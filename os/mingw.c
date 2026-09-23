@@ -389,8 +389,10 @@ wchar_t* u8tou16_mayfail(wchar_t* conv_buf, size_t number_of_wchar, const char* 
 {
 	/* MB_ERR_INVALID_CHARS forces the API to fail on malformed UTF-8 sequences */
 	int ret = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, src, number_of_char, conv_buf, number_of_wchar);
-	if (ret <= 0)
+	if (ret <= 0) {
+		windows_errno(GetLastError());
 		return 0;
+	}
 
 	if (result_length_without_terminator)
 		*result_length_without_terminator = ret;
@@ -402,8 +404,10 @@ char* u16tou8_mayfail(char* conv_buf, size_t number_of_char, const wchar_t* src,
 {
 	/* WC_ERR_INVALID_CHARS forces the API to fail on malformed UTF-16 sequences */
 	int ret = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, src, number_of_wchar, conv_buf, number_of_char, 0, 0);
-	if (ret <= 0)
+	if (ret <= 0) {
+		windows_errno(GetLastError());
 		return 0;
+	}
 
 	if (result_length_without_terminator)
 		*result_length_without_terminator = ret;
@@ -416,13 +420,8 @@ static wchar_t* u8tou16_force(wchar_t* conv_buf, size_t number_of_wchar, const c
 	/* flags at 0 forces the API to never fail on malformed UTF-8 sequences */
 	int ret = MultiByteToWideChar(CP_UTF8, 0, src, number_of_char, conv_buf, number_of_wchar);
 	if (ret <= 0) {
-		DWORD error = GetLastError();
-		if (error == ERROR_INSUFFICIENT_BUFFER) {
-			os_syslog(OS_LVL_CRITICAL, "path too long converting '%s' from UTF-8 to UTF-16", src);
-		} else {
-			os_syslog(OS_LVL_CRITICAL, "error %u converting '%s' from UTF-8 to UTF-16", (unsigned)error, src);
-		}
-		os_abort();
+		windows_errno(GetLastError());
+		return 0;
 	}
 
 	if (result_length_without_terminator)
@@ -436,18 +435,8 @@ static char* u16tou8_force(char* conv_buf, size_t number_of_char, const wchar_t*
 	/* flags at 0 forces the API to never fail on malformed UTF-16 sequences */
 	int ret = WideCharToMultiByte(CP_UTF8, 0, src, number_of_wchar, conv_buf, number_of_char, 0, 0);
 	if (ret <= 0) {
-		DWORD error = GetLastError();
-		if (error == ERROR_INSUFFICIENT_BUFFER) {
-			os_syslog(OS_LVL_CRITICAL, "path too long converting from UTF-16 to UTF-8 with len %u", (unsigned)number_of_wchar);
-		} else {
-			os_syslog(OS_LVL_CRITICAL, "error %u converting from UTF-16 to UTF-8 with len %u", (unsigned)error, (unsigned)number_of_wchar);
-			if (src != 0) {
-				for (size_t i = 0; i < number_of_wchar; ++i) {
-					os_syslog(OS_LVL_CRITICAL, "%4u: %04x", (unsigned)i, src[i]);
-				}
-			}
-		}
-		os_abort();
+		windows_errno(GetLastError());
+		return 0;
 	}
 
 	if (result_length_without_terminator)
@@ -492,8 +481,8 @@ wchar_t* convert_arg(wchar_t* conv_buf, const char* src, int only_if_required)
 	if (only_if_required && strlen(src) < 260 - 12) {
 		/*
 		 * It's a short path
-		 * 260 is the MAX_PATH, note that it includes the space for the terminating NUL
-		 * 12 is an additional space for filename, required when creating directory
+		 * 260 is the legacy MAX_PATH, including the terminating NUL
+		 * 12 leaves room to append an 8.3 filename to the new directory's path
 		 */
 
 		/* do nothing */
@@ -531,13 +520,8 @@ wchar_t* convert_arg(wchar_t* conv_buf, const char* src, int only_if_required)
 
 	ret = MultiByteToWideChar(CP_UTF8, 0, src, -1, dst, CONV_MAX - count);
 	if (ret <= 0) {
-		DWORD error = GetLastError();
-		if (error == ERROR_INSUFFICIENT_BUFFER) {
-			os_syslog(OS_LVL_CRITICAL, "oath too long converting '%s' from UTF-8 to UTF-16", src);
-		} else {
-			os_syslog(OS_LVL_CRITICAL, "error %u converting '%s' from UTF-8 to UTF-16", (unsigned)error, src);
-		}
-		os_abort();
+		windows_errno(GetLastError());
+		return 0;
 	}
 
 	/*
@@ -827,23 +811,26 @@ static void windows_finddata2stat(const WIN32_FIND_DATAW* info, struct windows_s
 	st->st_sync = 0;
 }
 
-static void windows_finddata2dirent(const WIN32_FIND_DATAW* info, struct windows_dirent* dirent)
+static int windows_finddata2dirent(const WIN32_FIND_DATAW* info, struct windows_dirent* dirent)
 {
 	char conv_buf[CONV_MAX];
 	const char* name;
 	size_t len;
 
 	name = u16tou8_force(conv_buf, CONV_MAX, info->cFileName, wcslen(info->cFileName), &len);
+	if (!name)
+		return -1;
 
 	if (len + 1 >= sizeof(dirent->d_name)) {
-		os_syslog(OS_LVL_CRITICAL, "name too long");
-		os_exit();
+		errno = ENAMETOOLONG;
+		return -1;
 	}
 
 	memcpy(dirent->d_name, name, len);
 	dirent->d_name[len] = 0;
 
 	windows_finddata2stat(info, &dirent->d_stat);
+	return 0;
 }
 
 static int windows_stream2dirent(const BY_HANDLE_FILE_INFORMATION* info, const FILE_ID_BOTH_DIR_INFO* stream, struct windows_dirent* dirent)
@@ -853,10 +840,12 @@ static int windows_stream2dirent(const BY_HANDLE_FILE_INFORMATION* info, const F
 	size_t len;
 
 	name = u16tou8_force(conv_buf, CONV_MAX, stream->FileName, stream->FileNameLength / 2, &len);
+	if (!name)
+		return -1;
 
 	if (len + 1 >= sizeof(dirent->d_name)) {
-		os_syslog(OS_LVL_CRITICAL, "name too long");
-		os_exit();
+		errno = ENAMETOOLONG;
+		return -1;
 	}
 
 	memcpy(dirent->d_name, name, len);
@@ -880,6 +869,8 @@ void windows_errno(DWORD error)
 		errno = EINVAL;
 		break;
 	case ERROR_HANDLE_EOF : /* in ReadFile() over the end of the file */
+	case ERROR_INVALID_PARAMETER :
+	case ERROR_INVALID_FLAGS :
 		errno = EINVAL;
 		break;
 	case ERROR_FILE_NOT_FOUND :
@@ -898,8 +889,13 @@ void windows_errno(DWORD error)
 	case ERROR_DISK_FULL :
 		errno = ENOSPC;
 		break;
+	case ERROR_FILENAME_EXCED_RANGE :
 	case ERROR_BUFFER_OVERFLOW :
+	case ERROR_INSUFFICIENT_BUFFER : /* in MultiByteToWideChar() and WideCharToMultiByte() */
 		errno = ENAMETOOLONG;
+		break;
+	case ERROR_NO_UNICODE_TRANSLATION : /* in MultiByteToWideChar() and WideCharToMultiByte() */
+		errno = EILSEQ;
 		break;
 	case ERROR_NOT_ENOUGH_MEMORY :
 		errno = ENOMEM;
@@ -960,7 +956,10 @@ int windows_get_file_attributes(const char* file)
 {
 	wchar_t conv_buf[CONV_MAX];
 
-	DWORD ret = GetFileAttributesW(convert(conv_buf, file));
+	if (!convert(conv_buf, file))
+		return -1;
+
+	DWORD ret = GetFileAttributesW(conv_buf);
 	if (ret == INVALID_FILE_ATTRIBUTES) {
 		windows_errno(GetLastError());
 		return -1;
@@ -973,7 +972,10 @@ int windows_set_file_attributes(const char* file, int attributes)
 {
 	wchar_t conv_buf[CONV_MAX];
 
-	if (!SetFileAttributesW(convert(conv_buf, file), attributes)) {
+	if (!convert(conv_buf, file))
+		return -1;
+
+	if (!SetFileAttributesW(conv_buf, attributes)) {
 		windows_errno(GetLastError());
 		return -1;
 	}
@@ -997,7 +999,9 @@ int windows_lstat(const char* file, struct windows_stat* st)
 		return windows_stat(file, st);
 
 	/* FindFirstFileW by default gets information of symbolic links and not of their targets */
-	h = FindFirstFileW(convert(conv_buf, file), &data);
+	if (!convert(conv_buf, file))
+		return -1;
+	h = FindFirstFileW(conv_buf, &data);
 	if (h == INVALID_HANDLE_VALUE) {
 		windows_errno(GetLastError());
 		return -1;
@@ -1022,7 +1026,10 @@ int windows_mkdir(const char* file)
 {
 	wchar_t conv_buf[CONV_MAX];
 
-	if (!CreateDirectoryW(convert(conv_buf, file), 0)) {
+	if (!convert(conv_buf, file))
+		return -1;
+
+	if (!CreateDirectoryW(conv_buf, 0)) {
 		windows_errno(GetLastError());
 		return -1;
 	}
@@ -1034,7 +1041,10 @@ int windows_rmdir(const char* file)
 {
 	wchar_t conv_buf[CONV_MAX];
 
-	if (!RemoveDirectoryW(convert(conv_buf, file))) {
+	if (!convert(conv_buf, file))
+		return -1;
+
+	if (!RemoveDirectoryW(conv_buf)) {
 		windows_errno(GetLastError());
 		return -1;
 	}
@@ -1054,7 +1064,9 @@ int windows_stat(const char* file, struct windows_stat* st)
 	 *
 	 * Use FILE_FLAG_BACKUP_SEMANTICS to open directories (it's just ignored for files).
 	 */
-	h = CreateFileW(convert(conv_buf, file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
+	if (!convert(conv_buf, file))
+		return -1;
+	h = CreateFileW(conv_buf, 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
 	if (h == INVALID_HANDLE_VALUE) {
 		windows_errno(GetLastError());
 		return -1;
@@ -1407,7 +1419,9 @@ int windows_utimensat(int fd, const char* file, struct windows_timespec tv[2], i
 	wflags = FILE_FLAG_BACKUP_SEMANTICS;
 	if ((flags & AT_SYMLINK_NOFOLLOW) != 0)
 		wflags |= FILE_FLAG_OPEN_REPARSE_POINT;
-	h = CreateFileW(convert(conv_buf, file), FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, wflags, 0);
+	if (!convert(conv_buf, file))
+		return -1;
+	h = CreateFileW(conv_buf, FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, wflags, 0);
 	if (h == INVALID_HANDLE_VALUE) {
 		windows_errno(GetLastError());
 		return -1;
@@ -1445,6 +1459,8 @@ int windows_rename(const char* from, const char* to)
 {
 	wchar_t conv_buf_from[CONV_MAX];
 	wchar_t conv_buf_to[CONV_MAX];
+	if (!convert(conv_buf_from, from) || !convert(conv_buf_to, to))
+		return -1;
 
 	/*
 	 * Implements an atomic rename in Windows.
@@ -1453,7 +1469,7 @@ int windows_rename(const char* from, const char* to)
 	 * Is an atomic file rename (with overwrite) possible on Windows?
 	 * http://stackoverflow.com/questions/167414/is-an-atomic-file-rename-with-overwrite-possible-on-windows
 	 */
-	if (!MoveFileExW(convert(conv_buf_from, from), convert(conv_buf_to, to), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) {
+	if (!MoveFileExW(conv_buf_from, conv_buf_to, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) {
 		windows_errno(GetLastError());
 		return -1;
 	}
@@ -1465,7 +1481,10 @@ int windows_remove(const char* file)
 {
 	wchar_t conv_buf[CONV_MAX];
 
-	if (!DeleteFileW(convert(conv_buf, file))) {
+	if (!convert(conv_buf, file))
+		return -1;
+
+	if (!DeleteFileW(conv_buf)) {
 		windows_errno(GetLastError());
 		return -1;
 	}
@@ -1478,7 +1497,9 @@ FILE* windows_fopen(const char* file, const char* mode)
 	wchar_t conv_buf_file[CONV_MAX];
 	wchar_t conv_buf_mode[CONV_MAX];
 
-	return _wfopen(convert(conv_buf_file, file), u8tou16(conv_buf_mode, mode));
+	if (!convert(conv_buf_file, file) || !u8tou16(conv_buf_mode, mode))
+		return 0;
+	return _wfopen(conv_buf_file, conv_buf_mode);
 }
 
 int windows_open(const char* file, int flags, ...)
@@ -1566,7 +1587,9 @@ int windows_open(const char* file, int flags, ...)
 	if ((flags & O_NOFOLLOW) != 0)
 		attr |= FILE_FLAG_OPEN_REPARSE_POINT;
 
-	h = CreateFileW(convert(conv_buf, file), access, share, 0, create, attr, 0);
+	if (!convert(conv_buf, file))
+		return -1;
+	h = CreateFileW(conv_buf, access, share, 0, create, attr, 0);
 	if (h == INVALID_HANDLE_VALUE) {
 		windows_errno(GetLastError());
 		return -1;
@@ -1609,7 +1632,7 @@ int windows_open(const char* file, int flags, ...)
 			}
 
 			attr &= ~FILE_FLAG_OPEN_REPARSE_POINT;
-			h = CreateFileW(convert(conv_buf, file), access, share, 0, create, attr, 0);
+			h = CreateFileW(conv_buf, access, share, 0, create, attr, 0);
 			if (h == INVALID_HANDLE_VALUE) {
 				windows_errno(GetLastError());
 				return -1;
@@ -1699,6 +1722,10 @@ static windows_dir* windows_opendir_find(const char* dir)
 	}
 
 	wdir = convert(conv_buf, dir);
+	if (!wdir) {
+		free(dirstream);
+		return 0;
+	}
 
 	/* add final \ and * */
 	len = wcslen(wdir);
@@ -1727,7 +1754,11 @@ static windows_dir* windows_opendir_find(const char* dir)
 		return 0;
 	}
 
-	windows_finddata2dirent(&dirstream->find, &dirstream->entry);
+	if (windows_finddata2dirent(&dirstream->find, &dirstream->entry) != 0) {
+		FindClose(dirstream->h);
+		free(dirstream);
+		return 0;
+	}
 	dirstream->state = DIR_STATE_FILLED;
 
 	return dirstream;
@@ -1746,7 +1777,8 @@ static struct windows_dirent* windows_readdir_find(windows_dir* dirstream)
 
 			dirstream->state = DIR_STATE_EOF;
 		} else {
-			windows_finddata2dirent(&dirstream->find, &dirstream->entry);
+			if (windows_finddata2dirent(&dirstream->find, &dirstream->entry) != 0)
+				return 0;
 			dirstream->state = DIR_STATE_FILLED;
 		}
 	}
@@ -1846,7 +1878,12 @@ static windows_dir* windows_opendir_stream(const char* dir)
 		return 0;
 	}
 
-	dirstream->h = CreateFileW(convert(conv_buf, dir), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
+	if (!convert(conv_buf, dir)) {
+		free(dirstream->buffer);
+		free(dirstream);
+		return 0;
+	}
+	dirstream->h = CreateFileW(conv_buf, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
 	if (dirstream->h == INVALID_HANDLE_VALUE) {
 		DWORD error = GetLastError();
 		free(dirstream->buffer);
@@ -1968,7 +2005,9 @@ int windows_link(const char* existing, const char* file)
 	wchar_t conv_buf_file[CONV_MAX];
 	wchar_t conv_buf_existing[CONV_MAX];
 
-	if (!CreateHardLinkW(convert(conv_buf_file, file), convert(conv_buf_existing, existing), 0)) {
+	if (!convert(conv_buf_file, file) || !convert(conv_buf_existing, existing))
+		return -1;
+	if (!CreateHardLinkW(conv_buf_file, conv_buf_existing, 0)) {
 		windows_errno(GetLastError());
 		return -1;
 	}
@@ -1991,6 +2030,8 @@ static int windows_symlink_flags(const char* existing, const char* file, DWORD f
 {
 	wchar_t conv_buf_file[CONV_MAX];
 	wchar_t conv_buf_existing[CONV_MAX];
+	if (!convert(conv_buf_file, file) || !convert_if_required(conv_buf_existing, existing))
+		return -1;
 
 	/*
 	 * We must convert to the extended-length \\?\ format if the path is too long
@@ -1998,7 +2039,7 @@ static int windows_symlink_flags(const char* existing, const char* file, DWORD f
 	 * But we don't want to always convert it, to avoid to recreate
 	 * user symlinks different than they were before
 	 */
-	if (!CreateSymbolicLinkW(convert(conv_buf_file, file), convert_if_required(conv_buf_existing, existing),
+	if (!CreateSymbolicLinkW(conv_buf_file, conv_buf_existing,
 		flags | SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE)
 	) {
 		DWORD error = GetLastError();
@@ -2008,7 +2049,7 @@ static int windows_symlink_flags(const char* existing, const char* file, DWORD f
 		}
 
 		/* retry without the new flag SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE */
-		if (!CreateSymbolicLinkW(convert(conv_buf_file, file), convert_if_required(conv_buf_existing, existing), flags)) {
+		if (!CreateSymbolicLinkW(conv_buf_file, conv_buf_existing, flags)) {
 			windows_errno(GetLastError());
 			return -1;
 		}
@@ -2077,7 +2118,9 @@ int windows_readlink(const char* file, char* buffer, size_t size)
 	 * Use FILE_FLAG_BACKUP_SEMANTICS to open directories (it's just ignored for files).
 	 * Use FILE_FLAG_OPEN_REPARSE_POINT to open symbolic links and not the their target.
 	 */
-	h = CreateFileW(convert(conv_buf_file, file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, 0);
+	if (!convert(conv_buf_file, file))
+		return -1;
+	h = CreateFileW(conv_buf_file, 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, 0);
 	if (h == INVALID_HANDLE_VALUE) {
 		windows_errno(GetLastError());
 		return -1;
@@ -2130,6 +2173,8 @@ int windows_readlink(const char* file, char* buffer, size_t size)
 
 	/* convert the name to UTF-8 */
 	name = u16tou8_force(conv_buf_name, CONV_MAX, print, print_len, &len);
+	if (!name)
+		return -1;
 
 	/* check for overflow */
 	if (len > size) {
@@ -2405,22 +2450,31 @@ struct tm* windows_localtime_r(const time_t* timer, struct tm* result)
 char* windows_realpath(const char* path, char* resolved_path)
 {
 	wchar_t conv_buf[CONV_MAX];
-	HANDLE h = CreateFileW(convert(conv_buf, path), 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+	HANDLE h;
+	if (!convert(conv_buf, path))
+		return 0;
+	h = CreateFileW(conv_buf, 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
 	if (h == INVALID_HANDLE_VALUE) {
 		windows_errno(GetLastError());
 		return 0;
 	}
 
 	DWORD result = GetFinalPathNameByHandleW(h, conv_buf, CONV_MAX, FILE_NAME_NORMALIZED);
+	DWORD error = GetLastError();
 
 	CloseHandle(h);
 
-	if (result == 0 || result >= CONV_MAX) {
-		windows_errno(GetLastError());
+	if (result >= CONV_MAX) {
+		errno = ENAMETOOLONG;
+		return 0;
+	}
+	if (result == 0) {
+		windows_errno(error);
 		return 0;
 	}
 
-	resolved_path = u16tou8(resolved_path, conv_buf);
+	if (!u16tou8(resolved_path, conv_buf))
+		return 0;
 
 	/*
 	 * Windows prefixes normalized paths with "\\?\" (for local drives)
@@ -2452,10 +2506,8 @@ char* absolutepath(const char* restrict path, char* restrict resolved_path)
 	wchar_t wpath[CONV_MAX];
 	wchar_t wfull[CONV_MAX];
 
-	if (!u8tou16_mayfail(wpath, CONV_MAX, path, strlen(path) + 1, 0)) {
-		errno = EINVAL;
+	if (!u8tou16_mayfail(wpath, CONV_MAX, path, strlen(path) + 1, 0))
 		return 0;
-	}
 
 	DWORD len = GetFullPathNameW(wpath, CONV_MAX, wfull, 0);
 	if (len == 0) {
@@ -2468,10 +2520,8 @@ char* absolutepath(const char* restrict path, char* restrict resolved_path)
 		return 0;
 	}
 
-	if (!u16tou8_mayfail(resolved_path, CONV_MAX, wfull, len + 1, 0)) {
-		errno = ENAMETOOLONG;
+	if (!u16tou8_mayfail(resolved_path, CONV_MAX, wfull, len + 1, 0))
 		return 0;
-	}
 
 	return resolved_path;
 }
@@ -2547,7 +2597,9 @@ int lstat_sync(const char* file, struct windows_stat* st, uint64_t* physical)
 	 * cannot be opened like "C:\System Volume Information" resulting
 	 * in error ERROR_ACCESS_DENIED.
 	 */
-	h = CreateFileW(convert(conv_buf, file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, 0);
+	if (!convert(conv_buf, file))
+		return -1;
+	h = CreateFileW(conv_buf, 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, 0);
 	if (h == INVALID_HANDLE_VALUE) {
 		windows_errno(GetLastError());
 		return -1;
@@ -2593,7 +2645,9 @@ int filephy(const char* file, uint64_t size, uint64_t* physical)
 	(void)size;
 
 	/* open the handle of the file */
-	h = CreateFileW(convert(conv_buf, file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
+	if (!convert(conv_buf, file))
+		return -1;
+	h = CreateFileW(conv_buf, 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
 	if (h == INVALID_HANDLE_VALUE) {
 		windows_errno(GetLastError());
 		return -1;
@@ -3221,10 +3275,21 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 
 	/* prepare command line string (Windows uses a single string, not an array) */
 	WCHAR cmd_buffer[COMMAND_LINE_MAX];
-	char cmd_buffer_conv[COMMAND_LINE_MAX * 3]; /* * 3 is needed because a single UTF-16 character can take up to 3 bytes in UTF-8 */
 	int pos = 0;
 	for (int i = 0; argv[i]; ++i) {
-		pos = argcat(cmd_buffer, COMMAND_LINE_MAX, pos, u8tou16(conv, argv[i]));
+		if (!u8tou16(conv, argv[i])) {
+			CloseHandle(nul_handle);
+			if (has_out) {
+				CloseHandle(stdout_write_handle);
+				close(out_f);
+			}
+			if (has_err) {
+				CloseHandle(stderr_write_handle);
+				close(err_f);
+			}
+			return -1;
+		}
+		pos = argcat(cmd_buffer, COMMAND_LINE_MAX, pos, conv);
 		if (pos < 0) {
 			os_syslog(OS_LVL_INFO, "command to long for spawn");
 			CloseHandle(nul_handle);
@@ -3313,7 +3378,8 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 			return -1;
 		}
 
-		if (!LogonUserW(u8tou16(conv, run_as_user), L"NT AUTHORITY", NULL, LOGON32_LOGON_SERVICE, LOGON32_PROVIDER_DEFAULT, &h_token)) {
+		const wchar_t* wuser = _stricmp(run_as_user, "LocalService") == 0 ? L"LocalService" : L"NetworkService";
+		if (!LogonUserW(wuser, L"NT AUTHORITY", NULL, LOGON32_LOGON_SERVICE, LOGON32_PROVIDER_DEFAULT, &h_token)) {
 			windows_errno(GetLastError());
 			os_syslog(OS_LVL_INFO, "failed to logon user %s, errno=%s(%d)", run_as_user, strerror(errno), errno);
 			pid_unpublish(pid_slot, 0);
@@ -3370,7 +3436,7 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 	process_startup_done(&startup);
 	if (!ret) {
 		windows_errno(create_error);
-		os_syslog(OS_LVL_INFO, "failed to create process '%s' for spawn, errno=%s(%d)", u16tou8_force(cmd_buffer_conv, sizeof(cmd_buffer_conv), cmd_buffer, wcslen(cmd_buffer) + 1, 0), strerror(errno), errno);
+		os_syslog(OS_LVL_INFO, "failed to create process '%s' for spawn, errno=%s(%d)", argv[0], strerror(errno), errno);
 		pid_unpublish(pid_slot, 0);
 		CloseHandle(nul_handle);
 		if (has_out) {
@@ -3607,6 +3673,9 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 	DWORD create_error = ERROR_SUCCESS;
 	int64_t start, stop;
 
+	if (!u8tou16(conv, command))
+		return -1;
+
 	start = os_tick_sec();
 
 	sa.nLength = sizeof(SECURITY_ATTRIBUTES);
@@ -3677,7 +3746,7 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 		/* create the child process */
 		ret = CreateProcessW(
 			NULL,
-			u8tou16(conv, command),
+			conv,
 			NULL, NULL,
 			TRUE, /* inherit handles from the explicit list */
 			CREATE_SUSPENDED | CREATE_NO_WINDOW | EXTENDED_STARTUPINFO_PRESENT,
@@ -3706,7 +3775,8 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 			return -1;
 		}
 
-		if (!LogonUserW(u8tou16(conv, run_as_user), L"NT AUTHORITY", NULL, LOGON32_LOGON_SERVICE, LOGON32_PROVIDER_DEFAULT, &h_token)) {
+		const wchar_t* wuser = _stricmp(run_as_user, "LocalService") == 0 ? L"LocalService" : L"NetworkService";
+		if (!LogonUserW(wuser, L"NT AUTHORITY", NULL, LOGON32_LOGON_SERVICE, LOGON32_PROVIDER_DEFAULT, &h_token)) {
 			windows_errno(GetLastError());
 			os_syslog(OS_LVL_INFO, "failed to logon user %s, errno=%s(%d)", run_as_user, strerror(errno), errno);
 			pid_unpublish(pid_slot, 0);
@@ -3736,7 +3806,7 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 		ret = CreateProcessAsUserW(
 			h_token,
 			NULL,
-			u8tou16(conv, command),
+			conv,
 			NULL, NULL,
 			TRUE, /* inherit handles from the explicit list */
 			CREATE_SUSPENDED | CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT | EXTENDED_STARTUPINFO_PRESENT,
@@ -3922,8 +3992,10 @@ static WCHAR* env_combine(const WCHAR* base_env, char** envp)
 		while (*p != 0) {
 			size_t len = wcslen(p);
 			struct env_item* item = malloc(sizeof(struct env_item) + len * sizeof(WCHAR));
-			if (!item)
+			if (!item) {
+				errno = ENOMEM;
 				goto bail;
+			}
 			memcpy(item->str, p, (len + 1) * sizeof(WCHAR));
 			tommy_list_insert_tail(&list, &item->node, item);
 			total_len += len + 1;
@@ -3935,11 +4007,14 @@ static WCHAR* env_combine(const WCHAR* base_env, char** envp)
 	if (envp) {
 		for (int i = 0; envp[i] != NULL; ++i) {
 			wchar_t conv[CONV_MAX];
-			u8tou16(conv, envp[i]);
+			if (!u8tou16(conv, envp[i]))
+				goto bail;
 			size_t len = wcslen(conv);
 			struct env_item* item = malloc(sizeof(struct env_item) + len * sizeof(WCHAR));
-			if (!item)
+			if (!item) {
+				errno = ENOMEM;
 				goto bail;
+			}
 			memcpy(item->str, conv, (len + 1) * sizeof(WCHAR));
 			tommy_list_insert_tail(&list, &item->node, item);
 			total_len += len + 1;
@@ -3948,6 +4023,8 @@ static WCHAR* env_combine(const WCHAR* base_env, char** envp)
 
 	if (total_len == 0) {
 		WCHAR* empty_env = malloc(2 * sizeof(WCHAR));
+		if (!empty_env)
+			errno = ENOMEM;
 		if (empty_env) {
 			empty_env[0] = 0;
 			empty_env[1] = 0;
@@ -3958,6 +4035,8 @@ static WCHAR* env_combine(const WCHAR* base_env, char** envp)
 	tommy_list_sort(&list, env_item_compare);
 
 	new_env = malloc((total_len + 1) * sizeof(WCHAR));
+	if (!new_env)
+		errno = ENOMEM;
 	if (new_env) {
 		WCHAR* dst = new_env;
 		for (tommy_node* node = tommy_list_head(&list); node; node = node->next) {
@@ -4016,7 +4095,6 @@ int os_script(char** argv, char** envp, const char* run_as_user, uint64_t timeou
 
 	/* prepare command line string (Windows uses a single string, not an array) */
 	WCHAR cmd_buffer[COMMAND_LINE_MAX];
-	char cmd_buffer_conv[COMMAND_LINE_MAX * 3]; /* * 3 is needed because a single UTF-16 character can take up to 3 bytes in UTF-8 */
 	int pos = 0;
 
 	/*
@@ -4026,7 +4104,9 @@ int os_script(char** argv, char** envp, const char* run_as_user, uint64_t timeou
 	 * /v:off explicitly disables delayed environment variable expansion (!VAR!).
 	 */
 	pos = fixcat(cmd_buffer, COMMAND_LINE_MAX, pos, L"cmd.exe /d /v:off /c \" ");
-	pos = scriptcat(cmd_buffer, COMMAND_LINE_MAX, pos, u8tou16(conv, resolved_path));
+	if (!u8tou16(conv, resolved_path))
+		return -1;
+	pos = scriptcat(cmd_buffer, COMMAND_LINE_MAX, pos, conv);
 	if (pos < 0) {
 		if (errno == EINVAL)
 			os_syslog(OS_LVL_INFO, "unsupported embedded double quote in script path");
@@ -4035,7 +4115,9 @@ int os_script(char** argv, char** envp, const char* run_as_user, uint64_t timeou
 		return -1;
 	}
 	for (int i = 1; argv[i]; ++i) {
-		pos = scriptcat(cmd_buffer, COMMAND_LINE_MAX, pos, u8tou16(conv, argv[i]));
+		if (!u8tou16(conv, argv[i]))
+			return -1;
+		pos = scriptcat(cmd_buffer, COMMAND_LINE_MAX, pos, conv);
 		if (pos < 0) {
 			if (errno == EINVAL)
 				os_syslog(OS_LVL_INFO, "unsupported embedded double quote in script argument");
@@ -4081,8 +4163,7 @@ int os_script(char** argv, char** envp, const char* run_as_user, uint64_t timeou
 			combined_env = env_combine(base_env, envp);
 			FreeEnvironmentStringsW(base_env);
 			if (!combined_env) {
-				errno = ENOMEM;
-				os_syslog(OS_LVL_INFO, "failed to combine environment strings (out of memory)");
+				os_syslog(OS_LVL_INFO, "failed to combine environment strings, errno=%s(%d)", strerror(errno), errno);
 				pid_unpublish(pid_slot, 0);
 				return -1;
 			}
@@ -4118,7 +4199,8 @@ int os_script(char** argv, char** envp, const char* run_as_user, uint64_t timeou
 			return -1;
 		}
 
-		if (!LogonUserW(u8tou16(conv, run_as_user), L"NT AUTHORITY", NULL, LOGON32_LOGON_SERVICE, LOGON32_PROVIDER_DEFAULT, &h_token)) {
+		const wchar_t* wuser = _stricmp(run_as_user, "LocalService") == 0 ? L"LocalService" : L"NetworkService";
+		if (!LogonUserW(wuser, L"NT AUTHORITY", NULL, LOGON32_LOGON_SERVICE, LOGON32_PROVIDER_DEFAULT, &h_token)) {
 			windows_errno(GetLastError());
 			os_syslog(OS_LVL_INFO, "failed to logon user %s, errno=%s(%d)", run_as_user, strerror(errno), errno);
 			pid_unpublish(pid_slot, 0);
@@ -4141,8 +4223,7 @@ int os_script(char** argv, char** envp, const char* run_as_user, uint64_t timeou
 		if (envp != NULL) {
 			combined_env = env_combine((const WCHAR*)env, envp);
 			if (!combined_env) {
-				errno = ENOMEM;
-				os_syslog(OS_LVL_INFO, "failed to combine environment strings (out of memory)");
+				os_syslog(OS_LVL_INFO, "failed to combine environment strings, errno=%s(%d)", strerror(errno), errno);
 				pid_unpublish(pid_slot, 0);
 				DestroyEnvironmentBlock(env);
 				CloseHandle(h_token);
@@ -4169,7 +4250,7 @@ int os_script(char** argv, char** envp, const char* run_as_user, uint64_t timeou
 	}
 	if (!ret) {
 		windows_errno(GetLastError());
-		os_syslog(OS_LVL_INFO, "failed to create process '%s' for script, errno=%s(%d)", u16tou8_force(cmd_buffer_conv, sizeof(cmd_buffer_conv), cmd_buffer, wcslen(cmd_buffer) + 1, 0), strerror(errno), errno);
+		os_syslog(OS_LVL_INFO, "failed to create process '%s' for script, errno=%s(%d)", resolved_path, strerror(errno), errno);
 		pid_unpublish(pid_slot, 0);
 		return -1;
 	}
@@ -4600,4 +4681,3 @@ void os_done(void)
 }
 
 #endif
-

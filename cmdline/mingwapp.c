@@ -60,7 +60,9 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 		strcpy(dir, path);
 
 		/* get the file attributes */
-		attr = GetFileAttributesW(convert(conv_buf, dir));
+		if (!convert(conv_buf, dir))
+			return -1;
+		attr = GetFileAttributesW(conv_buf);
 		if (attr == INVALID_FILE_ATTRIBUTES) {
 			DWORD error = GetLastError();
 
@@ -98,7 +100,9 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 		 * Get the free space of the directory
 		 * note that it must be a directory
 		 */
-		if (!GetDiskFreeSpaceExW(convert(conv_buf, dir), 0, &total_bytes, &total_free_bytes)) {
+		if (!convert(conv_buf, dir))
+			return -1;
+		if (!GetDiskFreeSpaceExW(conv_buf, 0, &total_bytes, &total_free_bytes)) {
 			windows_errno(GetLastError());
 			return -1;
 		}
@@ -120,7 +124,9 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 		if (fslabel && fslabel_size > 0)
 			fslabel[0] = 0;
 
-		if (GetVolumePathNameW(convert(conv_buf, path), volume_root, PATH_MAX)) {
+		if (!convert(conv_buf, path))
+			return -1;
+		if (GetVolumePathNameW(conv_buf, volume_root, PATH_MAX)) {
 			if (GetVolumeInformationW(volume_root, vol_name, PATH_MAX, 0, 0, 0, fs_name, PATH_MAX)) {
 				has_volume_info = 1;
 			}
@@ -556,7 +562,9 @@ int fssnapshot_mount(const char* dir, struct fssnapshot_struct* fss)
 	 * Make the configured path absolute without resolving reparse points.
 	 * Unlike realpath(), GetFullPathNameW() preserves volume mount points.
 	 */
-	DWORD full_len = GetFullPathNameW(convert_if_required(conv_buf_vol, dir), PATH_MAX, full_path, 0);
+	if (!convert_if_required(conv_buf_vol, dir))
+		return -1;
+	DWORD full_len = GetFullPathNameW(conv_buf_vol, PATH_MAX, full_path, 0);
 	if (full_len == 0) {
 		windows_errno(GetLastError());
 		log_error(errno, "Error resolving full path '%s'. %s.\n", dir, strerror(errno));
@@ -569,7 +577,9 @@ int fssnapshot_mount(const char* dir, struct fssnapshot_struct* fss)
 	}
 
 	/* use pathimport to convert backslashes to slashes */
-	pathimport(resolved_dir, sizeof(resolved_dir), u16tou8(conv_buf_root, full_path));
+	if (!u16tou8(conv_buf_root, full_path))
+		return -1;
+	pathimport(resolved_dir, sizeof(resolved_dir), conv_buf_root);
 	pathslash(resolved_dir, sizeof(resolved_dir));
 
 	/*
@@ -580,7 +590,9 @@ int fssnapshot_mount(const char* dir, struct fssnapshot_struct* fss)
 	 * Use convert_if_required() to avoid the automatic addition of \\?\
 	 * made by convert() that is propagated in the resulting volume_root
 	 */
-	if (!GetVolumePathNameW(convert_if_required(conv_buf_vol, resolved_dir), volume_root, PATH_MAX)) {
+	if (!convert_if_required(conv_buf_vol, resolved_dir))
+		return -1;
+	if (!GetVolumePathNameW(conv_buf_vol, volume_root, PATH_MAX)) {
 		windows_errno(GetLastError());
 		log_error(errno, "Error getting VolumeRoot from '%s'. %s.\n", resolved_dir, strerror(errno));
 		return -1;
@@ -588,7 +600,7 @@ int fssnapshot_mount(const char* dir, struct fssnapshot_struct* fss)
 
 	if (!GetVolumeInformationW(volume_root, 0, 0, 0, 0, 0, fs_name, 32)) {
 		windows_errno(GetLastError());
-		log_error(errno, "Error getting information of VolumeRoot '%s'. %s.\n", u16tou8(conv_buf_root, volume_root), strerror(errno));
+		log_error(errno, "Error getting information of VolumeRoot for '%s'. %s.\n", dir, strerror(errno));
 		return -1;
 	}
 	if (wcscmp(fs_name, L"NTFS") == 0)
@@ -610,15 +622,19 @@ int fssnapshot_mount(const char* dir, struct fssnapshot_struct* fss)
 	 */
 	if (!GetVolumeNameForVolumeMountPointW(volume_root, volume_name, PATH_MAX)) {
 		windows_errno(GetLastError());
-		log_error(errno, "Error getting VolumeName of VolumeRoot '%s'. %s.\n", u16tou8(conv_buf_root, volume_root), strerror(errno));
+		log_error(errno, "Error getting VolumeName of VolumeRoot for '%s'. %s.\n", dir, strerror(errno));
 		return -1;
 	}
 
 	/* don't use pathimport for dataset to keep backslashes */
-	pathcpy(fss->dataset, sizeof(fss->dataset), u16tou8(conv_buf_root, volume_name));
+	if (!u16tou8(conv_buf_root, volume_name))
+		return -1;
+	pathcpy(fss->dataset, sizeof(fss->dataset), conv_buf_root);
 
 	/* use pathimport to convert backslashes to slashes */
-	pathimport(fss->root_dir, sizeof(fss->root_dir), u16tou8(conv_buf_root, volume_root));
+	if (!u16tou8(conv_buf_root, volume_root))
+		return -1;
+	pathimport(fss->root_dir, sizeof(fss->root_dir), conv_buf_root);
 
 	/* the returned root_dir should match the start of the resolved dir */
 	if (pathncmp(fss->root_dir, resolved_dir, strlen(fss->root_dir)) != 0) {
@@ -932,7 +948,9 @@ static int devresolve(const char* mount, char* file, size_t file_size, char* wfi
 	char* p;
 
 	/* get the volume mount point from the disk path */
-	if (!GetVolumePathNameW(convert(conv_buf_mount, mount), volume_mount, sizeof(volume_mount) / sizeof(WCHAR))) {
+	if (!convert(conv_buf_mount, mount))
+		return -1;
+	if (!GetVolumePathNameW(conv_buf_mount, volume_mount, sizeof(volume_mount) / sizeof(WCHAR))) {
 		windows_errno(GetLastError());
 		return -1;
 	}
@@ -953,7 +971,9 @@ static int devresolve(const char* mount, char* file, size_t file_size, char* wfi
 	if (i != 0 && volume_guid[i - 1] == '\\')
 		volume_guid[i - 1] = 0;
 
-	pathcpy(wfile, wfile_size, u16tou8(conv_buf_volume_guid, volume_guid));
+	if (!u16tou8(conv_buf_volume_guid, volume_guid))
+		return -1;
+	pathcpy(wfile, wfile_size, conv_buf_volume_guid);
 
 	/* get the GUID start { */
 	p = strchr(wfile, '{');
@@ -1006,7 +1026,9 @@ static int devtree(devinfo_t* parent, tommy_list* list)
 	DWORD i;
 
 	/* open the volume */
-	h = CreateFileW(convert(conv_buf, parent->wfile), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
+	if (!convert(conv_buf, parent->wfile))
+		return -1;
+	h = CreateFileW(conv_buf, 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
 	if (h == INVALID_HANDLE_VALUE) {
 		windows_errno(GetLastError());
 		return -1;
@@ -1091,7 +1113,9 @@ static int devstat(uint64_t device, const char* name, const char* wfile, uint64_
 	snprintf(file, sizeof(file), "/dev/pd%" PRIu64, device);
 
 	/* open the volume */
-	h = CreateFileW(convert(conv_buf, wfile), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
+	if (!convert(conv_buf, wfile))
+		return -1;
+	h = CreateFileW(conv_buf, 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
 	if (h == INVALID_HANDLE_VALUE) {
 		DWORD error = GetLastError();
 		windows_errno(error);
@@ -1139,7 +1163,9 @@ static int smartctl_executable(char* path, size_t size)
 		return -1;
 	}
 
-	ret = snprintf(path, size, "%ssmartctl.exe", u16tou8(conv_buf, dir));
+	if (!u16tou8(conv_buf, dir))
+		return -1;
+	ret = snprintf(path, size, "%ssmartctl.exe", conv_buf);
 	if (ret < 0 || (size_t)ret >= size) {
 		errno = ENAMETOOLONG;
 		return -1;
@@ -1488,7 +1514,7 @@ static void devattr_rotational(HANDLE h, uint64_t* rotational)
 /**
  * Get device attributes.
  */
-static void devattr(uint64_t device, const char* name, const char* wfile, uint64_t* info, char* serial, char* family, char* model, char* interf)
+static int devattr(uint64_t device, const char* name, const char* wfile, uint64_t* info, char* serial, char* family, char* model, char* interf)
 {
 	HANDLE h;
 	wchar_t conv_buf[CONV_MAX];
@@ -1499,12 +1525,15 @@ static void devattr(uint64_t device, const char* name, const char* wfile, uint64
 	(void)family; /* not available, smartctl uses an internal database to get it */
 
 	/* open the volume */
-	h = CreateFileW(convert(conv_buf, wfile), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
+	/* an unavailable attribute is optional, but an unrepresentable path must fail */
+	if (!convert(conv_buf, wfile))
+		return -1;
+	h = CreateFileW(conv_buf, 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
 	if (h == INVALID_HANDLE_VALUE) {
 		DWORD error = GetLastError();
 		windows_errno(error);
 		log_tag("device:%s:%s:error:%lu\n", file, name, error);
-		return;
+		return 0;
 	}
 
 	if (info[INFO_SIZE] == SMART_UNASSIGNED)
@@ -1525,8 +1554,9 @@ static void devattr(uint64_t device, const char* name, const char* wfile, uint64
 		DWORD error = GetLastError();
 		windows_errno(error);
 		log_tag("device:%s:%s:error:%lu\n", file, name, error);
-		return;
+		return 0;
 	}
+	return 0;
 }
 
 /**
@@ -1545,7 +1575,10 @@ static int devpower(uint64_t device, const char* name, const char* wfile)
 	snprintf(file, sizeof(file), "/dev/pd%" PRIu64, device);
 
 	/* open the volume */
-	h = CreateFileW(convert(conv_buf, wfile), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
+	/* don't treat an unrepresentable path as an unknown rotational device */
+	if (!convert(conv_buf, wfile))
+		return -1;
+	h = CreateFileW(conv_buf, 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
 	if (h == INVALID_HANDLE_VALUE) {
 		DWORD error = GetLastError();
 		windows_errno(error);
@@ -1902,7 +1935,9 @@ static int devup(uint64_t device, const char* name, const char* wfile)
 	snprintf(file, sizeof(file), "/dev/pd%" PRIu64, device);
 
 	/* open the volume */
-	h = CreateFileW(convert(conv_buf, wfile), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH, 0);
+	if (!convert(conv_buf, wfile))
+		return -1;
+	h = CreateFileW(conv_buf, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH, 0);
 	if (h == INVALID_HANDLE_VALUE) {
 		DWORD error = GetLastError();
 		windows_errno(error);
@@ -1963,7 +1998,10 @@ static void* thread_spinup(void* arg)
 	int ret;
 
 	/* only for members of the array and rotational devices */
-	if (devinfo->is_array && devpower(devinfo->device, devinfo->name, devinfo->wfile) != 0) {
+	ret = devinfo->is_array ? devpower(devinfo->device, devinfo->name, devinfo->wfile) : 0;
+	if (ret < 0)
+		return (void*)-1;
+	if (ret != 0) {
 		uint64_t start = os_tick_ms();
 
 		if (devup(devinfo->device, devinfo->name, devinfo->wfile) != 0) {
@@ -1996,7 +2034,8 @@ static void* thread_spinup(void* arg)
 	 * smartctl intentionally skips queries on devices in standby mode
 	 * to prevent accidentally spinning them up.
 	 */
-	devattr(devinfo->device, devinfo->name, devinfo->wfile, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf);
+	if (devattr(devinfo->device, devinfo->name, devinfo->wfile, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf) != 0)
+		return (void*)-1;
 
 	return 0;
 }
@@ -2007,9 +2046,13 @@ static void* thread_spinup(void* arg)
 static void* thread_spindown(void* arg)
 {
 	devinfo_t* devinfo = arg;
+	int ret;
 
 	/* only for members of the array and rotational devices */
-	if (devinfo->is_array && devpower(devinfo->device, devinfo->name, devinfo->wfile) != 0) {
+	ret = devinfo->is_array ? devpower(devinfo->device, devinfo->name, devinfo->wfile) : 0;
+	if (ret < 0)
+		return (void*)-1;
+	if (ret != 0) {
 		uint64_t start = os_tick_ms();
 
 		if (devdown(devinfo->device, devinfo->name, devinfo->smartctl) != 0) {
@@ -2030,9 +2073,13 @@ static void* thread_spindown(void* arg)
 static void* thread_spindownifup(void* arg)
 {
 	devinfo_t* devinfo = arg;
+	int ret;
 
 	/* only for members of the array and rotational devices */
-	if (devinfo->is_array && devpower(devinfo->device, devinfo->name, devinfo->wfile) != 0) {
+	ret = devinfo->is_array ? devpower(devinfo->device, devinfo->name, devinfo->wfile) : 0;
+	if (ret < 0)
+		return (void*)-1;
+	if (ret != 0) {
 		uint64_t start = os_tick_ms();
 		int power;
 
@@ -2068,7 +2115,8 @@ static void* thread_smart(void* arg)
 	 * smartctl intentionally skips queries on devices in standby mode
 	 * to prevent accidentally spinning them up.
 	 */
-	devattr(devinfo->device, devinfo->name, devinfo->wfile, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf);
+	if (devattr(devinfo->device, devinfo->name, devinfo->wfile, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf) != 0)
+		return (void*)-1;
 
 	return 0;
 }
@@ -2092,7 +2140,8 @@ static void* thread_probe(void* arg)
 	 * smartctl intentionally skips queries on devices in standby mode
 	 * to prevent accidentally spinning them up.
 	 */
-	devattr(devinfo->device, devinfo->name, devinfo->wfile, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf);
+	if (devattr(devinfo->device, devinfo->name, devinfo->wfile, devinfo->info, devinfo->serial, devinfo->family, devinfo->model, devinfo->interf) != 0)
+		return (void*)-1;
 
 	return 0;
 }
@@ -2201,7 +2250,9 @@ int devmap(void)
 		HANDLE h;
 
 		/* open the volume */
-		h = CreateFileW(convert(conv_buf, wfile), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
+		if (!convert(conv_buf, wfile))
+			return -1;
+		h = CreateFileW(conv_buf, 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
 		if (h == INVALID_HANDLE_VALUE) {
 			DWORD error = GetLastError();
 			if (error != ERROR_FILE_NOT_FOUND)

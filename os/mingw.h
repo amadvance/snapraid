@@ -30,17 +30,21 @@
 /**
  * Convert a path to the Windows format.
  *
- * If only_is_required is 1, the extended-length format is used only if required.
+ * If only_if_required is 1, paths shorter than 248 UTF-8 bytes are not given
+ * an extended-length prefix. Longer paths follow the prefix rules below.
+ * This preserves compatibility with the legacy Win32 MAX_PATH limit for
+ * creating a directory: its path must leave room for an appended 8.3 filename.
  *
  * The exact operation done is:
  * - If it's a '\\?\' or '\\.\' path, convert any '/' to '\'.
  * - If it's a disk designator path, like 'D:\' or 'D:/', it prepends '\\?\' to the path and convert any '/' to '\'.
  * - If it's a UNC path, like ''\\server'', it prepends '\\?\UNC\' to the path and convert any '/' to '\'.
- * - Otherwise, only the UTF conversion is done. In this case Windows imposes a limit of 260 chars, and automatically convert any '/' to '\'.
+ * - Otherwise, only UTF conversion and '/' to '\' replacement are done. Relative paths remain limited to MAX_PATH.
  *
  * For more details see:
  * Naming Files, Paths, and Namespaces
  * http://msdn.microsoft.com/en-us/library/windows/desktop/aa365247%28v=vs.85%29.aspx#maxpath
+ * \return The converted path, or 0 with errno set from the conversion error.
  */
 wchar_t* convert_arg(wchar_t* conv_buf, const char* src, int only_if_required);
 
@@ -51,7 +55,7 @@ wchar_t* convert_arg(wchar_t* conv_buf, const char* src, int only_if_required);
  * Convert a generic string from UTF16 to UTF8.
  * \param conv_buf Destination UTF-8 buffer of size CONV_MAX.
  * \param src Source UTF-16 null-terminated string.
- * \return The converted string. It never fails.
+ * \return The converted string, or 0 with errno set from the conversion error.
  */
 char* u16tou8(char* conv_buf, const wchar_t* src);
 
@@ -59,7 +63,7 @@ char* u16tou8(char* conv_buf, const wchar_t* src);
  * Convert a generic string from UTF8 to UTF16.
  * \param conv_buf Destination UTF-16 buffer of size CONV_MAX.
  * \param src Source UTF-8 null-terminated string.
- * \return The converted string. It never fails.
+ * \return The converted string, or 0 with errno set from the conversion error.
  */
 wchar_t* u8tou16(wchar_t* conv_buf, const char* src);
 
@@ -70,7 +74,7 @@ wchar_t* u8tou16(wchar_t* conv_buf, const char* src);
  * \param src Source UTF-16 string.
  * \param number_of_wchar Number of wide characters to convert.
  * \param result_length_without_terminator Optional pointer to receive the converted length.
- * \return The converted string, or 0 on failure.
+ * \return The converted string, or 0 with errno set from the conversion error.
  */
 char* u16tou8_mayfail(char* conv_buf, size_t number_of_char, const wchar_t* src, size_t number_of_wchar, size_t* result_length_without_terminator);
 
@@ -81,7 +85,7 @@ char* u16tou8_mayfail(char* conv_buf, size_t number_of_char, const wchar_t* src,
  * \param src Source UTF-8 string.
  * \param number_of_char Number of bytes to convert (or -1 for null-terminated string).
  * \param result_length_without_terminator Optional pointer to receive the converted length.
- * \return The converted string, or 0 on failure.
+ * \return The converted string, or 0 with errno set from the conversion error.
  */
 wchar_t* u8tou16_mayfail(wchar_t* conv_buf, size_t number_of_wchar, const char* src, size_t number_of_char, size_t* result_length_without_terminator);
 
@@ -438,7 +442,6 @@ unsigned windows_sleep(unsigned seconds);
  * Like readlink().
  */
 int windows_readlink(const char* file, char* buffer, size_t size);
-
 
 /**
  * Like symlink().
