@@ -976,6 +976,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			state_progress_stop(state);
 
 			msg_progress("Autosaving...\n");
+			state_read_barrier(&io);
 			state_write(state);
 
 			state_progress_restart(state);

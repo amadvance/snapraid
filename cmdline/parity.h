@@ -136,13 +136,24 @@ int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned
 int parity_write(struct snapraid_parity_handle* handle, block_off_t pos, unsigned char* block_buffer, unsigned block_size, int skip_fallocate);
 
 /**
- * Complete all pending I/O and sync the parity files.
- *
- * This waits for all parity writes, reports their errors, and flushes the
- * parity data to disk. It also waits for all scheduled read-ahead to complete
- * without consuming the results, which remain available to the caller.
+ * Wait for all scheduled read-ahead before writing content state.
+ * state_write() bypasses extent locks and may remove obsolete extents, while
+ * reader workers look up extents and update fs_last. They must finish first to
+ * avoid races. Completed results remain queued for later use.
  */
-int state_barrier(struct snapraid_state* state, struct snapraid_io* io, struct snapraid_parity_handle* parity_handle, block_off_t blockcur);
+void state_read_barrier(struct snapraid_io* io);
+
+/**
+ * Establish the durability and read-ahead barrier before publishing sync state.
+ * Wait for parity writes and reject writer errors, then sync the parity files.
+ * Content must not record completed BLK/EMPTY states until their parity is
+ * durable. Finally wait for read-ahead so state_write() can access extent trees
+ * without racing reader workers; completed results remain queued for later use.
+ *
+ * If io is 0, only the parity files are synced. Return -1 on a write or sync
+ * failure; the caller must not publish completed state in that case.
+ */
+int state_write_barrier(struct snapraid_state* state, struct snapraid_io* io, struct snapraid_parity_handle* parity_handle, block_off_t blockcur);
 
 #endif
 

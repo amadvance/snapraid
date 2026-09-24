@@ -159,7 +159,7 @@
  *   3. Sync reads current data and computes new parity. Blocks may already be
  *      changed to BLK/EMPTY in memory while parity writes are still pending.
  *
- *   4. Before an autosave publishes these completed states, state_barrier()
+ *   4. Before an autosave publishes these completed states, state_write_barrier()
  *      drains pending parity writes and synchronizes the parity files.
  *
  *   5. Only after that barrier may BLK/EMPTY progress be written to content.
@@ -1730,7 +1730,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			state_progress_stop(state);
 
 			/* before spinning down flush all the caches */
-			ret = state_barrier(state, &io, parity_handle, blockcur);
+			ret = state_write_barrier(state, &io, parity_handle, blockcur);
 			if (ret == -1) {
 				/* LCOV_EXCL_START */
 				log_fatal(errno, "Stopping at block %" PRIu64 "\n", blockcur);
@@ -1778,7 +1778,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			 * Before writing the new content file we ensure that
 			 * the parity is really written flushing the disk cache
 			 */
-			ret = state_barrier(state, &io, parity_handle, blockcur);
+			ret = state_write_barrier(state, &io, parity_handle, blockcur);
 			if (ret == -1) {
 				/* LCOV_EXCL_START */
 				log_fatal(EIO, "Stopping at block %" PRIu64 "\n", blockcur);
@@ -1804,7 +1804,7 @@ end:
 	 * Before returning we ensure that
 	 * the parity is really written flushing the disk cache
 	 */
-	ret = state_barrier(state, &io, parity_handle, blockcur);
+	ret = state_write_barrier(state, &io, parity_handle, blockcur);
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
 		log_fatal(errno, "Stopping at block %" PRIu64 "\n", blockcur);
@@ -1859,7 +1859,7 @@ bail_durable:
 	 * parity generated up to the previous block so the partial progress
 	 * and any bad block markings can be made durable in the content file.
 	 */
-	ret = state_barrier(state, &io, parity_handle, blockcur);
+	ret = state_write_barrier(state, &io, parity_handle, blockcur);
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
 		log_fatal(errno, "Stopping at block %" PRIu64 "\n", blockcur);
@@ -2259,7 +2259,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 			 * Ensure any parity files created or resized prior to this branch
 			 * are physically committed to disk before declaring sync durable.
 			 */
-			ret = state_barrier(state, 0, parity_handle, blockmax);
+			ret = state_write_barrier(state, 0, parity_handle, blockmax);
 			if (ret == -1) {
 				/* LCOV_EXCL_START */
 				++process_error;
@@ -2304,7 +2304,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	 * Persist progress, error markings, and pending deallocations only after
 	 * all parity handles are closed AND sync durability has been confirmed.
 	 *
-	 * If an asynchronous parity write, state_barrier(), or parity_close() failed,
+	 * If an asynchronous parity write, state_write_barrier(), or parity_close() failed,
 	 * parity on disk is uncertain or incomplete. In that case, we must not publish
 	 * in-memory BLK/EMPTY transitions to the content file, keeping the previous
 	 * content file intact for recovery on the next run.
