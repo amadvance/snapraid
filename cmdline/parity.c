@@ -276,7 +276,7 @@ static int parity_handle_grow(struct snapraid_split_handle* split, data_off_t pr
 
 	/* simulate a failure for testing limits */
 	if (split->limit_size != 0 && size > (data_off_t)split->limit_size) {
-		errno = ENXIO;
+		errno = ENOSPC;
 		return -1;
 	}
 
@@ -436,13 +436,12 @@ static int parity_handle_fill(struct snapraid_split_handle* split, data_off_t si
 		/* note that in Windows ftruncate is really allocating space */
 		if (ftruncate(spaceholder_f, WINDOWS_SPACEHOLDER_SIZE) != 0) {
 			if (is_hw(errno)) {
-				log_fatal(errno, "Hardware error while resizing space holder file '%s'. %s.\n", spaceholder_path, strerror(errno));
+				log_fatal(errno, "DANGER! Hardware error while resizing space holder file '%s'. %s.\n", spaceholder_path, strerror(errno));
 				close(spaceholder_f);
 				remove(spaceholder_path);
 				return -1;
 			}
-			log_info(0, "WARNING Failed to resize the space holder file '%s' to %u bytes. %s.\n", spaceholder_path, WINDOWS_SPACEHOLDER_SIZE, strerror(errno));
-			log_info(0, "Assuming that no more space is available.\n");
+			log_info(errno, "WARNING Failed to resize the space holder file '%s' to %u bytes. Assuming that no more space is available. %s.\n", spaceholder_path, WINDOWS_SPACEHOLDER_SIZE, strerror(errno));
 			close(spaceholder_f);
 			remove(spaceholder_path);
 			return 0;
@@ -494,6 +493,15 @@ static int parity_handle_fill(struct snapraid_split_handle* split, data_off_t si
 
 		ret = parity_handle_grow(split, base, base + run, skip_fallocate);
 		if (ret != 0) {
+			/* some filesystems report capacity limits without ENOSPC; stop only for hardware errors */
+			if (is_hw(errno)) {
+				log_fatal(errno, "DANGER! Hardware error while growing the parity file '%s' to size %" PRIu64 ". %s.\n", split->path, base + run, strerror(errno));
+#ifdef _WIN32
+				remove(spaceholder_path);
+#endif
+				return -1;
+			}
+
 			/* we cannot grow, fallback enabling all the smaller bits */
 			delta = run - 1;
 
@@ -514,10 +522,10 @@ static int parity_handle_fill(struct snapraid_split_handle* split, data_off_t si
 	}
 
 #ifdef _WIN32
-	/* now delete the spaceholder file */
-	if (remove(spaceholder_path) != 0) {
+	/* release the reserved space only if the holder was created */
+	if (!skip_space_holder && remove(spaceholder_path) != 0) {
 		if (is_hw(errno)) {
-			log_fatal(errno, "DANGER! Failed to remove the space holder file '%s'. %s.\n", spaceholder_path, strerror(errno));
+			log_fatal(errno, "DANGER! Hardware error while removing the space holder file '%s'. %s.\n", spaceholder_path, strerror(errno));
 			return -1;
 		}
 		log_error(errno, "WARNING! Failed to remove the space holder file '%s', continuing anyway. %s.\n", spaceholder_path, strerror(errno));

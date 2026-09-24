@@ -886,8 +886,13 @@ void windows_errno(DWORD error)
 	case ERROR_ALREADY_EXISTS : /* in CreateDirectoryW() if already exists */
 		errno = EEXIST;
 		break;
-	case ERROR_DISK_FULL :
+	case ERROR_DISK_FULL : /* in SetEndOfFile() */
+	case ERROR_HANDLE_DISK_FULL : /* in SetEndOfFile() */
+	case ERROR_DISK_QUOTA_EXCEEDED : /* in SetEndOfFile() */
 		errno = ENOSPC;
+		break;
+	case ERROR_FILE_TOO_LARGE : /* in SetEndOfFile() */
+		errno = EFBIG;
 		break;
 	case ERROR_FILENAME_EXCED_RANGE :
 	case ERROR_BUFFER_OVERFLOW :
@@ -910,6 +915,8 @@ void windows_errno(DWORD error)
 		errno = EPERM;
 		break;
 	case ERROR_IO_DEVICE : /* in ReadFile() and WriteFile() */
+	case ERROR_FILE_CORRUPT :
+	case ERROR_DISK_CORRUPT :
 	case ERROR_CRC : /* in ReadFile() */
 		errno = EIO;
 		break;
