@@ -553,7 +553,7 @@ static void io_refresh_thread(struct snapraid_io* io)
 
 		if (worker->parity_handle)
 			io->state->parity[worker->parity_handle->level].cached_blocks = cached;
-		else
+		else if (worker->handle->disk) /* mapping holes have no disk statistics */
 			worker->handle->disk->cached_blocks = cached;
 	}
 
