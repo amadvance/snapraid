@@ -137,7 +137,7 @@ int state_search_fetch(struct snapraid_state* state, int prevhash, struct snapra
 	arg.block = missing_block;
 	arg.file = missing_file;
 	arg.buffer = buffer;
-	arg.offset = state->block_size * (data_off_t)missing_file_pos;
+	arg.offset = state->block_size * missing_file_pos;
 	arg.read_size = file_block_size(missing_file, missing_file_pos, state->block_size);
 	arg.prevhash = prevhash;
 

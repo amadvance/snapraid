@@ -2950,7 +2950,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					 * Allocate without initializing blocks. This deleted run sets every
 					 * state and hash before the file is inserted in the extent map.
 					 */
-					deleted = file_alloc(state->block_size, "<deleted>", v_count * (data_off_t)state->block_size, 0, 0, 0);
+					deleted = file_alloc(state->block_size, "<deleted>", v_count * state->block_size, 0, 0, 0);
 
 					/* mark the file as deleted */
 					file_flag_set(deleted, FILE_IS_DELETED);

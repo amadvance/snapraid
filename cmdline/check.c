@@ -3087,7 +3087,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 	 */
 
 	blockmax = parity_allocated_size(state);
-	size = blockmax * (data_off_t)state->block_size;
+	size = blockmax * state->block_size;
 
 	if (blockstart > blockmax) {
 		/* LCOV_EXCL_START */

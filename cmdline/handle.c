@@ -375,7 +375,7 @@ ssize_t handle_read(struct snapraid_handle* handle, block_off_t file_pos, unsign
 	unsigned count;
 	int ret;
 
-	offset = file_pos * (data_off_t)block_size;
+	offset = file_pos * block_size;
 
 	if (!out_missing)
 		out_missing = log_error;
@@ -456,7 +456,7 @@ int handle_write(struct snapraid_handle* handle, block_off_t file_pos, unsigned 
 		/* LCOV_EXCL_STOP */
 	}
 
-	offset = file_pos * (data_off_t)block_size;
+	offset = file_pos * block_size;
 
 	write_size = file_block_size(handle->file, file_pos, block_size);
 

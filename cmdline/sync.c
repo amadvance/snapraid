@@ -2019,11 +2019,11 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	 * but must not be shorter than used_size (which indicates missing parity).
 	 */
 	blockmax = parity_allocated_size(state);
-	size = blockmax * (data_off_t)state->block_size;
+	size = blockmax * state->block_size;
 
 	/* minimum size of the parity files we expect */
 	used_paritymax = parity_used_size(state);
-	used_parity_size = used_paritymax * (data_off_t)state->block_size;
+	used_parity_size = used_paritymax * state->block_size;
 
 	if (blockstart > blockmax) {
 		/* LCOV_EXCL_START */

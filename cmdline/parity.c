@@ -44,6 +44,11 @@ block_off_t parity_allocated_size(struct snapraid_state* state)
 			parity_block = block;
 	}
 
+	if (parity_block > (block_off_t)INT64_MAX / state->block_size) {
+		log_fatal(ESOFT, "Parity with %" PRIu64 " blocks is too large for block size %u.\n", parity_block, state->block_size);
+		exit(EXIT_FAILURE);
+	}
+
 	return parity_block;
 }
 
@@ -1083,7 +1088,7 @@ int parity_write(struct snapraid_parity_handle* handle, block_off_t pos, unsigne
 	unsigned count;
 	int ret;
 
-	offset = pos * (data_off_t)block_size;
+	offset = pos * block_size;
 
 	split = parity_split_find(handle, &offset);
 	if (!split) {
@@ -1177,7 +1182,7 @@ int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned
 	struct snapraid_split_handle* split;
 	int ret;
 
-	offset = pos * (data_off_t)block_size;
+	offset = pos * block_size;
 
 	split = parity_split_find(handle, &offset);
 	if (!split) {
