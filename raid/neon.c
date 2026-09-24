@@ -290,8 +290,8 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 			);
 
 			asm volatile (
-				"ldr q22, %0\n"
-				"ldr q23, %1\n"
+				"ld1 {v22.16b}, [%0]\n"
+				"ld1 {v23.16b}, [%1]\n"
 				"tbl v4.16b, {v22.16b}, v16.16b\n"
 				"tbl v20.16b, {v23.16b}, v17.16b\n"
 				"eor v4.16b, v4.16b, v20.16b\n"
@@ -300,13 +300,14 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 				"tbl v20.16b, {v23.16b}, v19.16b\n"
 				"eor v5.16b, v5.16b, v20.16b\n"
 				:
-				: "m" (raid_gfcauchypshufb[l][1][0][0]), "m" (raid_gfcauchypshufb[l][1][1][0])
+				: "r" (&raid_gfcauchypshufb[l][1][0][0]), "r" (&raid_gfcauchypshufb[l][1][1][0]),
+				"m" (raid_gfcauchypshufb[l][1][0]), "m" (raid_gfcauchypshufb[l][1][1])
 			);
 		}
 		if (np >= 4) {
 			asm volatile (
-				"ldr q22, %0\n"
-				"ldr q23, %1\n"
+				"ld1 {v22.16b}, [%0]\n"
+				"ld1 {v23.16b}, [%1]\n"
 				"tbl v6.16b, {v22.16b}, v16.16b\n"
 				"tbl v20.16b, {v23.16b}, v17.16b\n"
 				"eor v6.16b, v6.16b, v20.16b\n"
@@ -315,13 +316,14 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 				"tbl v20.16b, {v23.16b}, v19.16b\n"
 				"eor v7.16b, v7.16b, v20.16b\n"
 				:
-				: "m" (raid_gfcauchypshufb[l][2][0][0]), "m" (raid_gfcauchypshufb[l][2][1][0])
+				: "r" (&raid_gfcauchypshufb[l][2][0][0]), "r" (&raid_gfcauchypshufb[l][2][1][0]),
+				"m" (raid_gfcauchypshufb[l][2][0]), "m" (raid_gfcauchypshufb[l][2][1])
 			);
 		}
 		if (np >= 5) {
 			asm volatile (
-				"ldr q22, %0\n"
-				"ldr q23, %1\n"
+				"ld1 {v22.16b}, [%0]\n"
+				"ld1 {v23.16b}, [%1]\n"
 				"tbl v8.16b, {v22.16b}, v16.16b\n"
 				"tbl v20.16b, {v23.16b}, v17.16b\n"
 				"eor v8.16b, v8.16b, v20.16b\n"
@@ -330,13 +332,14 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 				"tbl v20.16b, {v23.16b}, v19.16b\n"
 				"eor v9.16b, v9.16b, v20.16b\n"
 				:
-				: "m" (raid_gfcauchypshufb[l][3][0][0]), "m" (raid_gfcauchypshufb[l][3][1][0])
+				: "r" (&raid_gfcauchypshufb[l][3][0][0]), "r" (&raid_gfcauchypshufb[l][3][1][0]),
+				"m" (raid_gfcauchypshufb[l][3][0]), "m" (raid_gfcauchypshufb[l][3][1])
 			);
 		}
 		if (np >= 6) {
 			asm volatile (
-				"ldr q22, %0\n"
-				"ldr q23, %1\n"
+				"ld1 {v22.16b}, [%0]\n"
+				"ld1 {v23.16b}, [%1]\n"
 				"tbl v10.16b, {v22.16b}, v16.16b\n"
 				"tbl v20.16b, {v23.16b}, v17.16b\n"
 				"eor v10.16b, v10.16b, v20.16b\n"
@@ -345,7 +348,8 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 				"tbl v20.16b, {v23.16b}, v19.16b\n"
 				"eor v11.16b, v11.16b, v20.16b\n"
 				:
-				: "m" (raid_gfcauchypshufb[l][4][0][0]), "m" (raid_gfcauchypshufb[l][4][1][0])
+				: "r" (&raid_gfcauchypshufb[l][4][0][0]), "r" (&raid_gfcauchypshufb[l][4][1][0]),
+				"m" (raid_gfcauchypshufb[l][4][0]), "m" (raid_gfcauchypshufb[l][4][1])
 			);
 		}
 
@@ -398,8 +402,8 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 				);
 
 				asm volatile (
-					"ldr q22, %0\n"
-					"ldr q23, %1\n"
+					"ld1 {v22.16b}, [%0]\n"
+					"ld1 {v23.16b}, [%1]\n"
 					"tbl v20.16b, {v22.16b}, v16.16b\n"
 					"tbl v21.16b, {v23.16b}, v17.16b\n"
 					"eor v20.16b, v20.16b, v21.16b\n"
@@ -410,13 +414,14 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 					"eor v20.16b, v20.16b, v21.16b\n"
 					"eor v5.16b, v5.16b, v20.16b\n"
 					:
-					: "m" (raid_gfcauchypshufb[d][1][0][0]), "m" (raid_gfcauchypshufb[d][1][1][0])
+					: "r" (&raid_gfcauchypshufb[d][1][0][0]), "r" (&raid_gfcauchypshufb[d][1][1][0]),
+					"m" (raid_gfcauchypshufb[d][1][0]), "m" (raid_gfcauchypshufb[d][1][1])
 				);
 			}
 			if (np >= 4) {
 				asm volatile (
-					"ldr q22, %0\n"
-					"ldr q23, %1\n"
+					"ld1 {v22.16b}, [%0]\n"
+					"ld1 {v23.16b}, [%1]\n"
 					"tbl v20.16b, {v22.16b}, v16.16b\n"
 					"tbl v21.16b, {v23.16b}, v17.16b\n"
 					"eor v20.16b, v20.16b, v21.16b\n"
@@ -427,13 +432,14 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 					"eor v20.16b, v20.16b, v21.16b\n"
 					"eor v7.16b, v7.16b, v20.16b\n"
 					:
-					: "m" (raid_gfcauchypshufb[d][2][0][0]), "m" (raid_gfcauchypshufb[d][2][1][0])
+					: "r" (&raid_gfcauchypshufb[d][2][0][0]), "r" (&raid_gfcauchypshufb[d][2][1][0]),
+					"m" (raid_gfcauchypshufb[d][2][0]), "m" (raid_gfcauchypshufb[d][2][1])
 				);
 			}
 			if (np >= 5) {
 				asm volatile (
-					"ldr q22, %0\n"
-					"ldr q23, %1\n"
+					"ld1 {v22.16b}, [%0]\n"
+					"ld1 {v23.16b}, [%1]\n"
 					"tbl v20.16b, {v22.16b}, v16.16b\n"
 					"tbl v21.16b, {v23.16b}, v17.16b\n"
 					"eor v20.16b, v20.16b, v21.16b\n"
@@ -444,13 +450,14 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 					"eor v20.16b, v20.16b, v21.16b\n"
 					"eor v9.16b, v9.16b, v20.16b\n"
 					:
-					: "m" (raid_gfcauchypshufb[d][3][0][0]), "m" (raid_gfcauchypshufb[d][3][1][0])
+					: "r" (&raid_gfcauchypshufb[d][3][0][0]), "r" (&raid_gfcauchypshufb[d][3][1][0]),
+					"m" (raid_gfcauchypshufb[d][3][0]), "m" (raid_gfcauchypshufb[d][3][1])
 				);
 			}
 			if (np >= 6) {
 				asm volatile (
-					"ldr q22, %0\n"
-					"ldr q23, %1\n"
+					"ld1 {v22.16b}, [%0]\n"
+					"ld1 {v23.16b}, [%1]\n"
 					"tbl v20.16b, {v22.16b}, v16.16b\n"
 					"tbl v21.16b, {v23.16b}, v17.16b\n"
 					"eor v20.16b, v20.16b, v21.16b\n"
@@ -461,7 +468,8 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 					"eor v20.16b, v20.16b, v21.16b\n"
 					"eor v11.16b, v11.16b, v20.16b\n"
 					:
-					: "m" (raid_gfcauchypshufb[d][4][0][0]), "m" (raid_gfcauchypshufb[d][4][1][0])
+					: "r" (&raid_gfcauchypshufb[d][4][0][0]), "r" (&raid_gfcauchypshufb[d][4][1][0]),
+					"m" (raid_gfcauchypshufb[d][4][0]), "m" (raid_gfcauchypshufb[d][4][1])
 				);
 			}
 		}
@@ -706,8 +714,8 @@ static __always_inline void raid_recX_neon_12(int nr, int has_p, int *id, int *i
 				asm volatile ("and v15.16b, v15.16b, v31.16b");
 
 				/* syndrome 0 */
-				asm volatile ("ldr q24, %0" : : "m" (t[0][0]));
-				asm volatile ("ldr q25, %0" : : "m" (t[0][16]));
+				asm volatile ("ld1 {v24.16b}, [%0]" : : "r" (&t[0][0]) : "memory");
+				asm volatile ("ld1 {v25.16b}, [%0]" : : "r" (&t[0][16]) : "memory");
 
 				asm volatile ("tbl v16.16b, {v24.16b}, v8.16b");
 				asm volatile ("tbl v17.16b, {v24.16b}, v9.16b");
@@ -732,8 +740,8 @@ static __always_inline void raid_recX_neon_12(int nr, int has_p, int *id, int *i
 
 			/* syndrome 1 */
 			if (nr >= 2) {
-				asm volatile ("ldr q24, %0" : : "m" (t[1][0]));
-				asm volatile ("ldr q25, %0" : : "m" (t[1][16]));
+				asm volatile ("ld1 {v24.16b}, [%0]" : : "r" (&t[1][0]) : "memory");
+				asm volatile ("ld1 {v25.16b}, [%0]" : : "r" (&t[1][16]) : "memory");
 
 				asm volatile ("tbl v16.16b, {v24.16b}, v8.16b");
 				asm volatile ("tbl v17.16b, {v24.16b}, v9.16b");
@@ -820,8 +828,8 @@ static __always_inline void raid_recX_neon_12(int nr, int has_p, int *id, int *i
 			 * First coefficient.
 			 * Initialize output accumulators from low-nibble products.
 			 */
-			asm volatile ("ldr q24, %0" : : "m" (t[0][0]));
-			asm volatile ("ldr q25, %0" : : "m" (t[0][16]));
+			asm volatile ("ld1 {v24.16b}, [%0]" : : "r" (&t[0][0]) : "memory");
+			asm volatile ("ld1 {v25.16b}, [%0]" : : "r" (&t[0][16]) : "memory");
 
 			asm volatile ("tbl v26.16b, {v24.16b}, v0.16b");
 			asm volatile ("tbl v27.16b, {v24.16b}, v1.16b");
@@ -840,8 +848,8 @@ static __always_inline void raid_recX_neon_12(int nr, int has_p, int *id, int *i
 
 			/* second coefficient */
 			if (nr >= 2) {
-				asm volatile ("ldr q24, %0" : : "m" (t[1][0]));
-				asm volatile ("ldr q25, %0" : : "m" (t[1][16]));
+				asm volatile ("ld1 {v24.16b}, [%0]" : : "r" (&t[1][0]) : "memory");
+				asm volatile ("ld1 {v25.16b}, [%0]" : : "r" (&t[1][16]) : "memory");
 
 				asm volatile ("tbl v20.16b, {v24.16b}, v4.16b");
 				asm volatile ("tbl v21.16b, {v24.16b}, v5.16b");
@@ -1052,8 +1060,8 @@ static __always_inline void raid_recX_neon(int nr, int has_p, int *id, int *ip, 
 				asm volatile ("and v15.16b, v15.16b, v31.16b");
 
 				/* syndrome 0 */
-				asm volatile ("ldr q24, %0" : : "m" (t[0][0]));
-				asm volatile ("ldr q25, %0" : : "m" (t[0][16]));
+				asm volatile ("ld1 {v24.16b}, [%0]" : : "r" (&t[0][0]) : "memory");
+				asm volatile ("ld1 {v25.16b}, [%0]" : : "r" (&t[0][16]) : "memory");
 
 				asm volatile ("tbl v26.16b, {v24.16b}, v12.16b");
 				asm volatile ("tbl v27.16b, {v25.16b}, v14.16b");
@@ -1068,8 +1076,8 @@ static __always_inline void raid_recX_neon(int nr, int has_p, int *id, int *ip, 
 
 			/* syndrome 1 */
 			if (nr >= 2) {
-				asm volatile ("ldr q24, %0" : : "m" (t[1][0]));
-				asm volatile ("ldr q25, %0" : : "m" (t[1][16]));
+				asm volatile ("ld1 {v24.16b}, [%0]" : : "r" (&t[1][0]) : "memory");
+				asm volatile ("ld1 {v25.16b}, [%0]" : : "r" (&t[1][16]) : "memory");
 
 				asm volatile ("tbl v26.16b, {v24.16b}, v12.16b");
 				asm volatile ("tbl v27.16b, {v25.16b}, v14.16b");
@@ -1084,8 +1092,8 @@ static __always_inline void raid_recX_neon(int nr, int has_p, int *id, int *ip, 
 
 			/* syndrome 2 */
 			if (nr >= 3) {
-				asm volatile ("ldr q24, %0" : : "m" (t[2][0]));
-				asm volatile ("ldr q25, %0" : : "m" (t[2][16]));
+				asm volatile ("ld1 {v24.16b}, [%0]" : : "r" (&t[2][0]) : "memory");
+				asm volatile ("ld1 {v25.16b}, [%0]" : : "r" (&t[2][16]) : "memory");
 
 				asm volatile ("tbl v26.16b, {v24.16b}, v12.16b");
 				asm volatile ("tbl v27.16b, {v25.16b}, v14.16b");
@@ -1100,8 +1108,8 @@ static __always_inline void raid_recX_neon(int nr, int has_p, int *id, int *ip, 
 
 			/* syndrome 3 */
 			if (nr >= 4) {
-				asm volatile ("ldr q24, %0" : : "m" (t[3][0]));
-				asm volatile ("ldr q25, %0" : : "m" (t[3][16]));
+				asm volatile ("ld1 {v24.16b}, [%0]" : : "r" (&t[3][0]) : "memory");
+				asm volatile ("ld1 {v25.16b}, [%0]" : : "r" (&t[3][16]) : "memory");
 
 				asm volatile ("tbl v26.16b, {v24.16b}, v12.16b");
 				asm volatile ("tbl v27.16b, {v25.16b}, v14.16b");
@@ -1116,8 +1124,8 @@ static __always_inline void raid_recX_neon(int nr, int has_p, int *id, int *ip, 
 
 			/* syndrome 4 */
 			if (nr >= 5) {
-				asm volatile ("ldr q24, %0" : : "m" (t[4][0]));
-				asm volatile ("ldr q25, %0" : : "m" (t[4][16]));
+				asm volatile ("ld1 {v24.16b}, [%0]" : : "r" (&t[4][0]) : "memory");
+				asm volatile ("ld1 {v25.16b}, [%0]" : : "r" (&t[4][16]) : "memory");
 
 				asm volatile ("tbl v26.16b, {v24.16b}, v12.16b");
 				asm volatile ("tbl v27.16b, {v25.16b}, v14.16b");
@@ -1132,8 +1140,8 @@ static __always_inline void raid_recX_neon(int nr, int has_p, int *id, int *ip, 
 
 			/* syndrome 5 */
 			if (nr >= 6) {
-				asm volatile ("ldr q24, %0" : : "m" (t[5][0]));
-				asm volatile ("ldr q25, %0" : : "m" (t[5][16]));
+				asm volatile ("ld1 {v24.16b}, [%0]" : : "r" (&t[5][0]) : "memory");
+				asm volatile ("ld1 {v25.16b}, [%0]" : : "r" (&t[5][16]) : "memory");
 
 				asm volatile ("tbl v26.16b, {v24.16b}, v12.16b");
 				asm volatile ("tbl v27.16b, {v25.16b}, v14.16b");
@@ -1226,16 +1234,16 @@ static __always_inline void raid_recX_neon(int nr, int has_p, int *id, int *ip, 
 			const uint8_t **t = R[j];
 
 			/* coefficient 0 initializes both lane accumulators */
-			asm volatile ("ldr q24, %0" : : "m" (t[0][0]));
-			asm volatile ("ldr q25, %0" : : "m" (t[0][16]));
+			asm volatile ("ld1 {v24.16b}, [%0]" : : "r" (&t[0][0]) : "memory");
+			asm volatile ("ld1 {v25.16b}, [%0]" : : "r" (&t[0][16]) : "memory");
 			asm volatile ("tbl v26.16b, {v24.16b}, v0.16b");
 			asm volatile ("tbl v27.16b, {v25.16b}, v1.16b");
 			asm volatile ("tbl v28.16b, {v24.16b}, v2.16b");
 			asm volatile ("tbl v29.16b, {v25.16b}, v3.16b");
 
 			if (nr >= 2) {
-				asm volatile ("ldr q24, %0" : : "m" (t[1][0]));
-				asm volatile ("ldr q25, %0" : : "m" (t[1][16]));
+				asm volatile ("ld1 {v24.16b}, [%0]" : : "r" (&t[1][0]) : "memory");
+				asm volatile ("ld1 {v25.16b}, [%0]" : : "r" (&t[1][16]) : "memory");
 
 				asm volatile ("tbl v30.16b, {v24.16b}, v4.16b");
 				asm volatile ("tbl v31.16b, {v25.16b}, v5.16b");
@@ -1249,8 +1257,8 @@ static __always_inline void raid_recX_neon(int nr, int has_p, int *id, int *ip, 
 			}
 
 			if (nr >= 3) {
-				asm volatile ("ldr q24, %0" : : "m" (t[2][0]));
-				asm volatile ("ldr q25, %0" : : "m" (t[2][16]));
+				asm volatile ("ld1 {v24.16b}, [%0]" : : "r" (&t[2][0]) : "memory");
+				asm volatile ("ld1 {v25.16b}, [%0]" : : "r" (&t[2][16]) : "memory");
 
 				asm volatile ("tbl v30.16b, {v24.16b}, v8.16b");
 				asm volatile ("tbl v31.16b, {v25.16b}, v9.16b");
@@ -1264,8 +1272,8 @@ static __always_inline void raid_recX_neon(int nr, int has_p, int *id, int *ip, 
 			}
 
 			if (nr >= 4) {
-				asm volatile ("ldr q24, %0" : : "m" (t[3][0]));
-				asm volatile ("ldr q25, %0" : : "m" (t[3][16]));
+				asm volatile ("ld1 {v24.16b}, [%0]" : : "r" (&t[3][0]) : "memory");
+				asm volatile ("ld1 {v25.16b}, [%0]" : : "r" (&t[3][16]) : "memory");
 
 				asm volatile ("tbl v30.16b, {v24.16b}, v12.16b");
 				asm volatile ("tbl v31.16b, {v25.16b}, v13.16b");
@@ -1279,8 +1287,8 @@ static __always_inline void raid_recX_neon(int nr, int has_p, int *id, int *ip, 
 			}
 
 			if (nr >= 5) {
-				asm volatile ("ldr q24, %0" : : "m" (t[4][0]));
-				asm volatile ("ldr q25, %0" : : "m" (t[4][16]));
+				asm volatile ("ld1 {v24.16b}, [%0]" : : "r" (&t[4][0]) : "memory");
+				asm volatile ("ld1 {v25.16b}, [%0]" : : "r" (&t[4][16]) : "memory");
 
 				asm volatile ("tbl v30.16b, {v24.16b}, v16.16b");
 				asm volatile ("tbl v31.16b, {v25.16b}, v17.16b");
@@ -1294,8 +1302,8 @@ static __always_inline void raid_recX_neon(int nr, int has_p, int *id, int *ip, 
 			}
 
 			if (nr >= 6) {
-				asm volatile ("ldr q24, %0" : : "m" (t[5][0]));
-				asm volatile ("ldr q25, %0" : : "m" (t[5][16]));
+				asm volatile ("ld1 {v24.16b}, [%0]" : : "r" (&t[5][0]) : "memory");
+				asm volatile ("ld1 {v25.16b}, [%0]" : : "r" (&t[5][16]) : "memory");
 
 				asm volatile ("tbl v30.16b, {v24.16b}, v20.16b");
 				asm volatile ("tbl v31.16b, {v25.16b}, v21.16b");
