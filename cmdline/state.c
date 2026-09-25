@@ -5856,6 +5856,27 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 			}
 		}
 
+		/*
+		 * Hardlink entries don't own data blocks; their data is represented by the
+		 * target file. If a hardlink pathname is selected while its target file is
+		 * excluded by a path filter, keep the target selected as well so check/fix
+		 * can process the data backing the selected hardlink.
+		 * With the missing filter, a present target must remain excluded because
+		 * fix -m promises to leave existing files untouched. It can be used directly
+		 * to recreate the missing hardlink without processing its data.
+		 */
+		for (j = tommy_list_head(&disk->linklist); j != 0; j = j->next) {
+			struct snapraid_link* slink = j->data;
+
+			if (link_flag_has(slink, FILE_IS_HARDLINK) && !link_flag_has(slink, FILE_IS_EXCLUDED)) {
+				struct snapraid_file* file;
+
+				file = tommy_hashdyn_search(&disk->pathset, file_path_compare_to_arg, slink->linkto, file_path_hash(slink->linkto));
+				if (file && filter_existence(filter_missing, disk->dir, file->sub) == 0)
+					file_flag_clear(file, FILE_IS_EXCLUDED);
+			}
+		}
+
 		/* for each empty dir */
 		for (j = tommy_list_head(&disk->dirlist); j != 0; j = j->next) {
 			struct snapraid_dir* dir = j->data;

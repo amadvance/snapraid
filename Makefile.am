@@ -904,6 +904,17 @@ endif # HAVE_POSIX
 	grep -q '^file:disk1:a-hardlink-main:' test.log
 	grep -q '^link_hardlink:disk1:b-hardlink-link:a-hardlink-main$$' test.log
 	! grep -q '^file:disk1:b-hardlink-link:' test.log
+	$(MSG) Missing hardlink recovery preserves its present target
+	rm bench/disk1/b-hardlink-link
+	echo NEWER-UNSYNCED-CONTENT-WITH-DIFFERENT-SIZE > bench/hardlink-missing-expected
+	cp bench/hardlink-missing-expected bench/disk1/a-hardlink-main
+	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(PAR1) -m fix -l test.log
+	cmp bench/hardlink-missing-expected bench/disk1/a-hardlink-main
+	cmp bench/hardlink-missing-expected bench/disk1/b-hardlink-link
+if HAVE_POSIX
+	test bench/disk1/a-hardlink-main -ef bench/disk1/b-hardlink-link
+endif # HAVE_POSIX
+	rm bench/hardlink-missing-expected
 	rm bench/disk1/a-hardlink-main bench/disk1/b-hardlink-link
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(PAR1) fix -l test.log
 	test -f bench/disk1/a-hardlink-main
