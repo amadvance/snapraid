@@ -1457,6 +1457,26 @@ int snapraid_main(int argc, char* argv[])
 	/* read the configuration file */
 	state_config(&state, conf, command, &opt, &filterlist_disk);
 
+	/*
+	 * Selecting parity means processing its complete block range, so it cannot
+	 * be combined with pathname or missing-file filters that select individual files.
+	 */
+	if (!tommy_list_empty(&filterlist_file) || filter_missing) {
+		tommy_node* node;
+		unsigned l;
+
+		for (node = tommy_list_head(&filterlist_disk); node != 0; node = node->next) {
+			struct snapraid_filter* filter = node->data;
+
+			for (l = 0; l < state.level; ++l) {
+				if (wnmatch(filter->pattern, lev_config_name(l)) == 0) {
+					log_fatal(EUSER, "You cannot combine -d, --filter-disk selecting parity with -f, --filter or -m, --filter-missing.\n");
+					exit(EXIT_FAILURE);
+				}
+			}
+		}
+	}
+
 	/* set the raid mode */
 	raid_mode(state.raid_mode);
 
