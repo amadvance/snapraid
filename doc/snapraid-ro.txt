@@ -1992,29 +1992,7 @@ distincție între majuscule și minuscule. Pentru a preveni discrepanțele apă
 din conversia efectuată de Windows, specificați întotdeauna forma exactă a
 caracterelor non-ASCII în căile de configurare și filtre.
 
-16.6 Sufixul fișierelor nerecuperabile
---------------------------------------
-
-Când `fix` nu poate recupera complet un fișier deteriorat, îl plasează în
-carantină adăugând extensia `.unrecoverable` la numele său.
-
-Dacă o comandă `fix` ulterioară reîncearcă recuperarea, aceasta creează un
-fișier nou sub numele normal și păstrează vechiul fișier `.unrecoverable`
-în timp ce recuperarea este în curs. Dacă reîncercarea eșuează, noul rezultat
-eșuat înlocuiește vechea carantină. Dacă reîncercarea reușește complet,
-SnapRAID șterge fișierul `.unrecoverable` învechit. O carantină nu este
-niciodată promovată înapoi la numele de fișier normal.
-
-Deoarece SnapRAID identifică fișierele de carantină exclusiv după numele lor,
-orice fișier preexistent care folosește din coincidență sufixul `.unrecoverable`
-poate fi trunchiat, suprascris, înlocuit sau șters dacă numele său de bază
-corespunde unui fișier în curs de reparare.
-
-Evitați utilizarea extensiei `.unrecoverable` pentru fișiere obișnuite și
-asigurați-vă că `exclude *.unrecoverable` este inclus în configurație pentru
-a preveni urmărirea acestor fișiere în setul de date de paritate.
-
-16.7 Recuperare cu fix parțial
+16.6 Recuperare cu fix parțial
 ------------------------------
 
 Când `fix` este restricționat folosind `-S, --start` sau `-B, --count`,
@@ -2036,7 +2014,7 @@ de obicei după ce un `fix` normal a eșuat. Dacă un `fix` parțial raportează
 date nerecuperabile, eliminați sau redenumiți fișierele afectate înainte de a
 încerca o nouă recuperare, sau verificați manual conținutul acestora.
 
-16.8 Legături dure NTFS și căi excluse
+16.7 Legături dure NTFS și căi excluse
 --------------------------------------
 
 Pe NTFS, intrările din director memorează în cache dimensiunea fișierului
@@ -2062,7 +2040,7 @@ prin legături dure care sunt excluse din SnapRAID, sau asigurați-vă că toate
 legăturile dure către un fișier sunt incluse în scanare, astfel încât
 SnapRAID să le poată normaliza.
 
-16.9 Recuperare după un sync multi-paritate întrerupt
+16.8 Recuperare după un sync multi-paritate întrerupt
 -----------------------------------------------------
 
 Într-o matrice cu mai multe discuri de paritate, un `sync` întrerupt

@@ -2092,29 +2092,7 @@ maiuscolo/minuscolo di Windows, specificare sempre l'esatta combinazione di
 maiuscole/minuscole per qualsiasi carattere non ASCII nei percorsi di
 configurazione e nei filtri.
 
-16.6 Suffisso dei file irrecuperabili
--------------------------------------
-
-Quando `fix` non riesce a recuperare completamente un file danneggiato,
-lo mette in quarantena aggiungendo l'estensione `.unrecoverable` al suo nome.
-
-Se un successivo `fix` tenta nuovamente il recupero, crea un nuovo file con
-il nome normale e preserva il vecchio file `.unrecoverable` durante l'avanzamento
-del recupero. Se il nuovo tentativo fallisce, il nuovo risultato fallito
-sostituisce la vecchia quarantena. Se il tentativo ha completamente successo,
-SnapRAID elimina il file `.unrecoverable` obsoleto. Un file in quarantena non
-viene mai promosso nuovamente al nome di file normale.
-
-Poiché SnapRAID identifica i file di quarantena esclusivamente dal nome del
-file, qualsiasi file preesistente che utilizzi casualmente il suffisso
-`.unrecoverable` potrebbe essere troncato, sovrascritto, sostituito o eliminato
-se il suo nome di base corrisponde a un file in fase di ripristino.
-
-Evitare di utilizzare l'estensione `.unrecoverable` per i normali file e
-assicurarsi che la regola `exclude *.unrecoverable` sia inclusa nella
-configurazione per evitare che tali file vengano tracciati nel dataset di parità.
-
-16.7 Recupero con fix parziale
+16.6 Recupero con fix parziale
 ------------------------------
 
 Quando `fix` viene limitato usando `-S, --start` o `-B, --count`,
@@ -2136,7 +2114,7 @@ avanzato, tipicamente dopo che un normale `fix` è fallito. Se un `fix`
 parziale segnala dati irrecuperabili, rimuovere o rinominare i file interessati
 prima di tentare un altro recupero, oppure verificarne manualmente il contenuto.
 
-16.8 Hard link NTFS e percorsi esclusi
+16.7 Hard link NTFS e percorsi esclusi
 --------------------------------------
 
 Su NTFS, le voci di directory memorizzano nella cache la dimensione del
@@ -2162,7 +2140,7 @@ tramite hard link esclusi da SnapRAID, oppure assicurarsi che tutti gli
 hard link a un file siano inclusi nella scansione in modo che SnapRAID
 possa normalizzarli.
 
-16.9 Recupero dopo un sync a parità multipla interrotto
+16.8 Recupero dopo un sync a parità multipla interrotto
 -------------------------------------------------------
 
 In un array con più dischi di parità, un `sync` interrotto può lasciare

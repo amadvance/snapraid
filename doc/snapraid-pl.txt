@@ -1995,29 +1995,7 @@ liter. Aby zapobiec rozbieżnościom wynikającym ze składania znaków przez
 Windows, zawsze podawaj dokładną wielkość liter w przypadku znaków spoza ASCII
 w ścieżkach konfiguracyjnych i filtrach.
 
-16.6 Sufiks plików niemożliwych do odzyskania
----------------------------------------------
-
-Gdy `fix` nie może w pełni odzyskać uszkodzonego pliku, poddaje go kwarantannie,
-dodając do jego nazwy rozszerzenie `.unrecoverable`.
-
-Jeśli późniejsze polecenie `fix` ponowi próbę odzyskania, tworzy ono nowy
-plik pod normalną nazwą i zachowuje stary plik `.unrecoverable` podczas trwania
-odzyskiwania. Jeśli ponowna próba się nie powiedzie, nowy nieudany wynik
-zastępuje starą kwarantannę. Jeśli ponowna próba zakończy się całkowitym
-sukcesem, SnapRAID usuwa przestarzały plik `.unrecoverable`. Kwarantanna nigdy
-nie jest przywracana do normalnej nazwy pliku.
-
-Ponieważ SnapRAID identyfikuje pliki kwarantanny wyłącznie na podstawie ich
-nazwy, każdy wcześniej istniejący plik, który przypadkowo używa sufiksu
-`.unrecoverable`, może zostać obcięty, nadpisany, zastąpiony lub usunięty, jeśli
-jego nazwa bazowa odpowiada naprawianemu plikowi.
-
-Unikaj używania rozszerzenia `.unrecoverable` dla zwykłych plików i upewnij się,
-że w konfiguracji uwzględniono regułę `exclude *.unrecoverable`, aby zapobiec
-śledzeniu takich plików w zbiorze danych parzystości.
-
-16.7 Odzyskiwanie za pomocą częściowego fix
+16.6 Odzyskiwanie za pomocą częściowego fix
 -------------------------------------------
 
 Gdy polecenie `fix` jest ograniczone za pomocą `-S, --start` lub `-B, --count`,
@@ -2040,7 +2018,7 @@ zgłosi dane niemożliwe do odzyskania, przed podjęciem kolejnej próby odzyski
 należy usunąć lub zmienić nazwę plików, których to dotyczy, albo ręcznie zweryfikować
 ich zawartość.
 
-16.8 Twarde dowiązania NTFS i wykluczone ścieżki
+16.7 Twarde dowiązania NTFS i wykluczone ścieżki
 ------------------------------------------------
 
 W systemie plików NTFS wpisy katalogowe niezależnie buforują rozmiar pliku
@@ -2067,7 +2045,7 @@ za pośrednictwem twardych dowiązań wykluczonych ze SnapRAID lub upewnić się
 że wszystkie twarde dowiązania do danego pliku są uwzględnione w skanowaniu,
 aby SnapRAID mógł je znormalizować.
 
-16.9 Odzyskiwanie po przerwanym sync z wieloma parzystościami
+16.8 Odzyskiwanie po przerwanym sync z wieloma parzystościami
 -------------------------------------------------------------
 
 W macierzy z wieloma dyskami parzystości przerwane polecenie `sync` może

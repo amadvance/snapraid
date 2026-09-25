@@ -1845,26 +1845,6 @@ Kända problem (Known Issues)
 	avvikelser till följd av Windows skiftlägesvikning, ange alltid det exakta
 	skiftläget för eventuella icke-ASCII-tecken i konfigurationssökvägar och filter.
 
-  Suffix för oåterkalleliga filer
-	När `fix` inte helt kan återställa en skadad fil sätter den filen i karantän
-	genom att lägga till filändelsen `.unrecoverable` till dess namn.
-
-	Om en senare `fix` försöker återställa filen igen skapar den en ny fil under
-	det normala filnamnet och bevarar den gamla `.unrecoverable`-filen medan
-	återställningen pågår. Om det nya försöket misslyckas ersätter det nya
-	misslyckade resultatet den gamla karantänen. Om det nya försöket lyckas helt
-	raderar SnapRAID den föråldrade `.unrecoverable`-filen. En karantänfil
-	befordras aldrig tillbaka till det normala filnamnet.
-
-	Eftersom SnapRAID identifierar karantänfiler enbart baserat på deras filnamn,
-	kan alla befintliga filer som av en händelse använder suffixet `.unrecoverable`
-	avhuggas, skrivas över, ersättas eller raderas om deras basnamn matchar en fil
-	som håller på att återställas.
-
-	Undvik att använda filändelsen `.unrecoverable` för vanliga filer och se till
-	att `exclude *.unrecoverable` ingår i din konfiguration för att förhindra att
-	sådana filer spåras i paritetsdatamängden.
-
   Återställning med partiell fix
 	När `fix` begränsas med `-S, --start` eller `-B, --count`,
 	arbetar SnapRAID endast på de markerade blocken och utför varken

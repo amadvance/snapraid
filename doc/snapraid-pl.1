@@ -2355,25 +2355,6 @@ Windows oraz jego uporczywego stosowania aliasów bez uwzględniania wielkości
 liter. Aby zapobiec rozbieżnościom wynikającym ze składania znaków przez
 Windows, zawsze podawaj dokładną wielkość liter w przypadku znaków spoza ASCII
 w ścieżkach konfiguracyjnych i filtrach.
-.SS Sufiks plików niemożliwych do odzyskania 
-Gdy \`fix\` nie może w pełni odzyskać uszkodzonego pliku, poddaje go kwarantannie,
-dodając do jego nazwy rozszerzenie \`.unrecoverable\`.
-.PP
-Jeśli późniejsze polecenie \`fix\` ponowi próbę odzyskania, tworzy ono nowy
-plik pod normalną nazwą i zachowuje stary plik \`.unrecoverable\` podczas trwania
-odzyskiwania. Jeśli ponowna próba się nie powiedzie, nowy nieudany wynik
-zastępuje starą kwarantannę. Jeśli ponowna próba zakończy się całkowitym
-sukcesem, SnapRAID usuwa przestarzały plik \`.unrecoverable\`. Kwarantanna nigdy
-nie jest przywracana do normalnej nazwy pliku.
-.PP
-Ponieważ SnapRAID identyfikuje pliki kwarantanny wyłącznie na podstawie ich
-nazwy, każdy wcześniej istniejący plik, który przypadkowo używa sufiksu
-\`.unrecoverable\`, może zostać obcięty, nadpisany, zastąpiony lub usunięty, jeśli
-jego nazwa bazowa odpowiada naprawianemu plikowi.
-.PP
-Unikaj używania rozszerzenia \`.unrecoverable\` dla zwykłych plików i upewnij się,
-że w konfiguracji uwzględniono regułę \`exclude *.unrecoverable\`, aby zapobiec
-śledzeniu takich plików w zbiorze danych parzystości.
 .SS Odzyskiwanie za pomocą częściowego fix 
 Gdy polecenie \`fix\` jest ograniczone za pomocą \`\-S, \-\-start\` lub \`\-B, \-\-count\`,
 SnapRAID działa tylko na wybranych blokach i nie przeprowadza finalizacji

@@ -1944,26 +1944,6 @@ Problemas conocidos (Known Issues)
 	mayúsculas y minúsculas de Windows, especifique siempre la grafía exacta de
 	los caracteres no ASCII en las rutas de configuración y filtros.
 
-  Sufijo de archivos no recuperables
-	Cuando `fix` no puede recuperar por completo un archivo dañado, lo pone en
-	cuarentena añadiendo la extensión `.unrecoverable` a su nombre.
-
-	Si un `fix` posterior reintenta la recuperación, crea un nuevo archivo con el
-	nombre de archivo normal y conserva el antiguo archivo `.unrecoverable`
-	mientras la recuperación está en curso. Si el reintento falla, el nuevo
-	resultado fallido reemplaza la antigua cuarentena. Si el reintento tiene éxito
-	por completo, SnapRAID elimina el archivo `.unrecoverable` obsoleto. Una
-	cuarentena nunca se promueve de nuevo al nombre de archivo normal.
-
-	Dado que SnapRAID identifica los archivos en cuarentena únicamente por su
-	nombre de archivo, cualquier archivo preexistente que utilice casualmente el
-	sufijo `.unrecoverable` puede truncarse, sobrescribirse, reemplazarse o eliminarse
-	si su nombre base coincide con un archivo que se está reparando.
-
-	Evite utilizar la extensión `.unrecoverable` para archivos normales y asegúrese
-	de incluir `exclude *.unrecoverable` en su configuración para evitar que dichos
-	archivos se rastreen en el conjunto de datos de paridad.
-
   Recuperación con fix parcial
 	Cuando `fix` se restringe mediante `-S, --start` o `-B, --count`,
 	SnapRAID opera únicamente sobre los bloques seleccionados y no realiza

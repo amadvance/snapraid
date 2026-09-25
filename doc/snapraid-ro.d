@@ -1851,26 +1851,6 @@ Probleme Cunoscute (Known Issues)
 	din conversia efectuată de Windows, specificați întotdeauna forma exactă a
 	caracterelor non-ASCII în căile de configurare și filtre.
 
-  Sufixul fișierelor nerecuperabile
-	Când `fix` nu poate recupera complet un fișier deteriorat, îl plasează în
-	carantină adăugând extensia `.unrecoverable` la numele său.
-
-	Dacă o comandă `fix` ulterioară reîncearcă recuperarea, aceasta creează un
-	fișier nou sub numele normal și păstrează vechiul fișier `.unrecoverable`
-	în timp ce recuperarea este în curs. Dacă reîncercarea eșuează, noul rezultat
-	eșuat înlocuiește vechea carantină. Dacă reîncercarea reușește complet,
-	SnapRAID șterge fișierul `.unrecoverable` învechit. O carantină nu este
-	niciodată promovată înapoi la numele de fișier normal.
-
-	Deoarece SnapRAID identifică fișierele de carantină exclusiv după numele lor,
-	orice fișier preexistent care folosește din coincidență sufixul `.unrecoverable`
-	poate fi trunchiat, suprascris, înlocuit sau șters dacă numele său de bază
-	corespunde unui fișier în curs de reparare.
-
-	Evitați utilizarea extensiei `.unrecoverable` pentru fișiere obișnuite și
-	asigurați-vă că `exclude *.unrecoverable` este inclus în configurație pentru
-	a preveni urmărirea acestor fișiere în setul de date de paritate.
-
   Recuperare cu fix parțial
 	Când `fix` este restricționat folosind `-S, --start` sau `-B, --count`,
 	SnapRAID operează doar pe blocurile selectate și nu efectuează finalizarea

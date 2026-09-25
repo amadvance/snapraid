@@ -2085,29 +2085,7 @@ mayúsculas y minúsculas. Para evitar discrepancias derivadas del plegado de
 mayúsculas y minúsculas de Windows, especifique siempre la grafía exacta de
 los caracteres no ASCII en las rutas de configuración y filtros.
 
-16.6 Sufijo de archivos no recuperables
----------------------------------------
-
-Cuando `fix` no puede recuperar por completo un archivo dañado, lo pone en
-cuarentena añadiendo la extensión `.unrecoverable` a su nombre.
-
-Si un `fix` posterior reintenta la recuperación, crea un nuevo archivo con el
-nombre de archivo normal y conserva el antiguo archivo `.unrecoverable`
-mientras la recuperación está en curso. Si el reintento falla, el nuevo
-resultado fallido reemplaza la antigua cuarentena. Si el reintento tiene éxito
-por completo, SnapRAID elimina el archivo `.unrecoverable` obsoleto. Una
-cuarentena nunca se promueve de nuevo al nombre de archivo normal.
-
-Dado que SnapRAID identifica los archivos en cuarentena únicamente por su
-nombre de archivo, cualquier archivo preexistente que utilice casualmente el
-sufijo `.unrecoverable` puede truncarse, sobrescribirse, reemplazarse o eliminarse
-si su nombre base coincide con un archivo que se está reparando.
-
-Evite utilizar la extensión `.unrecoverable` para archivos normales y asegúrese
-de incluir `exclude *.unrecoverable` en su configuración para evitar que dichos
-archivos se rastreen en el conjunto de datos de paridad.
-
-16.7 Recuperación con fix parcial
+16.6 Recuperación con fix parcial
 ---------------------------------
 
 Cuando `fix` se restringe mediante `-S, --start` o `-B, --count`,
@@ -2129,7 +2107,7 @@ avanzada, típicamente después de que un `fix` normal haya fallado. Si un `fix`
 parcial informa de datos no recuperables, elimine o renombre los archivos
 afectados antes de intentar otra recuperación, o verifique su contenido manualmente.
 
-16.8 Enlaces duros en NTFS y rutas excluidas
+16.7 Enlaces duros en NTFS y rutas excluidas
 --------------------------------------------
 
 En NTFS, las entradas de directorio almacenan en caché el tamaño del
@@ -2155,7 +2133,7 @@ de enlaces duros que estén excluidos de SnapRAID, o asegúrese de que
 todos los enlaces duros a un archivo se incluyan en el escaneo para que
 SnapRAID pueda normalizarlos.
 
-16.9 Recuperación tras una sincronización de multiparidad interrumpida
+16.8 Recuperación tras una sincronización de multiparidad interrumpida
 ----------------------------------------------------------------------
 
 En una matriz con múltiples discos de paridad, un `sync` interrumpido

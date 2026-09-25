@@ -1986,29 +1986,7 @@ och dess insisterande på skiftlägesokänslig aliasning. För att förhindra
 avvikelser till följd av Windows skiftlägesvikning, ange alltid det exakta
 skiftläget för eventuella icke-ASCII-tecken i konfigurationssökvägar och filter.
 
-16.6 Suffix för oåterkalleliga filer
-------------------------------------
-
-När `fix` inte helt kan återställa en skadad fil sätter den filen i karantän
-genom att lägga till filändelsen `.unrecoverable` till dess namn.
-
-Om en senare `fix` försöker återställa filen igen skapar den en ny fil under
-det normala filnamnet och bevarar den gamla `.unrecoverable`-filen medan
-återställningen pågår. Om det nya försöket misslyckas ersätter det nya
-misslyckade resultatet den gamla karantänen. Om det nya försöket lyckas helt
-raderar SnapRAID den föråldrade `.unrecoverable`-filen. En karantänfil
-befordras aldrig tillbaka till det normala filnamnet.
-
-Eftersom SnapRAID identifierar karantänfiler enbart baserat på deras filnamn,
-kan alla befintliga filer som av en händelse använder suffixet `.unrecoverable`
-avhuggas, skrivas över, ersättas eller raderas om deras basnamn matchar en fil
-som håller på att återställas.
-
-Undvik att använda filändelsen `.unrecoverable` för vanliga filer och se till
-att `exclude *.unrecoverable` ingår i din konfiguration för att förhindra att
-sådana filer spåras i paritetsdatamängden.
-
-16.7 Återställning med partiell fix
+16.6 Återställning med partiell fix
 -----------------------------------
 
 När `fix` begränsas med `-S, --start` eller `-B, --count`,
@@ -2030,7 +2008,7 @@ vanligtvis efter att en normal `fix` har misslyckats. Om en partiell `fix`
 rapporterar oåterkalleliga data, ta bort eller byt namn på de berörda filerna
 innan du försöker med en ny återställning, eller verifiera deras innehåll manuellt.
 
-16.8 NTFS hårda länkar och exkluderade sökvägar
+16.7 NTFS hårda länkar och exkluderade sökvägar
 -----------------------------------------------
 
 På NTFS cachelagrar katalogposter filstorlek och tidsstämplar oberoende
@@ -2054,7 +2032,7 @@ För att undvika denna begränsning, undvik att modifiera skyddade filer via
 hårda länkar som är exkluderade från SnapRAID, eller se till att alla hårda
 länkar till en fil inkluderas i skanningen så att SnapRAID kan normalisera dem.
 
-16.9 Återställning efter ett avbrutet multi-paritets-sync
+16.8 Återställning efter ett avbrutet multi-paritets-sync
 ---------------------------------------------------------
 
 I en array med flera paritetsdiskar kan ett avbrutet `sync` lämna
