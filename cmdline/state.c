@@ -3715,6 +3715,22 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					/* LCOV_EXCL_STOP */
 				}
 
+				if (!has_block_size) {
+					/* LCOV_EXCL_START */
+					decoding_error(path, f);
+					log_fatal(ECONTENT, "Missing 'blocksize' before parity split information in the content file!\n");
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
+
+				if (v_size % state->block_size != 0) {
+					/* LCOV_EXCL_START */
+					decoding_error(path, f);
+					log_fatal(ECONTENT, "Invalid parity split size %" PRIu64 " not aligned to block size %u!\n", v_size, state->block_size);
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
+
 				/* if we use this parity entry */
 				if (v_level < state->level) {
 					/* if this split was removed from the configuration */
