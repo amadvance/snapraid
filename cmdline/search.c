@@ -6,6 +6,16 @@
 #include "support.h"
 #include "search.h"
 
+#ifndef _WIN32
+static const char* es(int err)
+{
+	if (is_hw(err))
+		return "error_io";
+	else
+		return "error";
+}
+#endif
+
 /****************************************************************************/
 /* search */
 
@@ -145,7 +155,7 @@ int state_search_fetch(struct snapraid_state* state, int prevhash, struct snapra
 	return 0;
 }
 
-static void search_dir(struct snapraid_state* state, struct snapraid_disk* disk, const char* dir, const char* sub)
+static void search_dir(struct snapraid_state* state, struct snapraid_disk* disk, const struct fsidentity* root_identity, const char* dir, const char* sub)
 {
 	DIR* d;
 
@@ -245,9 +255,42 @@ static void search_dir(struct snapraid_state* state, struct snapraid_disk* disk,
 			}
 		} else if (S_ISDIR(st.st_mode)) {
 			if (disk == 0 || filter_subdir(&state->filterlist, &reason, disk->name, sub_next) == 0) {
+#ifndef _WIN32
+				/*
+				 * Automatic array search must stay within the same filesystem,
+				 * mount, and subvolume boundaries as the normal data-disk scan.
+				 * Explicit -i imports pass no root identity and may cross them.
+				 */
+				if (root_identity) {
+					struct fsidentity identity;
+
+					if (fsidentity(path_next, &st, &identity) != 0) {
+						/* LCOV_EXCL_START */
+						log_tag("%s:%u:%s:%s: Statx error. %s.\n", es(errno), 0, disk->name, esc_tag(path_next), strerror(errno));
+						log_fatal(errno, "Error accessing directory '%s'. %s.\n", path_next, strerror(errno));
+						exit(EXIT_FAILURE);
+						/* LCOV_EXCL_STOP */
+					}
+
+					if (identity.device != root_identity->device) {
+						log_tag("%s:%u:%s:%s: Ignoring mount point.\n", es(ESOFT), 0, disk->name, esc_tag(path_next));
+						log_error(ESOFT, "WARNING! Ignoring mount point '%s' because it appears to be in a different device\n", path_next);
+						continue;
+					} else if (identity.mnt_id != root_identity->mnt_id) {
+						log_tag("%s:%u:%s:%s: Ignoring mount point.\n", es(ESOFT), 0, disk->name, esc_tag(path_next));
+						log_error(ESOFT, "WARNING! Ignoring mount point '%s' because it belongs to a different mount\n", path_next);
+						continue;
+					} else if (identity.subvol != root_identity->subvol) {
+						log_tag("%s:%u:%s:%s: Ignoring nested subvolume.\n", es(ESOFT), 0, disk->name, esc_tag(path_next));
+						log_error(ESOFT, "WARNING! Ignoring nested subvolume '%s' because it belongs to a different subvolume\n", path_next);
+						continue;
+					}
+				}
+#endif
+
 				pathslash(path_next, sizeof(path_next));
 				pathslash(sub_next, sizeof(sub_next));
-				search_dir(state, disk, path_next, sub_next);
+				search_dir(state, disk, root_identity, path_next, sub_next);
 			} else {
 				msg_verbose("Excluding directory '%s' for rule '%s'\n", path_next, filter_type(reason, out, sizeof(out)));
 			}
@@ -272,7 +315,7 @@ void state_search(struct snapraid_state* state, const char* dir)
 	pathimport(path, sizeof(path), dir);
 	pathslash(path, sizeof(path));
 
-	search_dir(state, 0, path, "");
+	search_dir(state, 0, 0, path, "");
 }
 
 void state_search_array(struct snapraid_state* state)
@@ -289,7 +332,30 @@ void state_search_array(struct snapraid_state* state)
 
 		msg_progress("Searching disk %s...\n", disk->name);
 
-		search_dir(state, disk, disk->dir, "");
+#ifndef _WIN32
+		struct stat st;
+		struct fsidentity identity;
+
+		if (lstat(disk->dir, &st) != 0) {
+			/* LCOV_EXCL_START */
+			log_tag("%s:%u:%s:%s: Stat error. %s.\n", es(errno), 0, disk->name, esc_tag(disk->dir), strerror(errno));
+			log_fatal(errno, "Error accessing directory '%s'. %s.\n", disk->dir, strerror(errno));
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (fsidentity(disk->dir, &st, &identity) != 0) {
+			/* LCOV_EXCL_START */
+			log_tag("%s:%u:%s:%s: Statx error. %s.\n", es(errno), 0, disk->name, esc_tag(disk->dir), strerror(errno));
+			log_fatal(errno, "Error accessing directory '%s'. %s.\n", disk->dir, strerror(errno));
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		search_dir(state, disk, &identity, disk->dir, "");
+#else
+		search_dir(state, disk, 0, disk->dir, "");
+#endif
 	}
 }
 
