@@ -67,15 +67,11 @@ int search_file_compare(const void* void_arg, const void* void_data)
 	/* read the block and compare the hash */
 	f = open(path, O_RDONLY | O_BINARY);
 	if (f == -1) {
-		/* LCOV_EXCL_START */
-		if (errno == ENOENT) {
-			log_fatal(EUSER, "DANGER! file '%s' disappeared.\n", path);
-			log_fatal(EUSER, "If you moved it, please rerun the same command.\n");
-		} else {
-			log_fatal(errno, "Error opening file '%s'. %s.\n", path, strerror(errno));
-		}
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
+		if (errno == ENOENT)
+			log_error(EUSER, "WARNING! Search candidate file '%s' disappeared.\n", path);
+		else
+			log_error(errno, "WARNING! Error opening search candidate '%s'. %s.\n", path, strerror(errno));
+		return -1;
 	}
 
 	count = 0;
@@ -85,17 +81,16 @@ int search_file_compare(const void* void_arg, const void* void_data)
 			if (errno == EINTR)
 				continue;
 
-			/* LCOV_EXCL_START */
-			log_fatal(errno, "Error reading file '%s'. %s.\n", path, strerror(errno));
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
+			log_error(errno, "WARNING! Error reading search candidate '%s'. %s.\n", path, strerror(errno));
+			if (close(f) != 0)
+				log_error(errno, "WARNING! Error closing search candidate '%s'. %s.\n", path, strerror(errno));
+			return -1;
 		}
 		if (ret == 0) {
-			/* LCOV_EXCL_START */
-			errno = ENXIO;
-			log_fatal(errno, "Unexpected end of file '%s'. %s.\n", path, strerror(errno));
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
+			log_error(EUSER, "WARNING! Unexpected end of file in search candidate '%s'.\n", path);
+			if (close(f) != 0)
+				log_error(errno, "WARNING! Error closing search candidate '%s'. %s.\n", path, strerror(errno));
+			return -1;
 		}
 
 		count += ret;
@@ -103,10 +98,8 @@ int search_file_compare(const void* void_arg, const void* void_data)
 
 	ret = close(f);
 	if (ret != 0) {
-		/* LCOV_EXCL_START */
-		log_fatal(errno, "Error closing file '%s'. %s.\n", path, strerror(errno));
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
+		log_error(errno, "WARNING! Error closing search candidate '%s'. %s.\n", path, strerror(errno));
+		return -1;
 	}
 
 	if (arg->read_size != state->block_size) {
