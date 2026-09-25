@@ -34,8 +34,8 @@ static __always_inline void raid_gen3_ssse3_gen(int nd, size_t size, void **vv, 
 	raid_sse_begin();
 
 	/* generic case with at least two data disks */
-	asm volatile ("movdqa %0,%%xmm3" : : "m" (gfconst16.poly[0]));
-	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
+	asm volatile ("movdqa %0,%%xmm3" : : "m" (gfconst16.poly));
+	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4));
 
 	for (i = 0; i < size; i += 16) {
 		/* last disk without the generator multiplication */
@@ -49,8 +49,8 @@ static __always_inline void raid_gen3_ssse3_gen(int nd, size_t size, void **vv, 
 		asm volatile ("pand   %xmm7,%xmm4");
 		asm volatile ("pand   %xmm7,%xmm5");
 
-		asm volatile ("movdqa %0,%%xmm2" : : "m" (raid_gfcauchypshufb[l][1][0][0]));
-		asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[l][1][1][0]));
+		asm volatile ("movdqa %0,%%xmm2" : : "m" (raid_gfcauchypshufb[l][1][0]));
+		asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[l][1][1]));
 		asm volatile ("pshufb %xmm4,%xmm2");
 		asm volatile ("pshufb %xmm5,%xmm6");
 		asm volatile ("pxor   %xmm6,%xmm2");
@@ -77,10 +77,10 @@ static __always_inline void raid_gen3_ssse3_gen(int nd, size_t size, void **vv, 
 			asm volatile ("pand   %xmm7,%xmm4");
 			asm volatile ("pand   %xmm7,%xmm5");
 
-			asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[d][1][0][0]));
+			asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[d][1][0]));
 			asm volatile ("pshufb %xmm4,%xmm6");
 			asm volatile ("pxor   %xmm6,%xmm2");
-			asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[d][1][1][0]));
+			asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[d][1][1]));
 			asm volatile ("pshufb %xmm5,%xmm6");
 			asm volatile ("pxor   %xmm6,%xmm2");
 		}
@@ -148,7 +148,7 @@ static __always_inline void raid_gen4_ssse3_gen(int nd, size_t size, void **vv, 
 	/* generic case with at least two data disks */
 	for (i = 0; i < size; i += 16) {
 		/* last disk without the generator multiplication */
-		asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
+		asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4));
 		asm volatile ("movdqa %0,%%xmm4" : : "m" (v[l][i]));
 
 		asm volatile ("movdqa %xmm4,%xmm0");
@@ -159,21 +159,21 @@ static __always_inline void raid_gen4_ssse3_gen(int nd, size_t size, void **vv, 
 		asm volatile ("pand   %xmm7,%xmm4");
 		asm volatile ("pand   %xmm7,%xmm5");
 
-		asm volatile ("movdqa %0,%%xmm2" : : "m" (raid_gfcauchypshufb[l][1][0][0]));
-		asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[l][1][1][0]));
+		asm volatile ("movdqa %0,%%xmm2" : : "m" (raid_gfcauchypshufb[l][1][0]));
+		asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[l][1][1]));
 		asm volatile ("pshufb %xmm4,%xmm2");
 		asm volatile ("pshufb %xmm5,%xmm7");
 		asm volatile ("pxor   %xmm7,%xmm2");
 
-		asm volatile ("movdqa %0,%%xmm3" : : "m" (raid_gfcauchypshufb[l][2][0][0]));
-		asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[l][2][1][0]));
+		asm volatile ("movdqa %0,%%xmm3" : : "m" (raid_gfcauchypshufb[l][2][0]));
+		asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[l][2][1]));
 		asm volatile ("pshufb %xmm4,%xmm3");
 		asm volatile ("pshufb %xmm5,%xmm7");
 		asm volatile ("pxor   %xmm7,%xmm3");
 
 		/* intermediate disks */
 		for (d = l - 1; d > 0; --d) {
-			asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
+			asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly));
 			asm volatile ("movdqa %0,%%xmm4" : : "m" (v[d][i]));
 
 			if (generator == 3)
@@ -186,7 +186,7 @@ static __always_inline void raid_gen4_ssse3_gen(int nd, size_t size, void **vv, 
 			if (generator == 3)
 				asm volatile ("pxor %xmm6,%xmm1");
 
-			asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
+			asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4));
 
 			asm volatile ("pxor %xmm4,%xmm0");
 			asm volatile ("pxor %xmm4,%xmm1");
@@ -196,15 +196,15 @@ static __always_inline void raid_gen4_ssse3_gen(int nd, size_t size, void **vv, 
 			asm volatile ("pand   %xmm7,%xmm4");
 			asm volatile ("pand   %xmm7,%xmm5");
 
-			asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[d][1][0][0]));
-			asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[d][1][1][0]));
+			asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[d][1][0]));
+			asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[d][1][1]));
 			asm volatile ("pshufb %xmm4,%xmm6");
 			asm volatile ("pshufb %xmm5,%xmm7");
 			asm volatile ("pxor   %xmm6,%xmm2");
 			asm volatile ("pxor   %xmm7,%xmm2");
 
-			asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[d][2][0][0]));
-			asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[d][2][1][0]));
+			asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[d][2][0]));
+			asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[d][2][1]));
 			asm volatile ("pshufb %xmm4,%xmm6");
 			asm volatile ("pshufb %xmm5,%xmm7");
 			asm volatile ("pxor   %xmm6,%xmm3");
@@ -212,7 +212,7 @@ static __always_inline void raid_gen4_ssse3_gen(int nd, size_t size, void **vv, 
 		}
 
 		/* first disk with all coefficients at 1 */
-		asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
+		asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly));
 		asm volatile ("movdqa %0,%%xmm4" : : "m" (v[0][i]));
 
 		if (generator == 3)
@@ -289,26 +289,26 @@ static __always_inline void raid_gen5_ssse3_gen(int nd, size_t size, void **vv, 
 		asm volatile ("movdqa %xmm4,%xmm0");
 		asm volatile ("movdqa %%xmm4,%0" : "=m" (pd[0]));
 
-		asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
+		asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4));
 		asm volatile ("movdqa %xmm4,%xmm5");
 		asm volatile ("psrlw  $4,%xmm5");
 		asm volatile ("pand   %xmm7,%xmm4");
 		asm volatile ("pand   %xmm7,%xmm5");
 
-		asm volatile ("movdqa %0,%%xmm1" : : "m" (raid_gfcauchypshufb[l][1][0][0]));
-		asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[l][1][1][0]));
+		asm volatile ("movdqa %0,%%xmm1" : : "m" (raid_gfcauchypshufb[l][1][0]));
+		asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[l][1][1]));
 		asm volatile ("pshufb %xmm4,%xmm1");
 		asm volatile ("pshufb %xmm5,%xmm7");
 		asm volatile ("pxor   %xmm7,%xmm1");
 
-		asm volatile ("movdqa %0,%%xmm2" : : "m" (raid_gfcauchypshufb[l][2][0][0]));
-		asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[l][2][1][0]));
+		asm volatile ("movdqa %0,%%xmm2" : : "m" (raid_gfcauchypshufb[l][2][0]));
+		asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[l][2][1]));
 		asm volatile ("pshufb %xmm4,%xmm2");
 		asm volatile ("pshufb %xmm5,%xmm7");
 		asm volatile ("pxor   %xmm7,%xmm2");
 
-		asm volatile ("movdqa %0,%%xmm3" : : "m" (raid_gfcauchypshufb[l][3][0][0]));
-		asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[l][3][1][0]));
+		asm volatile ("movdqa %0,%%xmm3" : : "m" (raid_gfcauchypshufb[l][3][0]));
+		asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[l][3][1]));
 		asm volatile ("pshufb %xmm4,%xmm3");
 		asm volatile ("pshufb %xmm5,%xmm7");
 		asm volatile ("pxor   %xmm7,%xmm3");
@@ -317,7 +317,7 @@ static __always_inline void raid_gen5_ssse3_gen(int nd, size_t size, void **vv, 
 		for (d = l - 1; d > 0; --d) {
 			asm volatile ("movdqa %0,%%xmm4" : : "m" (v[d][i]));
 			asm volatile ("movdqa %0,%%xmm6" : : "m" (pd[0]));
-			asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
+			asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly));
 
 			asm volatile ("pxor %xmm5,%xmm5");
 			asm volatile ("pcmpgtb %xmm0,%xmm5");
@@ -329,28 +329,28 @@ static __always_inline void raid_gen5_ssse3_gen(int nd, size_t size, void **vv, 
 			asm volatile ("pxor %xmm4,%xmm6");
 			asm volatile ("movdqa %%xmm6,%0" : "=m" (pd[0]));
 
-			asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
+			asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4));
 			asm volatile ("movdqa %xmm4,%xmm5");
 			asm volatile ("psrlw  $4,%xmm5");
 			asm volatile ("pand   %xmm7,%xmm4");
 			asm volatile ("pand   %xmm7,%xmm5");
 
-			asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[d][1][0][0]));
-			asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[d][1][1][0]));
+			asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[d][1][0]));
+			asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[d][1][1]));
 			asm volatile ("pshufb %xmm4,%xmm6");
 			asm volatile ("pshufb %xmm5,%xmm7");
 			asm volatile ("pxor   %xmm6,%xmm1");
 			asm volatile ("pxor   %xmm7,%xmm1");
 
-			asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[d][2][0][0]));
-			asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[d][2][1][0]));
+			asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[d][2][0]));
+			asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[d][2][1]));
 			asm volatile ("pshufb %xmm4,%xmm6");
 			asm volatile ("pshufb %xmm5,%xmm7");
 			asm volatile ("pxor   %xmm6,%xmm2");
 			asm volatile ("pxor   %xmm7,%xmm2");
 
-			asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[d][3][0][0]));
-			asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[d][3][1][0]));
+			asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[d][3][0]));
+			asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[d][3][1]));
 			asm volatile ("pshufb %xmm4,%xmm6");
 			asm volatile ("pshufb %xmm5,%xmm7");
 			asm volatile ("pxor   %xmm6,%xmm3");
@@ -360,7 +360,7 @@ static __always_inline void raid_gen5_ssse3_gen(int nd, size_t size, void **vv, 
 		/* first disk with all coefficients at 1 */
 		asm volatile ("movdqa %0,%%xmm4" : : "m" (v[0][i]));
 		asm volatile ("movdqa %0,%%xmm6" : : "m" (pd[0]));
-		asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
+		asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly));
 
 		asm volatile ("pxor %xmm5,%xmm5");
 		asm volatile ("pcmpgtb %xmm0,%xmm5");
@@ -437,32 +437,32 @@ static __always_inline void raid_gen6_ssse3_gen(int nd, size_t size, void **vv, 
 		asm volatile ("movdqa %%xmm4,%0" : "=m" (pd[0]));
 		asm volatile ("movdqa %%xmm4,%0" : "=m" (pd[16]));
 
-		asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
+		asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4));
 		asm volatile ("movdqa %xmm4,%xmm5");
 		asm volatile ("psrlw  $4,%xmm5");
 		asm volatile ("pand   %xmm7,%xmm4");
 		asm volatile ("pand   %xmm7,%xmm5");
 
-		asm volatile ("movdqa %0,%%xmm0" : : "m" (raid_gfcauchypshufb[l][1][0][0]));
-		asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[l][1][1][0]));
+		asm volatile ("movdqa %0,%%xmm0" : : "m" (raid_gfcauchypshufb[l][1][0]));
+		asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[l][1][1]));
 		asm volatile ("pshufb %xmm4,%xmm0");
 		asm volatile ("pshufb %xmm5,%xmm7");
 		asm volatile ("pxor   %xmm7,%xmm0");
 
-		asm volatile ("movdqa %0,%%xmm1" : : "m" (raid_gfcauchypshufb[l][2][0][0]));
-		asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[l][2][1][0]));
+		asm volatile ("movdqa %0,%%xmm1" : : "m" (raid_gfcauchypshufb[l][2][0]));
+		asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[l][2][1]));
 		asm volatile ("pshufb %xmm4,%xmm1");
 		asm volatile ("pshufb %xmm5,%xmm7");
 		asm volatile ("pxor   %xmm7,%xmm1");
 
-		asm volatile ("movdqa %0,%%xmm2" : : "m" (raid_gfcauchypshufb[l][3][0][0]));
-		asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[l][3][1][0]));
+		asm volatile ("movdqa %0,%%xmm2" : : "m" (raid_gfcauchypshufb[l][3][0]));
+		asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[l][3][1]));
 		asm volatile ("pshufb %xmm4,%xmm2");
 		asm volatile ("pshufb %xmm5,%xmm7");
 		asm volatile ("pxor   %xmm7,%xmm2");
 
-		asm volatile ("movdqa %0,%%xmm3" : : "m" (raid_gfcauchypshufb[l][4][0][0]));
-		asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[l][4][1][0]));
+		asm volatile ("movdqa %0,%%xmm3" : : "m" (raid_gfcauchypshufb[l][4][0]));
+		asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[l][4][1]));
 		asm volatile ("pshufb %xmm4,%xmm3");
 		asm volatile ("pshufb %xmm5,%xmm7");
 		asm volatile ("pxor   %xmm7,%xmm3");
@@ -471,7 +471,7 @@ static __always_inline void raid_gen6_ssse3_gen(int nd, size_t size, void **vv, 
 		for (d = l - 1; d > 0; --d) {
 			asm volatile ("movdqa %0,%%xmm5" : : "m" (pd[0]));
 			asm volatile ("movdqa %0,%%xmm6" : : "m" (pd[16]));
-			asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
+			asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly));
 
 			asm volatile ("pxor %xmm4,%xmm4");
 			asm volatile ("pcmpgtb %xmm6,%xmm4");
@@ -486,35 +486,35 @@ static __always_inline void raid_gen6_ssse3_gen(int nd, size_t size, void **vv, 
 			asm volatile ("movdqa %%xmm5,%0" : "=m" (pd[0]));
 			asm volatile ("movdqa %%xmm6,%0" : "=m" (pd[16]));
 
-			asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
+			asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4));
 			asm volatile ("movdqa %xmm4,%xmm5");
 			asm volatile ("psrlw  $4,%xmm5");
 			asm volatile ("pand   %xmm7,%xmm4");
 			asm volatile ("pand   %xmm7,%xmm5");
 
-			asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[d][1][0][0]));
-			asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[d][1][1][0]));
+			asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[d][1][0]));
+			asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[d][1][1]));
 			asm volatile ("pshufb %xmm4,%xmm6");
 			asm volatile ("pshufb %xmm5,%xmm7");
 			asm volatile ("pxor   %xmm6,%xmm0");
 			asm volatile ("pxor   %xmm7,%xmm0");
 
-			asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[d][2][0][0]));
-			asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[d][2][1][0]));
+			asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[d][2][0]));
+			asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[d][2][1]));
 			asm volatile ("pshufb %xmm4,%xmm6");
 			asm volatile ("pshufb %xmm5,%xmm7");
 			asm volatile ("pxor   %xmm6,%xmm1");
 			asm volatile ("pxor   %xmm7,%xmm1");
 
-			asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[d][3][0][0]));
-			asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[d][3][1][0]));
+			asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[d][3][0]));
+			asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[d][3][1]));
 			asm volatile ("pshufb %xmm4,%xmm6");
 			asm volatile ("pshufb %xmm5,%xmm7");
 			asm volatile ("pxor   %xmm6,%xmm2");
 			asm volatile ("pxor   %xmm7,%xmm2");
 
-			asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[d][4][0][0]));
-			asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[d][4][1][0]));
+			asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[d][4][0]));
+			asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[d][4][1]));
 			asm volatile ("pshufb %xmm4,%xmm6");
 			asm volatile ("pshufb %xmm5,%xmm7");
 			asm volatile ("pxor   %xmm6,%xmm3");
@@ -524,7 +524,7 @@ static __always_inline void raid_gen6_ssse3_gen(int nd, size_t size, void **vv, 
 		/* first disk with all coefficients at 1 */
 		asm volatile ("movdqa %0,%%xmm5" : : "m" (pd[0]));
 		asm volatile ("movdqa %0,%%xmm6" : : "m" (pd[16]));
-		asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
+		asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly));
 
 		asm volatile ("pxor %xmm4,%xmm4");
 		asm volatile ("pcmpgtb %xmm6,%xmm4");
@@ -594,8 +594,8 @@ static __always_inline void raid_gen3_ssse3ext_gen(int nd, size_t size, void **v
 	raid_sse_begin();
 
 	/* generic case with at least two data disks */
-	asm volatile ("movdqa %0,%%xmm3" : : "m" (gfconst16.poly[0]));
-	asm volatile ("movdqa %0,%%xmm11" : : "m" (gfconst16.low4[0]));
+	asm volatile ("movdqa %0,%%xmm3" : : "m" (gfconst16.poly));
+	asm volatile ("movdqa %0,%%xmm11" : : "m" (gfconst16.low4));
 
 	for (i = 0; i < size; i += 32) {
 		/* last disk without the generator multiplication */
@@ -616,8 +616,8 @@ static __always_inline void raid_gen3_ssse3ext_gen(int nd, size_t size, void **v
 		asm volatile ("pand   %xmm11,%xmm5");
 		asm volatile ("pand   %xmm11,%xmm13");
 
-		asm volatile ("movdqa %0,%%xmm2" : : "m" (raid_gfcauchypshufb[l][1][0][0]));
-		asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[l][1][1][0]));
+		asm volatile ("movdqa %0,%%xmm2" : : "m" (raid_gfcauchypshufb[l][1][0]));
+		asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[l][1][1]));
 		asm volatile ("movdqa %xmm2,%xmm10");
 		asm volatile ("movdqa %xmm7,%xmm15");
 		asm volatile ("pshufb %xmm4,%xmm2");
@@ -632,8 +632,8 @@ static __always_inline void raid_gen3_ssse3ext_gen(int nd, size_t size, void **v
 			asm volatile ("movdqa %0,%%xmm4" : : "m" (v[d][i]));
 			asm volatile ("movdqa %0,%%xmm12" : : "m" (v[d][i + 16]));
 
-			asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[d][1][0][0]));
-			asm volatile ("movdqa %0,%%xmm15" : : "m" (raid_gfcauchypshufb[d][1][1][0]));
+			asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[d][1][0]));
+			asm volatile ("movdqa %0,%%xmm15" : : "m" (raid_gfcauchypshufb[d][1][1]));
 
 			if (generator == 3) {
 				asm volatile ("movdqa %xmm1,%xmm6");
@@ -682,8 +682,8 @@ static __always_inline void raid_gen3_ssse3ext_gen(int nd, size_t size, void **v
 			asm volatile ("movdqa %0,%%xmm4" : : "m" (v[d - 1][i]));
 			asm volatile ("movdqa %0,%%xmm12" : : "m" (v[d - 1][i + 16]));
 
-			asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[d - 1][1][0][0]));
-			asm volatile ("movdqa %0,%%xmm15" : : "m" (raid_gfcauchypshufb[d - 1][1][1][0]));
+			asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[d - 1][1][0]));
+			asm volatile ("movdqa %0,%%xmm15" : : "m" (raid_gfcauchypshufb[d - 1][1][1]));
 
 			if (generator == 3) {
 				asm volatile ("movdqa %xmm1,%xmm6");
@@ -768,8 +768,8 @@ static __always_inline void raid_gen3_ssse3ext_gen(int nd, size_t size, void **v
 			asm volatile ("pand   %xmm11,%xmm5");
 			asm volatile ("pand   %xmm11,%xmm13");
 
-			asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[1][1][0][0]));
-			asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[1][1][1][0]));
+			asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[1][1][0]));
+			asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[1][1][1]));
 			asm volatile ("movdqa %xmm6,%xmm14");
 			asm volatile ("movdqa %xmm7,%xmm15");
 			asm volatile ("pshufb %xmm4,%xmm6");
@@ -869,7 +869,7 @@ static __always_inline void raid_gen4_ssse3ext_gen(int nd, size_t size, void **v
 	/* generic case with at least two data disks */
 	for (i = 0; i < size; i += 32) {
 		/* last disk without the generator multiplication */
-		asm volatile ("movdqa %0,%%xmm15" : : "m" (gfconst16.low4[0]));
+		asm volatile ("movdqa %0,%%xmm15" : : "m" (gfconst16.low4));
 		asm volatile ("movdqa %0,%%xmm4" : : "m" (v[l][i]));
 		asm volatile ("movdqa %0,%%xmm12" : : "m" (v[l][i + 16]));
 
@@ -887,8 +887,8 @@ static __always_inline void raid_gen4_ssse3ext_gen(int nd, size_t size, void **v
 		asm volatile ("pand   %xmm15,%xmm5");
 		asm volatile ("pand   %xmm15,%xmm13");
 
-		asm volatile ("movdqa %0,%%xmm2" : : "m" (raid_gfcauchypshufb[l][1][0][0]));
-		asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[l][1][1][0]));
+		asm volatile ("movdqa %0,%%xmm2" : : "m" (raid_gfcauchypshufb[l][1][0]));
+		asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[l][1][1]));
 		asm volatile ("movdqa %xmm2,%xmm10");
 		asm volatile ("movdqa %xmm7,%xmm15");
 		asm volatile ("pshufb %xmm4,%xmm2");
@@ -898,8 +898,8 @@ static __always_inline void raid_gen4_ssse3ext_gen(int nd, size_t size, void **v
 		asm volatile ("pxor   %xmm7,%xmm2");
 		asm volatile ("pxor   %xmm15,%xmm10");
 
-		asm volatile ("movdqa %0,%%xmm3" : : "m" (raid_gfcauchypshufb[l][2][0][0]));
-		asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[l][2][1][0]));
+		asm volatile ("movdqa %0,%%xmm3" : : "m" (raid_gfcauchypshufb[l][2][0]));
+		asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[l][2][1]));
 		asm volatile ("movdqa %xmm3,%xmm11");
 		asm volatile ("movdqa %xmm7,%xmm15");
 		asm volatile ("pshufb %xmm4,%xmm3");
@@ -911,8 +911,8 @@ static __always_inline void raid_gen4_ssse3ext_gen(int nd, size_t size, void **v
 
 		/* intermediate disks */
 		for (d = l - 1; d > 0; --d) {
-			asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
-			asm volatile ("movdqa %0,%%xmm15" : : "m" (gfconst16.low4[0]));
+			asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly));
+			asm volatile ("movdqa %0,%%xmm15" : : "m" (gfconst16.low4));
 			asm volatile ("movdqa %0,%%xmm4" : : "m" (v[d][i]));
 			asm volatile ("movdqa %0,%%xmm12" : : "m" (v[d][i + 16]));
 
@@ -949,8 +949,8 @@ static __always_inline void raid_gen4_ssse3ext_gen(int nd, size_t size, void **v
 			asm volatile ("pand   %xmm15,%xmm5");
 			asm volatile ("pand   %xmm15,%xmm13");
 
-			asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[d][1][0][0]));
-			asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[d][1][1][0]));
+			asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[d][1][0]));
+			asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[d][1][1]));
 			asm volatile ("movdqa %xmm6,%xmm14");
 			asm volatile ("movdqa %xmm7,%xmm15");
 			asm volatile ("pshufb %xmm4,%xmm6");
@@ -962,8 +962,8 @@ static __always_inline void raid_gen4_ssse3ext_gen(int nd, size_t size, void **v
 			asm volatile ("pxor   %xmm7,%xmm2");
 			asm volatile ("pxor   %xmm15,%xmm10");
 
-			asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[d][2][0][0]));
-			asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[d][2][1][0]));
+			asm volatile ("movdqa %0,%%xmm6" : : "m" (raid_gfcauchypshufb[d][2][0]));
+			asm volatile ("movdqa %0,%%xmm7" : : "m" (raid_gfcauchypshufb[d][2][1]));
 			asm volatile ("movdqa %xmm6,%xmm14");
 			asm volatile ("movdqa %xmm7,%xmm15");
 			asm volatile ("pshufb %xmm4,%xmm6");
@@ -977,8 +977,8 @@ static __always_inline void raid_gen4_ssse3ext_gen(int nd, size_t size, void **v
 		}
 
 		/* first disk with all coefficients at 1 */
-		asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
-		asm volatile ("movdqa %0,%%xmm15" : : "m" (gfconst16.low4[0]));
+		asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly));
+		asm volatile ("movdqa %0,%%xmm15" : : "m" (gfconst16.low4));
 		asm volatile ("movdqa %0,%%xmm4" : : "m" (v[0][i]));
 		asm volatile ("movdqa %0,%%xmm12" : : "m" (v[0][i + 16]));
 
@@ -1069,8 +1069,8 @@ static __always_inline void raid_genX_ssse3ext(int nd, size_t size, void **vv, i
 	raid_sse_begin();
 
 	/* generic case with at least two data disks */
-	asm volatile ("movdqa %0,%%xmm14" : : "m" (gfconst16.poly[0]));
-	asm volatile ("movdqa %0,%%xmm15" : : "m" (gfconst16.low4[0]));
+	asm volatile ("movdqa %0,%%xmm14" : : "m" (gfconst16.poly));
+	asm volatile ("movdqa %0,%%xmm15" : : "m" (gfconst16.low4));
 
 	for (i = 0; i < size; i += 16) {
 		/* last disk without the generator multiplication */
@@ -1085,32 +1085,32 @@ static __always_inline void raid_genX_ssse3ext(int nd, size_t size, void **vv, i
 		asm volatile ("pand   %xmm15,%xmm11");
 
 		if (np >= 3) {
-			asm volatile ("movdqa %0,%%xmm2" : : "m" (raid_gfcauchypshufb[l][1][0][0]));
-			asm volatile ("movdqa %0,%%xmm13" : : "m" (raid_gfcauchypshufb[l][1][1][0]));
+			asm volatile ("movdqa %0,%%xmm2" : : "m" (raid_gfcauchypshufb[l][1][0]));
+			asm volatile ("movdqa %0,%%xmm13" : : "m" (raid_gfcauchypshufb[l][1][1]));
 			asm volatile ("pshufb %xmm10,%xmm2");
 			asm volatile ("pshufb %xmm11,%xmm13");
 			asm volatile ("pxor   %xmm13,%xmm2");
 		}
 
 		if (np >= 4) {
-			asm volatile ("movdqa %0,%%xmm3" : : "m" (raid_gfcauchypshufb[l][2][0][0]));
-			asm volatile ("movdqa %0,%%xmm13" : : "m" (raid_gfcauchypshufb[l][2][1][0]));
+			asm volatile ("movdqa %0,%%xmm3" : : "m" (raid_gfcauchypshufb[l][2][0]));
+			asm volatile ("movdqa %0,%%xmm13" : : "m" (raid_gfcauchypshufb[l][2][1]));
 			asm volatile ("pshufb %xmm10,%xmm3");
 			asm volatile ("pshufb %xmm11,%xmm13");
 			asm volatile ("pxor   %xmm13,%xmm3");
 		}
 
 		if (np >= 5) {
-			asm volatile ("movdqa %0,%%xmm4" : : "m" (raid_gfcauchypshufb[l][3][0][0]));
-			asm volatile ("movdqa %0,%%xmm13" : : "m" (raid_gfcauchypshufb[l][3][1][0]));
+			asm volatile ("movdqa %0,%%xmm4" : : "m" (raid_gfcauchypshufb[l][3][0]));
+			asm volatile ("movdqa %0,%%xmm13" : : "m" (raid_gfcauchypshufb[l][3][1]));
 			asm volatile ("pshufb %xmm10,%xmm4");
 			asm volatile ("pshufb %xmm11,%xmm13");
 			asm volatile ("pxor   %xmm13,%xmm4");
 		}
 
 		if (np >= 6) {
-			asm volatile ("movdqa %0,%%xmm5" : : "m" (raid_gfcauchypshufb[l][4][0][0]));
-			asm volatile ("movdqa %0,%%xmm13" : : "m" (raid_gfcauchypshufb[l][4][1][0]));
+			asm volatile ("movdqa %0,%%xmm5" : : "m" (raid_gfcauchypshufb[l][4][0]));
+			asm volatile ("movdqa %0,%%xmm13" : : "m" (raid_gfcauchypshufb[l][4][1]));
 			asm volatile ("pshufb %xmm10,%xmm5");
 			asm volatile ("pshufb %xmm11,%xmm13");
 			asm volatile ("pxor   %xmm13,%xmm5");
@@ -1139,8 +1139,8 @@ static __always_inline void raid_genX_ssse3ext(int nd, size_t size, void **vv, i
 			asm volatile ("pand   %xmm15,%xmm11");
 
 			if (np >= 3) {
-				asm volatile ("movdqa %0,%%xmm12" : : "m" (raid_gfcauchypshufb[d][1][0][0]));
-				asm volatile ("movdqa %0,%%xmm13" : : "m" (raid_gfcauchypshufb[d][1][1][0]));
+				asm volatile ("movdqa %0,%%xmm12" : : "m" (raid_gfcauchypshufb[d][1][0]));
+				asm volatile ("movdqa %0,%%xmm13" : : "m" (raid_gfcauchypshufb[d][1][1]));
 				asm volatile ("pshufb %xmm10,%xmm12");
 				asm volatile ("pshufb %xmm11,%xmm13");
 				asm volatile ("pxor   %xmm12,%xmm2");
@@ -1148,8 +1148,8 @@ static __always_inline void raid_genX_ssse3ext(int nd, size_t size, void **vv, i
 			}
 
 			if (np >= 4) {
-				asm volatile ("movdqa %0,%%xmm12" : : "m" (raid_gfcauchypshufb[d][2][0][0]));
-				asm volatile ("movdqa %0,%%xmm13" : : "m" (raid_gfcauchypshufb[d][2][1][0]));
+				asm volatile ("movdqa %0,%%xmm12" : : "m" (raid_gfcauchypshufb[d][2][0]));
+				asm volatile ("movdqa %0,%%xmm13" : : "m" (raid_gfcauchypshufb[d][2][1]));
 				asm volatile ("pshufb %xmm10,%xmm12");
 				asm volatile ("pshufb %xmm11,%xmm13");
 				asm volatile ("pxor   %xmm12,%xmm3");
@@ -1157,8 +1157,8 @@ static __always_inline void raid_genX_ssse3ext(int nd, size_t size, void **vv, i
 			}
 
 			if (np >= 5) {
-				asm volatile ("movdqa %0,%%xmm12" : : "m" (raid_gfcauchypshufb[d][3][0][0]));
-				asm volatile ("movdqa %0,%%xmm13" : : "m" (raid_gfcauchypshufb[d][3][1][0]));
+				asm volatile ("movdqa %0,%%xmm12" : : "m" (raid_gfcauchypshufb[d][3][0]));
+				asm volatile ("movdqa %0,%%xmm13" : : "m" (raid_gfcauchypshufb[d][3][1]));
 				asm volatile ("pshufb %xmm10,%xmm12");
 				asm volatile ("pshufb %xmm11,%xmm13");
 				asm volatile ("pxor   %xmm12,%xmm4");
@@ -1166,8 +1166,8 @@ static __always_inline void raid_genX_ssse3ext(int nd, size_t size, void **vv, i
 			}
 
 			if (np >= 6) {
-				asm volatile ("movdqa %0,%%xmm12" : : "m" (raid_gfcauchypshufb[d][4][0][0]));
-				asm volatile ("movdqa %0,%%xmm13" : : "m" (raid_gfcauchypshufb[d][4][1][0]));
+				asm volatile ("movdqa %0,%%xmm12" : : "m" (raid_gfcauchypshufb[d][4][0]));
+				asm volatile ("movdqa %0,%%xmm13" : : "m" (raid_gfcauchypshufb[d][4][1]));
 				asm volatile ("pshufb %xmm10,%xmm12");
 				asm volatile ("pshufb %xmm11,%xmm13");
 				asm volatile ("pxor   %xmm12,%xmm5");
@@ -1268,9 +1268,9 @@ static __always_inline void raid_rec1_ssse3_1(int *id, int *ip, int nd, size_t s
 
 	raid_sse_begin();
 
-	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
-	asm volatile ("movdqa %0,%%xmm2" : : "m" (raid_gfmulpshufb[V][0][0]));
-	asm volatile ("movdqa %0,%%xmm3" : : "m" (raid_gfmulpshufb[V][1][0]));
+	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4));
+	asm volatile ("movdqa %0,%%xmm2" : : "m" (raid_gfmulpshufb[V][0]));
+	asm volatile ("movdqa %0,%%xmm3" : : "m" (raid_gfmulpshufb[V][1]));
 
 	for (i = 0; i < size; i += 16) {
 		/* start from the selected parity block */
@@ -1350,11 +1350,11 @@ static __always_inline void raid_rec1_ssse3_q(int *id, int *ip, int nd, size_t s
 	raid_sse_begin();
 
 	/* keep the inverse coefficient resident */
-	asm volatile ("movdqa %0,%%xmm2" : : "m" (raid_gfmulpshufb[V][0][0]));
-	asm volatile ("movdqa %0,%%xmm3" : : "m" (raid_gfmulpshufb[V][1][0]));
+	asm volatile ("movdqa %0,%%xmm2" : : "m" (raid_gfmulpshufb[V][0]));
+	asm volatile ("movdqa %0,%%xmm3" : : "m" (raid_gfmulpshufb[V][1]));
 
 	/* keep the active reduction polynomial resident */
-	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
+	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly));
 
 	for (i = 0; i < size; i += 32) {
 		/* last disk starts Horner without generator multiplication */
@@ -1413,7 +1413,7 @@ static __always_inline void raid_rec1_ssse3_q(int *id, int *ip, int nd, size_t s
 		asm volatile ("pxor %0,%%xmm1" : : "m" (q[i + 16]));
 
 		/* low-nibble mask */
-		asm volatile ("movdqa %0,%%xmm6" : : "m" (gfconst16.low4[0]));
+		asm volatile ("movdqa %0,%%xmm6" : : "m" (gfconst16.low4));
 
 		/* split both Qdelta lanes into low/high nibbles */
 		asm volatile ("movdqa %xmm0,%xmm4");
@@ -1444,7 +1444,7 @@ static __always_inline void raid_rec1_ssse3_q(int *id, int *ip, int nd, size_t s
 		asm volatile ("movdqa %%xmm7,%0" : "=m" (pa[i + 16]));
 
 		/* restore the active reduction polynomial */
-		asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
+		asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly));
 	}
 
 	raid_sse_end(0);
@@ -1518,7 +1518,7 @@ static __always_inline void raid_rec2_ssse3_2(int has_p, int *id, int *ip, int n
 
 	raid_sse_begin();
 
-	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
+	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4));
 
 	for (i = 0; i < size; i += 16) {
 		/* start from the two selected parity blocks */
@@ -1692,7 +1692,7 @@ static __always_inline void raid_rec2of2_ssse3(int *id, int *ip, int nd, size_t 
 	 * xmm4-xmm6 temporaries
 	 * xmm7  active reduction polynomial
 	 */
-	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
+	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly));
 
 	for (i = 0; i < size; i += 32) {
 		/* Pdelta starts directly from stored P */
@@ -1771,7 +1771,7 @@ static __always_inline void raid_rec2of2_ssse3(int *id, int *ip, int nd, size_t 
 		 * The survivor scan is complete, so xmm7 can now hold
 		 * the low-nibble mask instead of the polynomial.
 		 */
-		asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
+		asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4));
 
 		/*
 		 * Lane 0.
@@ -1862,7 +1862,7 @@ static __always_inline void raid_rec2of2_ssse3(int *id, int *ip, int nd, size_t 
 		/*
 		 * Restore the polynomial for the next 32-byte iteration.
 		 */
-		asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
+		asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly));
 	}
 
 	raid_sse_end(0);
@@ -1935,7 +1935,7 @@ static __always_inline void raid_recX_ssse3_1234(int nr, int has_p, int *id, int
 
 	raid_sse_begin();
 
-	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
+	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4));
 
 	for (i = 0; i < size; i += 16) {
 		asm volatile ("movdqa %0,%%xmm0" : : "m" (p[0][i]));
@@ -2157,7 +2157,7 @@ static __always_inline void raid_recX_ssse3(int nr, int has_p, int *id, int *ip,
 
 	raid_sse_begin();
 
-	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
+	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4));
 
 	for (i = 0; i < size; i += 16) {
 		/* pd_low[] temporarily contains the complete raw syndrome */
@@ -2294,11 +2294,11 @@ static __always_inline void raid_rec1_ssse3ext_1(int *id, int *ip, int nd, size_
 
 	raid_sse_begin();
 
-	asm volatile ("movdqa %0,%%xmm15" : : "m" (gfconst16.low4[0]));
+	asm volatile ("movdqa %0,%%xmm15" : : "m" (gfconst16.low4));
 
 	/* keep the inverse coefficient resident */
-	asm volatile ("movdqa %0,%%xmm12" : : "m" (raid_gfmulpshufb[V][0][0]));
-	asm volatile ("movdqa %0,%%xmm13" : : "m" (raid_gfmulpshufb[V][1][0]));
+	asm volatile ("movdqa %0,%%xmm12" : : "m" (raid_gfmulpshufb[V][0]));
+	asm volatile ("movdqa %0,%%xmm13" : : "m" (raid_gfmulpshufb[V][1]));
 
 	for (i = 0; i < size; i += 32) {
 		/* start both lanes from the selected parity block */
@@ -2414,10 +2414,10 @@ static __always_inline void raid_rec1_ssse3ext_q(int *id, int *ip, int nd, size_
 	 * xmm14       active reduction polynomial
 	 * xmm15       low-nibble mask
 	 */
-	asm volatile ("movdqa %0,%%xmm12" : : "m" (raid_gfmulpshufb[V][0][0]));
-	asm volatile ("movdqa %0,%%xmm13" : : "m" (raid_gfmulpshufb[V][1][0]));
-	asm volatile ("movdqa %0,%%xmm14" : : "m" (gfconst16.poly[0]));
-	asm volatile ("movdqa %0,%%xmm15" : : "m" (gfconst16.low4[0]));
+	asm volatile ("movdqa %0,%%xmm12" : : "m" (raid_gfmulpshufb[V][0]));
+	asm volatile ("movdqa %0,%%xmm13" : : "m" (raid_gfmulpshufb[V][1]));
+	asm volatile ("movdqa %0,%%xmm14" : : "m" (gfconst16.poly));
+	asm volatile ("movdqa %0,%%xmm15" : : "m" (gfconst16.low4));
 
 	for (i = 0; i < size; i += 64) {
 		/* last disk starts Horner without generator multiplication */
@@ -2648,14 +2648,14 @@ static __always_inline void raid_rec2_ssse3ext_2(int has_p, int *id, int *ip, in
 	 */
 
 	/* keep the first inverse-matrix row resident */
-	asm volatile ("movdqa %0,%%xmm8" : : "m" (raid_gfmulpshufb[V[0]][0][0]));
-	asm volatile ("movdqa %0,%%xmm9" : : "m" (raid_gfmulpshufb[V[0]][1][0]));
-	asm volatile ("movdqa %0,%%xmm10" : : "m" (raid_gfmulpshufb[V[1]][0][0]));
-	asm volatile ("movdqa %0,%%xmm11" : : "m" (raid_gfmulpshufb[V[1]][1][0]));
+	asm volatile ("movdqa %0,%%xmm8" : : "m" (raid_gfmulpshufb[V[0]][0]));
+	asm volatile ("movdqa %0,%%xmm9" : : "m" (raid_gfmulpshufb[V[0]][1]));
+	asm volatile ("movdqa %0,%%xmm10" : : "m" (raid_gfmulpshufb[V[1]][0]));
+	asm volatile ("movdqa %0,%%xmm11" : : "m" (raid_gfmulpshufb[V[1]][1]));
 
 	for (i = 0; i < size; i += 32) {
 		/* xmm14 is reused during reconstruction, therefore restore the mask for each iteration */
-		asm volatile ("movdqa %0,%%xmm14" : : "m" (gfconst16.low4[0]));
+		asm volatile ("movdqa %0,%%xmm14" : : "m" (gfconst16.low4));
 
 		/* start both syndrome lanes from the selected stored parity blocks */
 		asm volatile ("movdqa %0,%%xmm0" : : "m" (p[0][i]));
@@ -2848,7 +2848,7 @@ static __always_inline void raid_rec2_ssse3ext_2(int has_p, int *id, int *ip, in
 			 */
 
 			/* V[2] * syndrome0 low */
-			asm volatile ("movdqa %0,%%xmm14" : : "m" (raid_gfmulpshufb[V[2]][0][0]));
+			asm volatile ("movdqa %0,%%xmm14" : : "m" (raid_gfmulpshufb[V[2]][0]));
 			asm volatile ("movdqa %xmm14,%xmm15");
 			asm volatile ("pshufb %xmm0,%xmm14");
 			asm volatile ("pshufb %xmm1,%xmm15");
@@ -2856,7 +2856,7 @@ static __always_inline void raid_rec2_ssse3ext_2(int has_p, int *id, int *ip, in
 			asm volatile ("movdqa %xmm15,%xmm7");
 
 			/* V[2] * syndrome0 high */
-			asm volatile ("movdqa %0,%%xmm14" : : "m" (raid_gfmulpshufb[V[2]][1][0]));
+			asm volatile ("movdqa %0,%%xmm14" : : "m" (raid_gfmulpshufb[V[2]][1]));
 			asm volatile ("movdqa %xmm14,%xmm15");
 			asm volatile ("pshufb %xmm4,%xmm14");
 			asm volatile ("pshufb %xmm5,%xmm15");
@@ -2864,7 +2864,7 @@ static __always_inline void raid_rec2_ssse3ext_2(int has_p, int *id, int *ip, in
 			asm volatile ("pxor %xmm15,%xmm7");
 
 			/* V[3] * syndrome1 low */
-			asm volatile ("movdqa %0,%%xmm14" : : "m" (raid_gfmulpshufb[V[3]][0][0]));
+			asm volatile ("movdqa %0,%%xmm14" : : "m" (raid_gfmulpshufb[V[3]][0]));
 			asm volatile ("movdqa %xmm14,%xmm15");
 			asm volatile ("pshufb %xmm2,%xmm14");
 			asm volatile ("pshufb %xmm3,%xmm15");
@@ -2872,7 +2872,7 @@ static __always_inline void raid_rec2_ssse3ext_2(int has_p, int *id, int *ip, in
 			asm volatile ("pxor %xmm15,%xmm7");
 
 			/* V[3] * syndrome1 high */
-			asm volatile ("movdqa %0,%%xmm14" : : "m" (raid_gfmulpshufb[V[3]][1][0]));
+			asm volatile ("movdqa %0,%%xmm14" : : "m" (raid_gfmulpshufb[V[3]][1]));
 			asm volatile ("movdqa %xmm14,%xmm15");
 			asm volatile ("pshufb %xmm12,%xmm14");
 			asm volatile ("pshufb %xmm13,%xmm15");
@@ -2941,7 +2941,7 @@ static __always_inline void raid_rec2of2_ssse3ext(int *id, int *ip, int nd, size
 	 * xmm11      active reduction polynomial
 	 * xmm12-xmm15 analytical multiplication tables
 	 */
-	asm volatile ("movdqa %0,%%xmm11" : : "m" (gfconst16.poly[0]));
+	asm volatile ("movdqa %0,%%xmm11" : : "m" (gfconst16.poly));
 
 	/* keep the analytical multiplication tables resident */
 	asm volatile ("movdqa %0,%%xmm12" : : "m" (R[0][0][0]));
@@ -3077,7 +3077,7 @@ static __always_inline void raid_rec2of2_ssse3ext(int *id, int *ip, int nd, size
 		asm volatile ("pxor %0,%%xmm7" : : "m" (q[i + 48]));
 
 		/* the polynomial is no longer needed during reconstruction */
-		asm volatile ("movdqa %0,%%xmm11" : : "m" (gfconst16.low4[0]));
+		asm volatile ("movdqa %0,%%xmm11" : : "m" (gfconst16.low4));
 
 		/* lane 0: split Pdelta */
 		asm volatile ("movdqa %xmm0,%xmm8");
@@ -3224,7 +3224,7 @@ static __always_inline void raid_rec2of2_ssse3ext(int *id, int *ip, int nd, size
 		asm volatile ("movdqa %%xmm10,%0" : "=m" (qa[i + 48]));
 
 		/* restore the polynomial for the next 64-byte iteration */
-		asm volatile ("movdqa %0,%%xmm11" : : "m" (gfconst16.poly[0]));
+		asm volatile ("movdqa %0,%%xmm11" : : "m" (gfconst16.poly));
 	}
 
 	raid_sse_end(0);
@@ -3295,7 +3295,7 @@ static __always_inline void raid_recX_ssse3ext_123(int nr, int has_p, int *id, i
 		 * Xmm15 is later reused by reconstruction, therefore reload the
 		 * nibble mask on every iteration.
 		 */
-		asm volatile ("movdqa %0,%%xmm15" : : "m" (gfconst16.low4[0]));
+		asm volatile ("movdqa %0,%%xmm15" : : "m" (gfconst16.low4));
 
 		asm volatile ("movdqa %0,%%xmm0" : : "m" (p[0][i]));
 		asm volatile ("movdqa %0,%%xmm1" : : "m" (p[0][i + 16]));
@@ -3555,7 +3555,7 @@ static __always_inline void raid_recX_ssse3ext_12345(int nr, int has_p, int *id,
 		 * xmm15 is reused by reconstruction, therefore reload the
 		 * nibble mask on every iteration.
 		 */
-		asm volatile ("movdqa %0,%%xmm15" : : "m" (gfconst16.low4[0]));
+		asm volatile ("movdqa %0,%%xmm15" : : "m" (gfconst16.low4));
 
 		/*
 		 * Raw syndrome accumulators:
@@ -3848,7 +3848,7 @@ static __always_inline void raid_recX_ssse3ext(int nr, int has_p, int *id, int *
 		 * Xmm15 is later reused by reconstruction, therefore reload the
 		 * nibble mask on every iteration.
 		 */
-		asm volatile ("movdqa %0,%%xmm15" : : "m" (gfconst16.low4[0]));
+		asm volatile ("movdqa %0,%%xmm15" : : "m" (gfconst16.low4));
 
 		asm volatile ("movdqa %0,%%xmm0" : : "m" (p[0][i]));
 

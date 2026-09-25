@@ -85,7 +85,7 @@ static __always_inline void raid_gen2_neon32_gen(int nd, size_t size,
 	asm volatile (
 		"vld1.8 {q14}, %0\n"
 		:
-		: "Q" (gfconst16.poly[0])
+		: "Q" (gfconst16.poly)
 	);
 
 	for (i = 0; i < size; i += 32) {
@@ -167,7 +167,7 @@ static __always_inline void raid_genz_neon32_gen(int nd, size_t size, void **vv)
 		"vld1.8 {q14}, %0\n"
 		"vld1.8 {q15}, %1\n"
 		:
-		: "Q" (gfconst16.poly[0]), "Q" (gfconst16.half[0])
+		: "Q" (gfconst16.poly), "Q" (gfconst16.half)
 	);
 
 	for (i = 0; i < size; i += 32) {
@@ -258,7 +258,7 @@ static __always_inline void raid_genX_neon32(int nd, size_t size,
 		"vld1.8 {q14}, %0\n"
 		"vmov.i8 q15, #0x0f\n"
 		:
-		: "Q" (gfconst16.poly[0])
+		: "Q" (gfconst16.poly)
 	);
 
 	for (i = 0; i < size; i += 16) {
@@ -288,8 +288,8 @@ static __always_inline void raid_genX_neon32(int nd, size_t size,
 
 				"veor q2, q11, q12\n"
 				:
-				: "Q" (raid_gfcauchypshufb[l][1][0][0]),
-				"Q" (raid_gfcauchypshufb[l][1][1][0])
+				: "Q" (raid_gfcauchypshufb[l][1][0]),
+				"Q" (raid_gfcauchypshufb[l][1][1])
 			);
 		}
 
@@ -305,8 +305,8 @@ static __always_inline void raid_genX_neon32(int nd, size_t size,
 
 				"veor q3, q11, q12\n"
 				:
-				: "Q" (raid_gfcauchypshufb[l][2][0][0]),
-				"Q" (raid_gfcauchypshufb[l][2][1][0])
+				: "Q" (raid_gfcauchypshufb[l][2][0]),
+				"Q" (raid_gfcauchypshufb[l][2][1])
 			);
 		}
 
@@ -322,8 +322,8 @@ static __always_inline void raid_genX_neon32(int nd, size_t size,
 
 				"veor q4, q11, q12\n"
 				:
-				: "Q" (raid_gfcauchypshufb[l][3][0][0]),
-				"Q" (raid_gfcauchypshufb[l][3][1][0])
+				: "Q" (raid_gfcauchypshufb[l][3][0]),
+				"Q" (raid_gfcauchypshufb[l][3][1])
 			);
 		}
 
@@ -339,8 +339,8 @@ static __always_inline void raid_genX_neon32(int nd, size_t size,
 
 				"veor q5, q11, q12\n"
 				:
-				: "Q" (raid_gfcauchypshufb[l][4][0][0]),
-				"Q" (raid_gfcauchypshufb[l][4][1][0])
+				: "Q" (raid_gfcauchypshufb[l][4][0]),
+				"Q" (raid_gfcauchypshufb[l][4][1])
 			);
 		}
 
@@ -386,8 +386,8 @@ static __always_inline void raid_genX_neon32(int nd, size_t size,
 					"veor q11, q11, q12\n"
 					"veor q2, q2, q11\n"
 					:
-					: "Q" (raid_gfcauchypshufb[d][1][0][0]),
-					"Q" (raid_gfcauchypshufb[d][1][1][0])
+					: "Q" (raid_gfcauchypshufb[d][1][0]),
+					"Q" (raid_gfcauchypshufb[d][1][1])
 				);
 			}
 
@@ -402,8 +402,8 @@ static __always_inline void raid_genX_neon32(int nd, size_t size,
 					"veor q11, q11, q12\n"
 					"veor q3, q3, q11\n"
 					:
-					: "Q" (raid_gfcauchypshufb[d][2][0][0]),
-					"Q" (raid_gfcauchypshufb[d][2][1][0])
+					: "Q" (raid_gfcauchypshufb[d][2][0]),
+					"Q" (raid_gfcauchypshufb[d][2][1])
 				);
 			}
 
@@ -418,8 +418,8 @@ static __always_inline void raid_genX_neon32(int nd, size_t size,
 					"veor q11, q11, q12\n"
 					"veor q4, q4, q11\n"
 					:
-					: "Q" (raid_gfcauchypshufb[d][3][0][0]),
-					"Q" (raid_gfcauchypshufb[d][3][1][0])
+					: "Q" (raid_gfcauchypshufb[d][3][0]),
+					"Q" (raid_gfcauchypshufb[d][3][1])
 				);
 			}
 
@@ -434,8 +434,8 @@ static __always_inline void raid_genX_neon32(int nd, size_t size,
 					"veor q11, q11, q12\n"
 					"veor q5, q5, q11\n"
 					:
-					: "Q" (raid_gfcauchypshufb[d][4][0][0]),
-					"Q" (raid_gfcauchypshufb[d][4][1][0])
+					: "Q" (raid_gfcauchypshufb[d][4][0]),
+					"Q" (raid_gfcauchypshufb[d][4][1])
 				);
 			}
 		}

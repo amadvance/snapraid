@@ -162,7 +162,7 @@ static __always_inline void raid_gen2_sse2_gen(int nd, size_t size, void **vv, i
 
 	raid_sse_begin();
 
-	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
+	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly));
 
 	for (i = 0; i < size; i += 32) {
 		asm volatile ("movdqa %0,%%xmm0" : : "m" (v[l][i]));
@@ -247,7 +247,7 @@ static __always_inline void raid_gen2_sse2ext_gen(int nd, size_t size, void **vv
 
 	raid_sse_begin();
 
-	asm volatile ("movdqa %0,%%xmm15" : : "m" (gfconst16.poly[0]));
+	asm volatile ("movdqa %0,%%xmm15" : : "m" (gfconst16.poly));
 
 	for (i = 0; i < size; i += 64) {
 		asm volatile ("movdqa %0,%%xmm0" : : "m" (v[l][i]));
@@ -486,9 +486,9 @@ static __always_inline void raid_genz_sse2_gen(int nd, size_t size, void **vv, i
 
 	raid_sse_begin();
 
-	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
-	asm volatile ("movdqa %0,%%xmm3" : : "m" (gfconst16.half[0]));
-	asm volatile ("movdqa %0,%%xmm6" : : "m" (gfconst16.low7[0]));
+	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly));
+	asm volatile ("movdqa %0,%%xmm3" : : "m" (gfconst16.half));
+	asm volatile ("movdqa %0,%%xmm6" : : "m" (gfconst16.low7));
 
 	for (i = 0; i < size; i += 16) {
 		asm volatile ("movdqa %0,%%xmm0" : : "m" (v[l][i]));
@@ -551,9 +551,9 @@ static __always_inline void raid_genz_sse2ext_gen(int nd, size_t size, void **vv
 
 	raid_sse_begin();
 
-	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
-	asm volatile ("movdqa %0,%%xmm3" : : "m" (gfconst16.half[0]));
-	asm volatile ("movdqa %0,%%xmm11" : : "m" (gfconst16.low7[0]));
+	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly));
+	asm volatile ("movdqa %0,%%xmm3" : : "m" (gfconst16.half));
+	asm volatile ("movdqa %0,%%xmm11" : : "m" (gfconst16.low7));
 
 	for (i = 0; i < size; i += 32) {
 		asm volatile ("movdqa %0,%%xmm0" : : "m" (v[l][i]));

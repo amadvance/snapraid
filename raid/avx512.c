@@ -77,32 +77,32 @@ static __always_inline void raid_gen2_avx512bw_gen(int nd, size_t size, void **v
 	asm volatile ("vpbroadcastb %0,%%zmm31" : : "m" (gfconst16.low4[0]));
 
 	/* preload as many Q coefficient tables as possible */
-	asm volatile ("vbroadcasti32x4 %0,%%zmm4" : : "m" (raid_gfcauchypshufb[1][0][0][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm5" : : "m" (raid_gfcauchypshufb[1][0][1][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm6" : : "m" (raid_gfcauchypshufb[2][0][0][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm7" : : "m" (raid_gfcauchypshufb[2][0][1][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm8" : : "m" (raid_gfcauchypshufb[3][0][0][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm9" : : "m" (raid_gfcauchypshufb[3][0][1][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm10" : : "m" (raid_gfcauchypshufb[4][0][0][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm11" : : "m" (raid_gfcauchypshufb[4][0][1][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm12" : : "m" (raid_gfcauchypshufb[5][0][0][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm13" : : "m" (raid_gfcauchypshufb[5][0][1][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm14" : : "m" (raid_gfcauchypshufb[6][0][0][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm15" : : "m" (raid_gfcauchypshufb[6][0][1][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm16" : : "m" (raid_gfcauchypshufb[7][0][0][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm17" : : "m" (raid_gfcauchypshufb[7][0][1][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm18" : : "m" (raid_gfcauchypshufb[8][0][0][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm19" : : "m" (raid_gfcauchypshufb[8][0][1][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm20" : : "m" (raid_gfcauchypshufb[9][0][0][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm21" : : "m" (raid_gfcauchypshufb[9][0][1][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm22" : : "m" (raid_gfcauchypshufb[10][0][0][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm23" : : "m" (raid_gfcauchypshufb[10][0][1][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm24" : : "m" (raid_gfcauchypshufb[11][0][0][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm25" : : "m" (raid_gfcauchypshufb[11][0][1][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm26" : : "m" (raid_gfcauchypshufb[12][0][0][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm27" : : "m" (raid_gfcauchypshufb[12][0][1][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm28" : : "m" (raid_gfcauchypshufb[13][0][0][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm29" : : "m" (raid_gfcauchypshufb[13][0][1][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm4" : : "m" (raid_gfcauchypshufb[1][0][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm5" : : "m" (raid_gfcauchypshufb[1][0][1]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm6" : : "m" (raid_gfcauchypshufb[2][0][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm7" : : "m" (raid_gfcauchypshufb[2][0][1]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm8" : : "m" (raid_gfcauchypshufb[3][0][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm9" : : "m" (raid_gfcauchypshufb[3][0][1]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm10" : : "m" (raid_gfcauchypshufb[4][0][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm11" : : "m" (raid_gfcauchypshufb[4][0][1]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm12" : : "m" (raid_gfcauchypshufb[5][0][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm13" : : "m" (raid_gfcauchypshufb[5][0][1]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm14" : : "m" (raid_gfcauchypshufb[6][0][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm15" : : "m" (raid_gfcauchypshufb[6][0][1]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm16" : : "m" (raid_gfcauchypshufb[7][0][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm17" : : "m" (raid_gfcauchypshufb[7][0][1]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm18" : : "m" (raid_gfcauchypshufb[8][0][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm19" : : "m" (raid_gfcauchypshufb[8][0][1]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm20" : : "m" (raid_gfcauchypshufb[9][0][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm21" : : "m" (raid_gfcauchypshufb[9][0][1]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm22" : : "m" (raid_gfcauchypshufb[10][0][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm23" : : "m" (raid_gfcauchypshufb[10][0][1]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm24" : : "m" (raid_gfcauchypshufb[11][0][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm25" : : "m" (raid_gfcauchypshufb[11][0][1]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm26" : : "m" (raid_gfcauchypshufb[12][0][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm27" : : "m" (raid_gfcauchypshufb[12][0][1]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm28" : : "m" (raid_gfcauchypshufb[13][0][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm29" : : "m" (raid_gfcauchypshufb[13][0][1]));
 
 	for (i = 0; i < size; i += 64) {
 		asm volatile ("vmovdqa64 %0,%%zmm0" : : "m" (v[0][i]));
@@ -264,10 +264,10 @@ static __always_inline void raid_gen2_avx512bw_gen(int nd, size_t size, void **v
 			asm volatile ("vpandq %zmm31,%zmm2,%zmm2");
 			asm volatile ("vpandq %zmm31,%zmm3,%zmm3");
 
-			asm volatile ("vbroadcasti32x4 %0,%%zmm30" : : "m" (raid_gfcauchypshufb[d][0][0][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm30" : : "m" (raid_gfcauchypshufb[d][0][0]));
 			asm volatile ("vpshufb %zmm2,%zmm30,%zmm2");
 
-			asm volatile ("vbroadcasti32x4 %0,%%zmm30" : : "m" (raid_gfcauchypshufb[d][0][1][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm30" : : "m" (raid_gfcauchypshufb[d][0][1]));
 			asm volatile ("vpshufb %zmm3,%zmm30,%zmm3");
 
 			asm volatile ("vpternlogq $0x96,%zmm2,%zmm3,%zmm1");
@@ -313,30 +313,30 @@ static __always_inline void raid_gen3_avx512bw_gen(int nd, size_t size, void **v
 	asm volatile ("vpbroadcastb %0,%%zmm31" : : "m" (gfconst16.low4[0]));
 
 	/* preload as many Q and R coefficient tables as possible */
-	asm volatile ("vbroadcasti32x4 %0,%%zmm7" : : "m" (raid_gfcauchypshufb[1][0][0][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm8" : : "m" (raid_gfcauchypshufb[1][0][1][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm9" : : "m" (raid_gfcauchypshufb[1][1][0][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm10" : : "m" (raid_gfcauchypshufb[1][1][1][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm11" : : "m" (raid_gfcauchypshufb[2][0][0][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm12" : : "m" (raid_gfcauchypshufb[2][0][1][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm13" : : "m" (raid_gfcauchypshufb[2][1][0][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm14" : : "m" (raid_gfcauchypshufb[2][1][1][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm15" : : "m" (raid_gfcauchypshufb[3][0][0][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm16" : : "m" (raid_gfcauchypshufb[3][0][1][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm17" : : "m" (raid_gfcauchypshufb[3][1][0][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm18" : : "m" (raid_gfcauchypshufb[3][1][1][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm19" : : "m" (raid_gfcauchypshufb[4][0][0][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm20" : : "m" (raid_gfcauchypshufb[4][0][1][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm21" : : "m" (raid_gfcauchypshufb[4][1][0][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm22" : : "m" (raid_gfcauchypshufb[4][1][1][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm23" : : "m" (raid_gfcauchypshufb[5][0][0][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm24" : : "m" (raid_gfcauchypshufb[5][0][1][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm25" : : "m" (raid_gfcauchypshufb[5][1][0][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm26" : : "m" (raid_gfcauchypshufb[5][1][1][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm27" : : "m" (raid_gfcauchypshufb[6][0][0][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm28" : : "m" (raid_gfcauchypshufb[6][0][1][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm29" : : "m" (raid_gfcauchypshufb[6][1][0][0]));
-	asm volatile ("vbroadcasti32x4 %0,%%zmm30" : : "m" (raid_gfcauchypshufb[6][1][1][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm7" : : "m" (raid_gfcauchypshufb[1][0][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm8" : : "m" (raid_gfcauchypshufb[1][0][1]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm9" : : "m" (raid_gfcauchypshufb[1][1][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm10" : : "m" (raid_gfcauchypshufb[1][1][1]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm11" : : "m" (raid_gfcauchypshufb[2][0][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm12" : : "m" (raid_gfcauchypshufb[2][0][1]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm13" : : "m" (raid_gfcauchypshufb[2][1][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm14" : : "m" (raid_gfcauchypshufb[2][1][1]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm15" : : "m" (raid_gfcauchypshufb[3][0][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm16" : : "m" (raid_gfcauchypshufb[3][0][1]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm17" : : "m" (raid_gfcauchypshufb[3][1][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm18" : : "m" (raid_gfcauchypshufb[3][1][1]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm19" : : "m" (raid_gfcauchypshufb[4][0][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm20" : : "m" (raid_gfcauchypshufb[4][0][1]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm21" : : "m" (raid_gfcauchypshufb[4][1][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm22" : : "m" (raid_gfcauchypshufb[4][1][1]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm23" : : "m" (raid_gfcauchypshufb[5][0][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm24" : : "m" (raid_gfcauchypshufb[5][0][1]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm25" : : "m" (raid_gfcauchypshufb[5][1][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm26" : : "m" (raid_gfcauchypshufb[5][1][1]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm27" : : "m" (raid_gfcauchypshufb[6][0][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm28" : : "m" (raid_gfcauchypshufb[6][0][1]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm29" : : "m" (raid_gfcauchypshufb[6][1][0]));
+	asm volatile ("vbroadcasti32x4 %0,%%zmm30" : : "m" (raid_gfcauchypshufb[6][1][1]));
 
 	for (i = 0; i < size; i += 64) {
 		asm volatile ("vmovdqa64 %0,%%zmm0" : : "m" (v[0][i]));
@@ -438,15 +438,15 @@ static __always_inline void raid_gen3_avx512bw_gen(int nd, size_t size, void **v
 			asm volatile ("vpandq %zmm31,%zmm3,%zmm4");
 			asm volatile ("vpandq %zmm31,%zmm5,%zmm5");
 
-			asm volatile ("vbroadcasti32x4 %0,%%zmm6" : : "m" (raid_gfcauchypshufb[d][0][0][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm6" : : "m" (raid_gfcauchypshufb[d][0][0]));
 			asm volatile ("vpshufb %zmm4,%zmm6,%zmm6");
-			asm volatile ("vbroadcasti32x4 %0,%%zmm3" : : "m" (raid_gfcauchypshufb[d][0][1][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm3" : : "m" (raid_gfcauchypshufb[d][0][1]));
 			asm volatile ("vpshufb %zmm5,%zmm3,%zmm3");
 			asm volatile ("vpternlogq $0x96,%zmm3,%zmm6,%zmm1");
 
-			asm volatile ("vbroadcasti32x4 %0,%%zmm6" : : "m" (raid_gfcauchypshufb[d][1][0][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm6" : : "m" (raid_gfcauchypshufb[d][1][0]));
 			asm volatile ("vpshufb %zmm4,%zmm6,%zmm6");
-			asm volatile ("vbroadcasti32x4 %0,%%zmm3" : : "m" (raid_gfcauchypshufb[d][1][1][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm3" : : "m" (raid_gfcauchypshufb[d][1][1]));
 			asm volatile ("vpshufb %zmm5,%zmm3,%zmm3");
 			asm volatile ("vpternlogq $0x96,%zmm3,%zmm6,%zmm2");
 		}
@@ -507,23 +507,23 @@ static __always_inline void raid_genX_avx512bw(int nd, size_t size, void **vv, i
 			asm volatile ("vpandq    %zmm31,%zmm10,%zmm10");
 			asm volatile ("vpandq    %zmm31,%zmm11,%zmm11");
 
-			asm volatile ("vbroadcasti32x4 %0,%%zmm12" : : "m" (raid_gfcauchypshufb[d][0][0][0]));
-			asm volatile ("vbroadcasti32x4 %0,%%zmm13" : : "m" (raid_gfcauchypshufb[d][0][1][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm12" : : "m" (raid_gfcauchypshufb[d][0][0]));
+			asm volatile ("vbroadcasti32x4 %0,%%zmm13" : : "m" (raid_gfcauchypshufb[d][0][1]));
 			if (np >= 3) {
-				asm volatile ("vbroadcasti32x4 %0,%%zmm14" : : "m" (raid_gfcauchypshufb[d][1][0][0]));
-				asm volatile ("vbroadcasti32x4 %0,%%zmm15" : : "m" (raid_gfcauchypshufb[d][1][1][0]));
+				asm volatile ("vbroadcasti32x4 %0,%%zmm14" : : "m" (raid_gfcauchypshufb[d][1][0]));
+				asm volatile ("vbroadcasti32x4 %0,%%zmm15" : : "m" (raid_gfcauchypshufb[d][1][1]));
 			}
 			if (np >= 4) {
-				asm volatile ("vbroadcasti32x4 %0,%%zmm16" : : "m" (raid_gfcauchypshufb[d][2][0][0]));
-				asm volatile ("vbroadcasti32x4 %0,%%zmm17" : : "m" (raid_gfcauchypshufb[d][2][1][0]));
+				asm volatile ("vbroadcasti32x4 %0,%%zmm16" : : "m" (raid_gfcauchypshufb[d][2][0]));
+				asm volatile ("vbroadcasti32x4 %0,%%zmm17" : : "m" (raid_gfcauchypshufb[d][2][1]));
 			}
 			if (np >= 5) {
-				asm volatile ("vbroadcasti32x4 %0,%%zmm18" : : "m" (raid_gfcauchypshufb[d][3][0][0]));
-				asm volatile ("vbroadcasti32x4 %0,%%zmm19" : : "m" (raid_gfcauchypshufb[d][3][1][0]));
+				asm volatile ("vbroadcasti32x4 %0,%%zmm18" : : "m" (raid_gfcauchypshufb[d][3][0]));
+				asm volatile ("vbroadcasti32x4 %0,%%zmm19" : : "m" (raid_gfcauchypshufb[d][3][1]));
 			}
 			if (np >= 6) {
-				asm volatile ("vbroadcasti32x4 %0,%%zmm20" : : "m" (raid_gfcauchypshufb[d][4][0][0]));
-				asm volatile ("vbroadcasti32x4 %0,%%zmm21" : : "m" (raid_gfcauchypshufb[d][4][1][0]));
+				asm volatile ("vbroadcasti32x4 %0,%%zmm20" : : "m" (raid_gfcauchypshufb[d][4][0]));
+				asm volatile ("vbroadcasti32x4 %0,%%zmm21" : : "m" (raid_gfcauchypshufb[d][4][1]));
 			}
 
 			asm volatile ("vpshufb   %zmm10,%zmm12,%zmm12");

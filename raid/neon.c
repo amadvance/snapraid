@@ -80,7 +80,7 @@ static __always_inline void raid_gen2_neon_gen(int nd, size_t size, void **vv, i
 	asm volatile (
 		"ldr q29, %0\n"
 		:
-		: "m" (gfconst16.poly[0])
+		: "m" (gfconst16.poly)
 	);
 
 	for (i = 0; i < size; i += 32) {
@@ -167,7 +167,7 @@ static __always_inline void raid_genz_neon_gen(int nd, size_t size, void **vv)
 		"ldr q29, %0\n"
 		"ldr q30, %1\n"
 		:
-		: "m" (gfconst16.poly[0]), "m" (gfconst16.half[0])
+		: "m" (gfconst16.poly), "m" (gfconst16.half)
 	);
 
 	for (i = 0; i < size; i += 32) {
@@ -264,7 +264,7 @@ static __always_inline void raid_genX_neon(int nd, size_t size, void **vv, int n
 		"ldr q29, %0\n"
 		"movi v28.16b, #0x0f\n"
 		:
-		: "m" (gfconst16.poly[0])
+		: "m" (gfconst16.poly)
 	);
 
 	for (i = 0; i < size; i += 32) {

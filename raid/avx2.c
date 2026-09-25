@@ -380,8 +380,8 @@ static __always_inline void raid_gen3_avx2ext_gen(int nd, size_t size, void **vv
 		asm volatile ("vpand   %ymm11,%ymm5,%ymm5");
 		asm volatile ("vpand   %ymm11,%ymm13,%ymm13");
 
-		asm volatile ("vbroadcasti128 %0,%%ymm10" : : "m" (raid_gfcauchypshufb[l][1][0][0]));
-		asm volatile ("vbroadcasti128 %0,%%ymm15" : : "m" (raid_gfcauchypshufb[l][1][1][0]));
+		asm volatile ("vbroadcasti128 %0,%%ymm10" : : "m" (raid_gfcauchypshufb[l][1][0]));
+		asm volatile ("vbroadcasti128 %0,%%ymm15" : : "m" (raid_gfcauchypshufb[l][1][1]));
 		asm volatile ("vpshufb %ymm4,%ymm10,%ymm2");
 		asm volatile ("vpshufb %ymm12,%ymm10,%ymm10");
 		asm volatile ("vpshufb %ymm5,%ymm15,%ymm7");
@@ -394,8 +394,8 @@ static __always_inline void raid_gen3_avx2ext_gen(int nd, size_t size, void **vv
 			asm volatile ("vmovdqa %0,%%ymm4" : : "m" (v[d][i]));
 			asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[d][i + 32]));
 
-			asm volatile ("vbroadcasti128 %0,%%ymm14" : : "m" (raid_gfcauchypshufb[d][1][0][0]));
-			asm volatile ("vbroadcasti128 %0,%%ymm15" : : "m" (raid_gfcauchypshufb[d][1][1][0]));
+			asm volatile ("vbroadcasti128 %0,%%ymm14" : : "m" (raid_gfcauchypshufb[d][1][0]));
+			asm volatile ("vbroadcasti128 %0,%%ymm15" : : "m" (raid_gfcauchypshufb[d][1][1]));
 
 			if (generator == 3)
 				asm volatile ("vmovdqa %ymm1,%ymm6");
@@ -444,8 +444,8 @@ static __always_inline void raid_gen3_avx2ext_gen(int nd, size_t size, void **vv
 			asm volatile ("vmovdqa %0,%%ymm4" : : "m" (v[d - 1][i]));
 			asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[d - 1][i + 32]));
 
-			asm volatile ("vbroadcasti128 %0,%%ymm14" : : "m" (raid_gfcauchypshufb[d - 1][1][0][0]));
-			asm volatile ("vbroadcasti128 %0,%%ymm15" : : "m" (raid_gfcauchypshufb[d - 1][1][1][0]));
+			asm volatile ("vbroadcasti128 %0,%%ymm14" : : "m" (raid_gfcauchypshufb[d - 1][1][0]));
+			asm volatile ("vbroadcasti128 %0,%%ymm15" : : "m" (raid_gfcauchypshufb[d - 1][1][1]));
 
 			if (generator == 3)
 				asm volatile ("vmovdqa %ymm1,%ymm6");
@@ -514,8 +514,8 @@ static __always_inline void raid_gen3_avx2ext_gen(int nd, size_t size, void **vv
 			asm volatile ("vpand %ymm11,%ymm4,%ymm4");
 			asm volatile ("vpand %ymm11,%ymm5,%ymm5");
 
-			asm volatile ("vbroadcasti128 %0,%%ymm14" : : "m" (raid_gfcauchypshufb[1][1][0][0]));
-			asm volatile ("vbroadcasti128 %0,%%ymm15" : : "m" (raid_gfcauchypshufb[1][1][1][0]));
+			asm volatile ("vbroadcasti128 %0,%%ymm14" : : "m" (raid_gfcauchypshufb[1][1][0]));
+			asm volatile ("vbroadcasti128 %0,%%ymm15" : : "m" (raid_gfcauchypshufb[1][1][1]));
 
 			asm volatile ("vpshufb %ymm4,%ymm14,%ymm6");
 			asm volatile ("vpshufb %ymm5,%ymm15,%ymm7");
@@ -651,8 +651,8 @@ static __always_inline void raid_gen4_avx2ext_gen(int nd, size_t size, void **vv
 		asm volatile ("vpand %ymm7,%ymm12,%ymm12");
 		asm volatile ("vpand %ymm7,%ymm13,%ymm13");
 
-		asm volatile ("vbroadcasti128 %0,%%ymm14" : : "m" (raid_gfcauchypshufb[l][1][0][0]));
-		asm volatile ("vbroadcasti128 %0,%%ymm15" : : "m" (raid_gfcauchypshufb[l][1][1][0]));
+		asm volatile ("vbroadcasti128 %0,%%ymm14" : : "m" (raid_gfcauchypshufb[l][1][0]));
+		asm volatile ("vbroadcasti128 %0,%%ymm15" : : "m" (raid_gfcauchypshufb[l][1][1]));
 		asm volatile ("vpshufb %ymm4,%ymm14,%ymm2");
 		asm volatile ("vpshufb %ymm5,%ymm15,%ymm3");
 		asm volatile ("vpxor %ymm3,%ymm2,%ymm2");
@@ -660,8 +660,8 @@ static __always_inline void raid_gen4_avx2ext_gen(int nd, size_t size, void **vv
 		asm volatile ("vpshufb %ymm13,%ymm15,%ymm11");
 		asm volatile ("vpxor %ymm11,%ymm10,%ymm10");
 
-		asm volatile ("vbroadcasti128 %0,%%ymm14" : : "m" (raid_gfcauchypshufb[l][2][0][0]));
-		asm volatile ("vbroadcasti128 %0,%%ymm15" : : "m" (raid_gfcauchypshufb[l][2][1][0]));
+		asm volatile ("vbroadcasti128 %0,%%ymm14" : : "m" (raid_gfcauchypshufb[l][2][0]));
+		asm volatile ("vbroadcasti128 %0,%%ymm15" : : "m" (raid_gfcauchypshufb[l][2][1]));
 		asm volatile ("vpshufb %ymm4,%ymm14,%ymm3");
 		asm volatile ("vpshufb %ymm5,%ymm15,%ymm5");
 		asm volatile ("vpxor %ymm5,%ymm3,%ymm3");
@@ -704,23 +704,23 @@ static __always_inline void raid_gen4_avx2ext_gen(int nd, size_t size, void **vv
 			asm volatile ("vpand %ymm7,%ymm12,%ymm12");
 			asm volatile ("vpand %ymm7,%ymm13,%ymm13");
 
-			asm volatile ("vbroadcasti128 %0,%%ymm14" : : "m" (raid_gfcauchypshufb[d][1][0][0]));
+			asm volatile ("vbroadcasti128 %0,%%ymm14" : : "m" (raid_gfcauchypshufb[d][1][0]));
 			asm volatile ("vpshufb %ymm4,%ymm14,%ymm15");
 			asm volatile ("vpshufb %ymm12,%ymm14,%ymm14");
 			asm volatile ("vpxor %ymm15,%ymm2,%ymm2");
 			asm volatile ("vpxor %ymm14,%ymm10,%ymm10");
-			asm volatile ("vbroadcasti128 %0,%%ymm14" : : "m" (raid_gfcauchypshufb[d][1][1][0]));
+			asm volatile ("vbroadcasti128 %0,%%ymm14" : : "m" (raid_gfcauchypshufb[d][1][1]));
 			asm volatile ("vpshufb %ymm5,%ymm14,%ymm15");
 			asm volatile ("vpshufb %ymm13,%ymm14,%ymm14");
 			asm volatile ("vpxor %ymm15,%ymm2,%ymm2");
 			asm volatile ("vpxor %ymm14,%ymm10,%ymm10");
 
-			asm volatile ("vbroadcasti128 %0,%%ymm14" : : "m" (raid_gfcauchypshufb[d][2][0][0]));
+			asm volatile ("vbroadcasti128 %0,%%ymm14" : : "m" (raid_gfcauchypshufb[d][2][0]));
 			asm volatile ("vpshufb %ymm4,%ymm14,%ymm15");
 			asm volatile ("vpshufb %ymm12,%ymm14,%ymm14");
 			asm volatile ("vpxor %ymm15,%ymm3,%ymm3");
 			asm volatile ("vpxor %ymm14,%ymm11,%ymm11");
-			asm volatile ("vbroadcasti128 %0,%%ymm14" : : "m" (raid_gfcauchypshufb[d][2][1][0]));
+			asm volatile ("vbroadcasti128 %0,%%ymm14" : : "m" (raid_gfcauchypshufb[d][2][1]));
 			asm volatile ("vpshufb %ymm5,%ymm14,%ymm15");
 			asm volatile ("vpshufb %ymm13,%ymm14,%ymm14");
 			asm volatile ("vpxor %ymm15,%ymm3,%ymm3");
@@ -819,29 +819,29 @@ static __always_inline void raid_genX_avx2ext(int nd, size_t size, void **vv, in
 		asm volatile ("vpand   %ymm15,%ymm10,%ymm10");
 		asm volatile ("vpand   %ymm15,%ymm11,%ymm11");
 		if (np >= 3) {
-			asm volatile ("vbroadcasti128 %0,%%ymm2" : : "m" (raid_gfcauchypshufb[l][1][0][0]));
-			asm volatile ("vbroadcasti128 %0,%%ymm13" : : "m" (raid_gfcauchypshufb[l][1][1][0]));
+			asm volatile ("vbroadcasti128 %0,%%ymm2" : : "m" (raid_gfcauchypshufb[l][1][0]));
+			asm volatile ("vbroadcasti128 %0,%%ymm13" : : "m" (raid_gfcauchypshufb[l][1][1]));
 			asm volatile ("vpshufb %ymm10,%ymm2,%ymm2");
 			asm volatile ("vpshufb %ymm11,%ymm13,%ymm13");
 			asm volatile ("vpxor   %ymm13,%ymm2,%ymm2");
 		}
 		if (np >= 4) {
-			asm volatile ("vbroadcasti128 %0,%%ymm3" : : "m" (raid_gfcauchypshufb[l][2][0][0]));
-			asm volatile ("vbroadcasti128 %0,%%ymm13" : : "m" (raid_gfcauchypshufb[l][2][1][0]));
+			asm volatile ("vbroadcasti128 %0,%%ymm3" : : "m" (raid_gfcauchypshufb[l][2][0]));
+			asm volatile ("vbroadcasti128 %0,%%ymm13" : : "m" (raid_gfcauchypshufb[l][2][1]));
 			asm volatile ("vpshufb %ymm10,%ymm3,%ymm3");
 			asm volatile ("vpshufb %ymm11,%ymm13,%ymm13");
 			asm volatile ("vpxor   %ymm13,%ymm3,%ymm3");
 		}
 		if (np >= 5) {
-			asm volatile ("vbroadcasti128 %0,%%ymm4" : : "m" (raid_gfcauchypshufb[l][3][0][0]));
-			asm volatile ("vbroadcasti128 %0,%%ymm13" : : "m" (raid_gfcauchypshufb[l][3][1][0]));
+			asm volatile ("vbroadcasti128 %0,%%ymm4" : : "m" (raid_gfcauchypshufb[l][3][0]));
+			asm volatile ("vbroadcasti128 %0,%%ymm13" : : "m" (raid_gfcauchypshufb[l][3][1]));
 			asm volatile ("vpshufb %ymm10,%ymm4,%ymm4");
 			asm volatile ("vpshufb %ymm11,%ymm13,%ymm13");
 			asm volatile ("vpxor   %ymm13,%ymm4,%ymm4");
 		}
 		if (np >= 6) {
-			asm volatile ("vbroadcasti128 %0,%%ymm5" : : "m" (raid_gfcauchypshufb[l][4][0][0]));
-			asm volatile ("vbroadcasti128 %0,%%ymm13" : : "m" (raid_gfcauchypshufb[l][4][1][0]));
+			asm volatile ("vbroadcasti128 %0,%%ymm5" : : "m" (raid_gfcauchypshufb[l][4][0]));
+			asm volatile ("vbroadcasti128 %0,%%ymm13" : : "m" (raid_gfcauchypshufb[l][4][1]));
 			asm volatile ("vpshufb %ymm10,%ymm5,%ymm5");
 			asm volatile ("vpshufb %ymm11,%ymm13,%ymm13");
 			asm volatile ("vpxor   %ymm13,%ymm5,%ymm5");
@@ -867,32 +867,32 @@ static __always_inline void raid_genX_avx2ext(int nd, size_t size, void **vv, in
 			asm volatile ("vpand   %ymm15,%ymm10,%ymm10");
 			asm volatile ("vpand   %ymm15,%ymm11,%ymm11");
 			if (np >= 3) {
-				asm volatile ("vbroadcasti128 %0,%%ymm12" : : "m" (raid_gfcauchypshufb[d][1][0][0]));
-				asm volatile ("vbroadcasti128 %0,%%ymm13" : : "m" (raid_gfcauchypshufb[d][1][1][0]));
+				asm volatile ("vbroadcasti128 %0,%%ymm12" : : "m" (raid_gfcauchypshufb[d][1][0]));
+				asm volatile ("vbroadcasti128 %0,%%ymm13" : : "m" (raid_gfcauchypshufb[d][1][1]));
 				asm volatile ("vpshufb %ymm10,%ymm12,%ymm12");
 				asm volatile ("vpshufb %ymm11,%ymm13,%ymm13");
 				asm volatile ("vpxor   %ymm12,%ymm2,%ymm2");
 				asm volatile ("vpxor   %ymm13,%ymm2,%ymm2");
 			}
 			if (np >= 4) {
-				asm volatile ("vbroadcasti128 %0,%%ymm12" : : "m" (raid_gfcauchypshufb[d][2][0][0]));
-				asm volatile ("vbroadcasti128 %0,%%ymm13" : : "m" (raid_gfcauchypshufb[d][2][1][0]));
+				asm volatile ("vbroadcasti128 %0,%%ymm12" : : "m" (raid_gfcauchypshufb[d][2][0]));
+				asm volatile ("vbroadcasti128 %0,%%ymm13" : : "m" (raid_gfcauchypshufb[d][2][1]));
 				asm volatile ("vpshufb %ymm10,%ymm12,%ymm12");
 				asm volatile ("vpshufb %ymm11,%ymm13,%ymm13");
 				asm volatile ("vpxor   %ymm12,%ymm3,%ymm3");
 				asm volatile ("vpxor   %ymm13,%ymm3,%ymm3");
 			}
 			if (np >= 5) {
-				asm volatile ("vbroadcasti128 %0,%%ymm12" : : "m" (raid_gfcauchypshufb[d][3][0][0]));
-				asm volatile ("vbroadcasti128 %0,%%ymm13" : : "m" (raid_gfcauchypshufb[d][3][1][0]));
+				asm volatile ("vbroadcasti128 %0,%%ymm12" : : "m" (raid_gfcauchypshufb[d][3][0]));
+				asm volatile ("vbroadcasti128 %0,%%ymm13" : : "m" (raid_gfcauchypshufb[d][3][1]));
 				asm volatile ("vpshufb %ymm10,%ymm12,%ymm12");
 				asm volatile ("vpshufb %ymm11,%ymm13,%ymm13");
 				asm volatile ("vpxor   %ymm12,%ymm4,%ymm4");
 				asm volatile ("vpxor   %ymm13,%ymm4,%ymm4");
 			}
 			if (np >= 6) {
-				asm volatile ("vbroadcasti128 %0,%%ymm12" : : "m" (raid_gfcauchypshufb[d][4][0][0]));
-				asm volatile ("vbroadcasti128 %0,%%ymm13" : : "m" (raid_gfcauchypshufb[d][4][1][0]));
+				asm volatile ("vbroadcasti128 %0,%%ymm12" : : "m" (raid_gfcauchypshufb[d][4][0]));
+				asm volatile ("vbroadcasti128 %0,%%ymm13" : : "m" (raid_gfcauchypshufb[d][4][1]));
 				asm volatile ("vpshufb %ymm10,%ymm12,%ymm12");
 				asm volatile ("vpshufb %ymm11,%ymm13,%ymm13");
 				asm volatile ("vpxor   %ymm12,%ymm5,%ymm5");
@@ -1090,8 +1090,8 @@ static __always_inline void raid_rec1_avx2_q(int *id, int *ip, int nd, size_t si
 	raid_avx_begin();
 
 	/* keep the inverse coefficient resident */
-	asm volatile ("vbroadcasti128 %0,%%ymm2" : : "m" (raid_gfmulpshufb[V][0][0]));
-	asm volatile ("vbroadcasti128 %0,%%ymm3" : : "m" (raid_gfmulpshufb[V][1][0]));
+	asm volatile ("vbroadcasti128 %0,%%ymm2" : : "m" (raid_gfmulpshufb[V][0]));
+	asm volatile ("vbroadcasti128 %0,%%ymm3" : : "m" (raid_gfmulpshufb[V][1]));
 
 	/* keep zero and the active reduction polynomial resident */
 	asm volatile ("vpxor %ymm6,%ymm6,%ymm6");
@@ -1637,8 +1637,8 @@ static __always_inline void raid_rec1_avx2ext_q(int *id, int *ip, int nd, size_t
 	raid_avx_begin();
 
 	/* keep the inverse coefficient, zero, and active reduction polynomial resident */
-	asm volatile ("vbroadcasti128 %0,%%ymm12" : : "m" (raid_gfmulpshufb[V][0][0]));
-	asm volatile ("vbroadcasti128 %0,%%ymm13" : : "m" (raid_gfmulpshufb[V][1][0]));
+	asm volatile ("vbroadcasti128 %0,%%ymm12" : : "m" (raid_gfmulpshufb[V][0]));
+	asm volatile ("vbroadcasti128 %0,%%ymm13" : : "m" (raid_gfmulpshufb[V][1]));
 	asm volatile ("vpxor %ymm14,%ymm14,%ymm14");
 	asm volatile ("vpbroadcastb %0,%%ymm15" : : "m" (gfconst16.poly[0]));
 
