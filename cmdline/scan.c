@@ -1563,7 +1563,7 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 		struct dirent_sorted* dd = node->data;
 		const char* name = dd->d_name;
 		struct stat* st;
-		int type;
+		int d_type;
 #if !HAVE_STRUCT_DIRENT_D_STAT
 		struct stat st_buf;
 #endif
@@ -1571,23 +1571,17 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 		pathcatl(path_next, path_len, PATH_MAX, name);
 		pathcatl(sub_next, sub_len, PATH_MAX, name);
 
-		/* start with an unknown type */
-		type = -1;
 		st = 0;
 
 		/* if dirent has the type, use it */
 #if HAVE_STRUCT_DIRENT_D_TYPE
-		switch (dd->d_type) {
-		case DT_UNKNOWN : break;
-		case DT_REG : type = 0; break;
-		case DT_LNK : type = 1; break;
-		case DT_DIR : type = 2; break;
-		default : type = 3; break;
-		}
+		d_type = dd->d_type;
+#else
+		d_type = DT_UNKNOWN;
 #endif
 
 		/* if type is still unknown */
-		if (type < 0) {
+		if (d_type == DT_UNKNOWN) {
 			/* get the type from stat */
 			st = DSTAT(path_next, dd, &st_buf);
 
@@ -1611,16 +1605,14 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 #endif
 
 			if (S_ISREG(st->st_mode))
-				type = 0;
+				d_type = DT_REG;
 			else if (S_ISLNK(st->st_mode))
-				type = 1;
+				d_type = DT_LNK;
 			else if (S_ISDIR(st->st_mode))
-				type = 2;
-			else
-				type = 3;
+				d_type = DT_DIR;
 		}
 
-		if (type == 0) { /* REG */
+		if (d_type == DT_REG) {
 			/*
 			 * Note that .snapraidignore is an exception from filtering because it
 			 * is a control file that must be preserved as array data.
@@ -1661,7 +1653,7 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 			} else {
 				msg_verbose("Excluding file '%s' for rule '%s'\n", path_next, filter_type(reason, tmp, PATH_MAX));
 			}
-		} else if (type == 1) { /* LNK */
+		} else if (d_type == DT_LNK) {
 			/*
 			 * Note that .snapraidignore is an exception from filtering because it
 			 * is a control file that must be preserved as array data.
@@ -1698,7 +1690,7 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 			} else {
 				msg_verbose("Excluding link '%s' for rule '%s'\n", path_next, filter_type(reason, tmp, PATH_MAX));
 			}
-		} else if (type == 2) { /* DIR */
+		} else if (d_type == DT_DIR) {
 			if (filter_subdir(&state->filterlist, &reason, disk->name, sub_next) == 0
 				&& filter_subdir(&scan->local_filter_list, &reason, disk->name, sub_next) == 0) {
 #ifndef _WIN32

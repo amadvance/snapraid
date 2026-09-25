@@ -134,6 +134,14 @@ wchar_t* u8tou16_mayfail(wchar_t* conv_buf, size_t number_of_wchar, const char* 
 #define rmdir windows_rmdir
 #undef dirent
 #define dirent windows_dirent
+#define DT_UNKNOWN 0
+#define DT_FIFO 1
+#define DT_CHR 2
+#define DT_DIR 4
+#define DT_BLK 6
+#define DT_REG 8
+#define DT_LNK 10
+#define DT_SOCK 12
 #undef DIR
 #define DIR windows_dir
 #undef opendir

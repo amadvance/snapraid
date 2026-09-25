@@ -19,6 +19,22 @@
 #define OS_LVL_INFO LOG_INFO
 #define OS_LVL_DEBUG LOG_DEBUG
 
+#if !HAVE_STRUCT_DIRENT_D_TYPE
+/* without d_type these values are internal markers populated from lstat(). */
+#ifndef DT_UNKNOWN
+#define DT_UNKNOWN 0
+#endif
+#ifndef DT_DIR
+#define DT_DIR 4
+#endif
+#ifndef DT_REG
+#define DT_REG 8
+#endif
+#ifndef DT_LNK
+#define DT_LNK 10
+#endif
+#endif
+
 /* implement close_range for glibc 2.33 or earlier */
 #if defined(__linux__) && !defined(HAVE_CLOSE_RANGE)
 #ifndef __NR_close_range
