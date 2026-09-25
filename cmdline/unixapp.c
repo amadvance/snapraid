@@ -971,16 +971,83 @@ bail:
 	return -1;
 }
 
+static int extract_zfs_mount(const char* resolved, char* dataset, size_t dataset_size, char* mount_point, size_t mount_point_size)
+{
+	struct stat st;
+
+	if (stat(resolved, &st) != 0)
+		return -1;
+
+	FILE* fd = fopen("/proc/self/mountinfo", "r");
+	if (!fd)
+		return -1;
+
+	size_t best_len = 0;
+	while (1) {
+		char buf[PATH_MAX * 2 + 64];
+		char* id_map[8];
+		unsigned id_mac;
+		char* fs_map[8];
+		unsigned fs_mac;
+		unsigned mount_major;
+		unsigned mount_minor;
+
+		char* s = fgets(buf, sizeof(buf), fd);
+		if (s == 0)
+			break;
+
+		/* find the separator position */
+		char* separator = strstr(s, " - ");
+		if (!separator)
+			continue;
+
+		/* skip the separator */
+		*separator = 0;
+		separator += 3;
+
+		/* split the line */
+		id_mac = strsplit(id_map, 8, s, " \t\r\n", 0, 1);
+		fs_mac = strsplit(fs_map, 8, separator, " \t\r\n", 0, 1);
+
+		if (id_mac < 5 || fs_mac < 2)
+			continue;
+
+		/* mount point must contain the directory */
+		unescape_mount(id_map[4]);
+		const char* mp = id_map[4];
+		size_t mp_len = strlen(mp);
+		if (strncmp(resolved, mp, mp_len) != 0)
+			continue;
+		if (mp_len > 1 && resolved[mp_len] != '/' && resolved[mp_len] != 0)
+			continue;
+
+		/* match the device backing the path, not a hidden parent mount */
+		if (strcmp(fs_map[0], "zfs") != 0
+			|| sscanf(id_map[2], "%u:%u", &mount_major, &mount_minor) != 2
+			|| mount_major != major(st.st_dev) || mount_minor != minor(st.st_dev))
+			continue;
+
+		/* use the visible mount, including a legacy mount under a parent dataset */
+		if (mp_len > best_len) {
+			best_len = mp_len;
+			unescape_mount(fs_map[1]);
+			pathcpy(dataset, dataset_size, fs_map[1]);
+			pathcpy(mount_point, mount_point_size, mp);
+		}
+	}
+
+	int error = ferror(fd);
+	if (fclose(fd) != 0 || error)
+		return -1;
+
+	return best_len == 0 ? -1 : 0;
+}
+
 static int extract_zfs(const char* dir, char* dataset, size_t dataset_size, char* uuid, size_t uuid_size, char* mount_point, size_t mount_point_size)
 {
 	char resolved[PATH_MAX];
-
-	const char* zfs = find_zfs();
-	if (!zfs) {
-		/* LCOV_EXCL_START */
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
+	char mounted_dataset[PATH_MAX];
+	char mounted_point[PATH_MAX];
 
 	if (realpath(dir, resolved) == 0) {
 		/* LCOV_EXCL_START */
@@ -988,67 +1055,66 @@ static int extract_zfs(const char* dir, char* dataset, size_t dataset_size, char
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* list all ZFS filesystems in one shot */
-	const char* argv[] = {
-		zfs,
-		"list",
-		"-H",
-		"-o",
-		"name,guid,mountpoint",
-		"-t",
-		"filesystem",
-		0
-	};
-
-	OS_FILE* fp = os_popen(argv);
-	if (!fp) {
-		/* LCOV_EXCL_START */
+	if (extract_zfs_mount(resolved, mounted_dataset, sizeof(mounted_dataset), mounted_point, sizeof(mounted_point)) != 0)
 		return -1;
-		/* LCOV_EXCL_STOP */
-	}
 
-	size_t best_len = 0;
-	while (1) {
-		char buf[PATH_MAX * 2 + 64];
-		char* map[3];
-		unsigned mac;
+	if (uuid) {
+		const char* zfs = find_zfs();
+		if (!zfs)
+			return -1;
 
-		char* s = os_fgets(buf, sizeof(buf), fp);
-		if (s == 0)
-			break;
+		const char* argv[] = {
+			zfs,
+			"list",
+			"-H",
+			"-o",
+			"guid",
+			"-t",
+			"filesystem",
+			mounted_dataset,
+			0
+		};
 
-		/* split the line */
-		mac = strsplit(map, 3, s, "\t\r\n", 0, 1);
+		OS_FILE* fp = os_popen(argv);
+		if (!fp)
+			return -1;
 
-		if (mac < 3)
-			continue;
+		int found = 0;
+		while (1) {
+			char buf[64];
+			char* s = os_fgets(buf, sizeof(buf), fp);
+			if (s == 0)
+				break;
 
-		const char* mp = map[2];
-		size_t mp_len = strlen(mp);
-		if (strncmp(resolved, mp, mp_len) != 0)
-			continue;
-		if (mp_len > 1 && resolved[mp_len] != '/' && resolved[mp_len] != 0)
-			continue;
-
-		/* keep the longest (innermost) match */
-		if (mp_len > best_len) {
-			best_len = mp_len;
-			if (dataset)
-				pathcpy(dataset, dataset_size, map[0]);
-			if (uuid)
-				pathcpy(uuid, uuid_size, map[1]);
-			if (mount_point)
-				pathcpy(mount_point, mount_point_size, map[2]);
+			buf[strcspn(buf, "\r\n")] = 0;
+			if (!found && buf[0] != 0) {
+				pathcpy(uuid, uuid_size, buf);
+				found = 1;
+			}
 		}
+
+		/* read to EOF so closing the pipe does not interrupt zfs list */
+		int ret = os_pclose(fp);
+		if (ret < 0) {
+			/* LCOV_EXCL_START */
+			log_error(errno, "Failed to close ZFS dataset list for '%s'. %s.\n", dir, strerror(errno));
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
+			log_error(ESOFT, "Failed to list ZFS dataset '%s' (status %d).\n", mounted_dataset, ret);
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+		if (!found)
+			return -1;
 	}
 
-	os_pclose(fp);
-
-	if (best_len == 0) {
-		/* LCOV_EXCL_START */
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
+	if (dataset)
+		pathcpy(dataset, dataset_size, mounted_dataset);
+	if (mount_point)
+		pathcpy(mount_point, mount_point_size, mounted_point);
 
 	return 0;
 }
@@ -1855,6 +1921,12 @@ static int devuuid_bcachefs(uint64_t device, const char* dir, char* uuid, size_t
 #if HAVE_LINUX_DEVICE
 int devuuid_zfs(uint64_t device, const char* dir, char* uuid, size_t uuid_size)
 {
+	struct statfs sfs;
+
+	/* only report ZFS lookup failures after identifying the filesystem */
+	if (statfs(dir, &sfs) != 0 || statfs_type(&sfs) != ZFS_SUPER_MAGIC)
+		return -1;
+
 	if (extract_zfs(dir, 0, 0, uuid, uuid_size, 0, 0) != 0)
 		return -1;
 
