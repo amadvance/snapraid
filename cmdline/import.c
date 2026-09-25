@@ -224,33 +224,20 @@ static void import_dealloc(struct snapraid_state* state, const char* dir, struct
 		block->offset = offset;
 		block->size = read_size;
 
-		hash_copy(block->hash, dealloc->blockhash + i * BLOCK_HASH_SIZE);
+		if (dealloc->block[i].prev) {
+			hash_invalid_set(block->hash);
+			hash_copy(block->prevhash, dealloc->block[i].hash);
 
-		/* do not insert invalid hashes */
-		if (!hash_is_invalid(block->hash)) {
-			tommy_hashdyn_insert(&state->importset, &block->nodeset, block, import_block_hash(block->hash));
-
-			/* if we are in a rehash state */
-			if (state->prevhash != HASH_UNDEFINED) {
-				/*
-				 * The deallocation record stores only one digest per block without
-				 * recording which hash algorithm generated it. To avoid disk I/O at
-				 * startup, index the stored digest under both algorithms.
-				 *
-				 * This is safe against false positives because state_import_fetch()
-				 * validates candidate bytes with the requested algorithm upon read.
-				 *
-				 * Note that cross-generation matches (an old-hash deallocation supplying
-				 * a new-hash block, or vice-versa) will miss in hash lookup and fall
-				 * back to parity reconstruction. Only same-generation matches will succeed.
-				 */
-				hash_copy(block->prevhash, block->hash);
+			/* do not insert invalid hashes */
+			if (!hash_is_invalid(block->prevhash))
 				tommy_hashdyn_insert(&state->previmportset, &block->prevnodeset, block, import_block_hash(block->prevhash));
-			} else {
-				hash_invalid_set(block->prevhash);
-			}
 		} else {
+			hash_copy(block->hash, dealloc->block[i].hash);
 			hash_invalid_set(block->prevhash);
+
+			/* do not insert invalid hashes */
+			if (!hash_is_invalid(block->hash))
+				tommy_hashdyn_insert(&state->importset, &block->nodeset, block, import_block_hash(block->hash));
 		}
 
 		offset += read_size;

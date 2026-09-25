@@ -18,6 +18,7 @@ void state_rehash(struct snapraid_state* state)
 {
 	block_off_t blockmax;
 	block_off_t i;
+	int has_pending_dealloc = 0;
 
 	blockmax = parity_allocated_size(state);
 
@@ -38,8 +39,17 @@ void state_rehash(struct snapraid_state* state)
 		/* LCOV_EXCL_STOP */
 	}
 
+	/* deleted-only positions are not counted in unsynced_blocks, but their hashes still need the current generation */
+	for (tommy_node* node = state->disklist; node != 0; node = node->next) {
+		struct snapraid_disk* disk = node->data;
+		if (!tommy_list_empty(&disk->dealloclist)) {
+			has_pending_dealloc = 1;
+			break;
+		}
+	}
+
 	/* a rehash can start only from a fully synchronized state */
-	if (state->unsynced_blocks != 0) {
+	if (state->unsynced_blocks != 0 || has_pending_dealloc) {
 		/* LCOV_EXCL_START */
 		log_tag("summary:exit:sync_required\n");
 		log_fatal(EUSER, "You cannot start a rehash with an incomplete sync.\n");

@@ -495,7 +495,7 @@ struct snapraid_file* file_alloc(unsigned block_size, const char* sub, data_off_
 	file->mtime_nsec = mtime_nsec;
 	file->inode = inode;
 	file->flag = 0;
-	file->blockvec = nalloc_nofail((size_t)file->blockmax, block_sizeof());
+	file->blockvec = nalloc_nofail(file->blockmax, block_sizeof());
 
 	return file;
 }
@@ -522,7 +522,7 @@ struct snapraid_file* file_dup(struct snapraid_file* copy)
 	file->mtime_nsec = copy->mtime_nsec;
 	file->inode = copy->inode;
 	file->flag = copy->flag;
-	file->blockvec = nalloc_nofail((size_t)file->blockmax, block_sizeof());
+	file->blockvec = nalloc_nofail(file->blockmax, block_sizeof());
 
 	for (i = 0; i < file->blockmax; ++i) {
 		struct snapraid_block* block = file_block(file, i);
@@ -873,39 +873,52 @@ struct snapraid_dealloc* dealloc_alloc(unsigned block_size, const char* sub, dat
 		exit(EXIT_FAILURE);
 	}
 
-	dealloc = malloc_nofail(sizeof(struct snapraid_dealloc));
+	dealloc = malloc_nofail(sizeof(struct snapraid_dealloc) + blockmax * sizeof(struct snapraid_dealloc_block));
 	dealloc->sub = strdup_nofail(sub);
 	dealloc->size = size;
 	dealloc->mtime_sec = mtime_sec;
 	dealloc->mtime_nsec = mtime_nsec;
 	dealloc->blockmax = blockmax;
-	dealloc->blockhash = nalloc_nofail((size_t)dealloc->blockmax, BLOCK_HASH_SIZE);
 
 	return dealloc;
 }
 
-void dealloc_import(struct snapraid_dealloc* dealloc, struct snapraid_file* file)
+void dealloc_import(tommy_arrayblkof* infoarr, struct snapraid_disk* disk, struct snapraid_dealloc* dealloc, struct snapraid_file* file)
 {
 	assert(dealloc->blockmax == file->blockmax);
 
 	/* for all the blocks of the file */
 	for (block_off_t i = 0; i < dealloc->blockmax; ++i) {
 		struct snapraid_block* block = fs_file2block_get(file, i);
-		unsigned char* hash = dealloc->blockhash + i * BLOCK_HASH_SIZE;
+		struct snapraid_dealloc_block* dealloc_block = &dealloc->block[i];
+		unsigned block_state = block_state_get(block);
 
-		unsigned state = block_state_get(block);
-		switch (state) {
+		switch (block_state) {
 		case BLOCK_STATE_BLK :
 		case BLOCK_STATE_REP :
-		case BLOCK_STATE_REBUILD :
-			hash_copy(hash, block->hash);
+		case BLOCK_STATE_REBUILD : {
+			block_off_t parity_pos = fs_file2par_find(disk, file, i);
+			snapraid_info info;
+
+			if (parity_pos == POS_NULL) {
+				/* LCOV_EXCL_START */
+				log_fatal(EINTERNAL, "Internal inconsistency: Missing parity position for dealloc block %" PRIu64 "\n", i);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			info = info_get(infoarr, parity_pos);
+			dealloc_block->prev = info_get_rehash(info);
+			hash_copy(dealloc_block->hash, block->hash);
 			break;
+		}
 		case BLOCK_STATE_CHG :
-			hash_invalid_set(hash);
+			dealloc_block->prev = 0;
+			hash_invalid_set(dealloc_block->hash);
 			break;
 		default :
 			/* LCOV_EXCL_START */
-			log_fatal(EINTERNAL, "Internal inconsistency: State for dealloc block %" PRIu64 " state %u\n", i, state);
+			log_fatal(EINTERNAL, "Internal inconsistency: State for dealloc block %" PRIu64 " state %u\n", i, block_state);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -917,7 +930,6 @@ void dealloc_free(void* void_dealloc)
 	struct snapraid_dealloc* dealloc = void_dealloc;
 
 	free(dealloc->sub);
-	free(dealloc->blockhash);
 	free(dealloc);
 }
 

@@ -616,7 +616,7 @@ static void scan_file_remove(struct snapraid_scan* scan, struct snapraid_file* f
 	if (keep_track) {
 		struct snapraid_dealloc* dealloc = dealloc_alloc(scan->state->block_size, file->sub, file->size, file->mtime_sec, file->mtime_nsec);
 
-		dealloc_import(dealloc, file);
+		dealloc_import(&scan->state->infoarr, disk, dealloc, file);
 
 		/* insert the dealloc in the dealloc containers */
 		tommy_list_insert_tail(&disk->dealloclist, &dealloc->nodelist, dealloc);

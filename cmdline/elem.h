@@ -369,6 +369,14 @@ struct snapraid_dir {
 };
 
 /**
+ * Deallocated block.
+ */
+struct snapraid_dealloc_block {
+	unsigned char prev; /**< If the hash uses the previous hash generation. */
+	unsigned char hash[HASH_MAX]; /**< Hash of the block. Only BLOCK_HASH_SIZE bytes are significant. */
+};
+
+/**
  * Deallocated file.
  */
 struct snapraid_dealloc {
@@ -377,10 +385,11 @@ struct snapraid_dealloc {
 	int64_t mtime_sec; /**< Modification time. */
 	int mtime_nsec; /**< Modification time nanoseconds. In the range 0 <= x < 1,000,000,000, or STAT_NSEC_INVALID if not present. */
 	block_off_t blockmax; /**< Number of blocks. */
-	unsigned char* blockhash; /**< Hash of all blocks. */
 
 	/* nodes for data structures */
 	tommy_node nodelist;
+
+	struct snapraid_dealloc_block block[]; /**< Blocks of the file. */
 };
 
 /**
@@ -1126,7 +1135,7 @@ void dealloc_free(void* void_dealloc);
 /**
  * Import file hash in the dealloc.
  */
-void dealloc_import(struct snapraid_dealloc* dealloc, struct snapraid_file* file);
+void dealloc_import(tommy_arrayblkof* infoarr, struct snapraid_disk* disk, struct snapraid_dealloc* dealloc, struct snapraid_file* file);
 
 /**
  * Allocate a disk.

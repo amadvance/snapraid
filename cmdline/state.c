@@ -3075,11 +3075,31 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 
 				log_tag("content_info:dealloc_entry:%s:%s:%" PRIu64 ":%" PRIu64 ":%u\n", disk->name, esc_tag(dealloc->sub), dealloc->size, dealloc->mtime_sec, dealloc->mtime_nsec);
 
-				/* read all hashes */
+				/* read all hashes with their generation */
 				for (block_off_t k = 0; k < dealloc->blockmax; ++k) {
-					unsigned char* hash = dealloc->blockhash + k * BLOCK_HASH_SIZE;
+					struct snapraid_dealloc_block* block = &dealloc->block[k];
 
-					ret = sread(f, hash, BLOCK_HASH_SIZE);
+					c = sgetc(f);
+					if (c == 'c') {
+						block->prev = 0;
+					} else if (c == 'p') {
+						if (state->prevhash == HASH_UNDEFINED) {
+							/* LCOV_EXCL_START */
+							decoding_error(path, f);
+							log_fatal(EINTERNAL, "Internal inconsistency: Previous dealloc hash without previous checksum!\n");
+							os_abort();
+							/* LCOV_EXCL_STOP */
+						}
+						block->prev = 1;
+					} else {
+						/* LCOV_EXCL_START */
+						decoding_error(path, f);
+						log_fatal(ECONTENT, "Invalid dealloc hash type!\n");
+						os_abort();
+						/* LCOV_EXCL_STOP */
+					}
+
+					ret = sread(f, block->hash, BLOCK_HASH_SIZE);
 					if (ret < 0) {
 						/* LCOV_EXCL_START */
 						decoding_error(path, f);
@@ -3889,7 +3909,7 @@ struct state_write_context {
 	block_off_t blockmax;
 	time_t info_oldest;
 	time_t info_now;
-	int info_has_rehash;
+	int has_prevhash_data;
 	uint64_t count_unsynced;
 	STREAM* f;
 	int first;
@@ -3963,7 +3983,7 @@ static void* state_write_thread(void* arg)
 	block_off_t blockmax = context->blockmax;
 	time_t info_oldest = context->info_oldest;
 	time_t info_now = context->info_now;
-	int info_has_rehash = context->info_has_rehash;
+	int has_prevhash_data = context->has_prevhash_data;
 	STREAM* f = context->f;
 	uint32_t crc;
 	uint64_t t64;
@@ -4035,10 +4055,9 @@ static void* state_write_thread(void* arg)
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* previous hash only present */
+	/* previous hash is also needed by deallocated blocks after active rehash positions disappear */
 	if (state->prevhash != HASH_UNDEFINED) {
-		/* if at least one rehash tag found, we have to save the previous hash */
-		if (info_has_rehash) {
+		if (has_prevhash_data) {
 			sputc('C', f);
 			if (state->prevhash == HASH_MURMUR3) {
 				sputc('u', f);
@@ -4393,8 +4412,13 @@ static void* state_write_thread(void* arg)
 				if (context->first)
 					log_tag("content_info:dealloc_entry:%s:%s:%" PRIu64 ":%" PRIu64 ":%u\n", disk->name, esc_tag(dealloc->sub), dealloc->size, dealloc->mtime_sec, dealloc->mtime_nsec);
 
-				/* deallocated hashes are already contiguous in memory */
-				swrite(dealloc->blockhash, (size_t)dealloc->blockmax * BLOCK_HASH_SIZE, f);
+				/* write all hashes with their generation */
+				for (block_off_t k = 0; k < dealloc->blockmax; ++k) {
+					struct snapraid_dealloc_block* block = &dealloc->block[k];
+
+					sputc(block->prev ? 'p' : 'c', f);
+					swrite(block->hash, BLOCK_HASH_SIZE, f);
+				}
 			}
 
 			if (serror(f)) {
@@ -4567,6 +4591,7 @@ static void state_write_content(struct snapraid_state* state, struct state_write
 	time_t content_mtime;
 	int info_has_rehash;
 	int state_has_rebuild;
+	int has_dealloc;
 	int mapping_idx;
 	block_off_t idx;
 	uint32_t crc;
@@ -4669,22 +4694,21 @@ static void state_write_content(struct snapraid_state* state, struct state_write
 	}
 
 	int content_version = 3;
+	has_dealloc = 0;
 
 	/*
 	 * Force at least version 3 as we want to always store the parity size.
 	 * If there is a REBUILD block or a dealloc list, force version 4.
 	 */
-	if (state_has_rebuild) {
-		content_version = 4;
-	} else {
-		for (i = state->disklist; i != 0; i = i->next) {
-			struct snapraid_disk* disk = i->data;
-			if (!tommy_list_empty(&disk->dealloclist)) {
-				content_version = 4;
-				break;
-			}
+	for (i = state->disklist; i != 0; i = i->next) {
+		struct snapraid_disk* disk = i->data;
+		if (!tommy_list_empty(&disk->dealloclist)) {
+			has_dealloc = 1;
+			break;
 		}
 	}
+	if (state_has_rebuild || has_dealloc)
+		content_version = 4;
 
 	fs_single_thread(state, 0);
 
@@ -4735,7 +4759,7 @@ static void state_write_content(struct snapraid_state* state, struct state_write
 		context->blockmax = blockmax;
 		context->info_oldest = info_oldest;
 		context->info_now = info_now;
-		context->info_has_rehash = info_has_rehash;
+		context->has_prevhash_data = info_has_rehash || has_dealloc;
 		context->count_unsynced = count_unsynced;
 		context->f = f;
 		context->first = first;
@@ -4914,7 +4938,7 @@ static void state_write_content(struct snapraid_state* state, struct state_write
 	context->blockmax = blockmax;
 	context->info_oldest = info_oldest;
 	context->info_now = info_now;
-	context->info_has_rehash = info_has_rehash;
+	context->has_prevhash_data = info_has_rehash || has_dealloc;
 	context->count_unsynced = count_unsynced;
 	context->f = f;
 	context->first = 1;
