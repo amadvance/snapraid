@@ -1915,6 +1915,26 @@ Kända problem (Known Issues)
 	och återställning krävs bör du undvika att ändra datadiskarna innan du kör
 	`check` eller `fix`.
 
+  Reserverade fil- och katalognamn
+	SnapRAID reserverar vissa fil-, katalog- och ögonblicksbildnamn för sina
+	interna operationer. Använd inte dessa namn för användardata:
+
+	.snapraidignore - Lokal fil med exkluderingsregler.
+	.snapraid - Katalog för container av ögonblicksbilder.
+	snapraid-* - ZFS-ögonblicksbildnamn som hanteras av SnapRAID.
+	*.unrecoverable - Skadade filer satta i karantän under återställning.
+	CONTENT.tmp - Temporär fil för content-uppdateringar.
+	CONTENT.lock - Content-låsfil.
+	PARITY.spaceholder - Temporär platshållarfil under paritetstilldelning
+		i Windows.
+
+	Om du använder dessa namn för orelaterade data kan filer eller ögonblicksbilder
+	ignoreras, feltolkas som metadata, skrivas över, döpas om eller raderas.
+
+	I Windows är även alla skiftlägesvarianter reserverade, även i NTFS-kataloger
+	som konfigurerats för att skilja på stora och små bokstäver (till exempel
+	.SNAPRAIDIGNORE, .SnapRaid, CONTENT.TMP och CONTENT.Lock).
+
 Översättning (Translation)
 	Detta dokument är en automatisk översättning av den engelska manualen.
 	Se den engelska manualen för den officiella versionen.

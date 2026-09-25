@@ -1924,6 +1924,27 @@ Probleme Cunoscute (Known Issues)
 	disc a cedat și este necesară recuperarea, evitați modificarea discurilor
 	de date înainte de a rula `check` sau `fix`.
 
+  Nume rezervate de fișiere și directoare
+	SnapRAID rezervă anumite nume de fișiere, directoare și snapshot-uri pentru
+	operațiunile sale interne. Nu utilizați aceste nume pentru datele utilizatorului:
+
+	.snapraidignore - Fișier local cu reguli de excludere.
+	.snapraid - Director container pentru snapshot-uri.
+	snapraid-* - Nume de snapshot-uri ZFS gestionate de SnapRAID.
+	*.unrecoverable - Fișiere deteriorate puse în carantină în timpul recuperării.
+	CONTENT.tmp - Fișier temporar pentru actualizările fișierului content.
+	CONTENT.lock - Fișier de blocare pentru fișierul content.
+	PARITY.spaceholder - Fișier temporar pentru rezervarea spațiului în timpul
+		alocării parității pe Windows.
+
+	Utilizarea acestor nume pentru date fără legătură poate face ca fișierele sau
+	snapshot-urile să fie ignorate, interpretate eronat ca metadate, suprascrise,
+	redenumite sau șterse.
+
+	Pe Windows, toate variantele majuscule/minuscule sunt de asemenea rezervate,
+	chiar și în directoarele NTFS configurate pentru diferențierea majusculelor de
+	minuscule (de exemplu, .SNAPRAIDIGNORE, .SnapRaid, CONTENT.TMP și CONTENT.Lock).
+
 Traducere (Translation)
 	Acest document este o traducere automată a manualului în limba engleză.
 	Consultați manualul în limba engleză pentru versiunea oficială.

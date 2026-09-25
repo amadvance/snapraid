@@ -2422,6 +2422,42 @@ If all disks are healthy, completing the interrupted \`sync\` before making
 further changes removes this ambiguity. If a disk has failed and recovery
 is required, avoid modifying any data disks before running \`check\` or
 \`fix\`.
+.SS Reserved file and directory names 
+SnapRAID reserves some file, directory, and snapshot names for its internal
+operation. Do not use these names for user data:
+.RS 0
+.PD 0
+.HP 4
+.I .snapraidignore
+Local exclusion\-rules file.
+.HP 4
+.I .snapraid
+Snapshot container directory.
+.HP 4
+.I snapraid\-*
+SnapRAID\-managed ZFS snapshot names.
+.HP 4
+.I *.unrecoverable
+Damaged files quarantined during recovery.
+.HP 4
+.I CONTENT.tmp
+Temporary file for content updates.
+.HP 4
+.I CONTENT.lock
+Content lock file.
+.HP 4
+.I PARITY.spaceholder
+Temporary space\-holder file during Windows parity
+allocation.
+.PD
+.RE
+.PP
+Using these names for unrelated data may cause files or snapshots to be
+ignored, misinterpreted as metadata, overwritten, renamed, or deleted.
+.PP
+On Windows, all case variants are reserved as well, even in NTFS directories
+configured for case\-sensitive operation (for example, .SNAPRAIDIGNORE,
+.SnapRaid, CONTENT.TMP, and CONTENT.Lock).
 .SH COPYRIGHT 
 This file is Copyright (C) 2026 Andrea Mazzoleni
 .SH SEE ALSO 

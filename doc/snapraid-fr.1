@@ -2563,6 +2563,44 @@ Si tous les disques sont sains, achever le \`sync\` interrompu avant
 d\'apporter d\'autres modifications élimine cette ambiguïté. Si un disque
 est tombé en panne et qu\'une récupération est requise, évitez de modifier
 les disques de données avant d\'exécuter \`check\` ou \`fix\`.
+.SS Noms de fichiers et de répertoires réservés 
+SnapRAID réserve certains noms de fichiers, répertoires et instantanés pour son
+fonctionnement interne. N\'utilisez pas ces noms pour des données utilisateur :
+.RS 0
+.PD 0
+.HP 4
+.I .snapraidignore
+Fichier local de règles d\'exclusion.
+.HP 4
+.I .snapraid
+Répertoire conteneur d\'instantanés.
+.HP 4
+.I snapraid\-*
+Noms d\'instantanés ZFS gérés par SnapRAID.
+.HP 4
+.I *.unrecoverable
+Fichiers endommagés mis en quarantaine lors de la
+récupération.
+.HP 4
+.I CONTENT.tmp
+Fichier temporaire pour les mises à jour du fichier content.
+.HP 4
+.I CONTENT.lock
+Fichier de verrouillage du fichier content.
+.HP 4
+.I PARITY.spaceholder
+Fichier temporaire réservant de l\'espace lors de
+l\'allocation de parité sous Windows.
+.PD
+.RE
+.PP
+L\'utilisation de ces noms pour des données non liées peut entraîner l\'ignorance,
+une mauvaise interprétation en tant que métadonnées, l\'écrasement, le renommage
+ou la suppression de fichiers ou d\'instantanés.
+.PP
+Sous Windows, toutes les variantes de casse sont également réservées, même
+dans les répertoires NTFS configurés pour respecter la casse (par exemple,
+.SNAPRAIDIGNORE, .SnapRaid, CONTENT.TMP et CONTENT.Lock).
 .SH TRADUCTION (TRANSLATION) 
 Ce document est une traduction automatique du manuel en anglais.
 Veuillez vous référer au manuel en anglais pour la version officielle.

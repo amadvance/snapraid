@@ -2565,6 +2565,45 @@ unterbrochenen \`sync\` vor weiteren Änderungen diese Unklarheit. Wenn eine
 Festplatte ausgefallen ist und eine Wiederherstellung erforderlich ist,
 sollten vor dem Ausführen von \`check\` oder \`fix\` keine Änderungen an den
 Datenfestplatten vorgenommen werden.
+.SS Reservierte Datei\- und Verzeichnisnamen 
+SnapRAID reserviert einige Datei\-, Verzeichnis\- und Snapshot\-Namen für seine
+internen Operationen. Verwenden Sie diese Namen nicht für Benutzerdaten:
+.RS 0
+.PD 0
+.HP 4
+.I .snapraidignore
+Lokale Ausschlussregeldatei.
+.HP 4
+.I .snapraid
+Snapshot\-Container\-Verzeichnis.
+.HP 4
+.I snapraid\-*
+Von SnapRAID verwaltete ZFS\-Snapshot\-Namen.
+.HP 4
+.I *.unrecoverable
+Beschädigte Dateien, die während der Wiederherstellung
+unter Quarantäne gestellt wurden.
+.HP 4
+.I CONTENT.tmp
+Temporäre Datei für Content\-Aktualisierungen.
+.HP 4
+.I CONTENT.lock
+Content\-Sperrdatei.
+.HP 4
+.I PARITY.spaceholder
+Temporäre Platzhalterdatei während der
+Paritätszuweisung unter Windows.
+.PD
+.RE
+.PP
+Die Verwendung dieser Namen für nicht zugehörige Daten kann dazu führen,
+dass Dateien oder Snapshots ignoriert, als Metadaten fehlinterpretiert,
+überschrieben, umbenannt oder gelöscht werden.
+.PP
+Unter Windows sind alle Varianten der Groß\- und Kleinschreibung ebenfalls
+reserviert, selbst in NTFS\-Verzeichnissen, die für die Unterscheidung von
+Groß\- und Kleinschreibung konfiguriert sind (z. B. .SNAPRAIDIGNORE,
+.SnapRaid, CONTENT.TMP und CONTENT.Lock).
 .SH ÜBERSETZUNG (TRANSLATION) 
 Dieses Dokument ist eine automatische Übersetzung des englischen Handbuchs.
 Die maßgebliche Version finden Sie im englischen Handbuch.

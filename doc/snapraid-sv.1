@@ -2413,6 +2413,42 @@ Om alla diskar är felfria elimineras denna tvetydighet genom att slutföra
 det avbrutna \`sync\` innan fler ändringar görs. Om en disk har gått sönder
 och återställning krävs bör du undvika att ändra datadiskarna innan du kör
 \`check\` eller \`fix\`.
+.SS Reserverade fil\- och katalognamn 
+SnapRAID reserverar vissa fil\-, katalog\- och ögonblicksbildnamn för sina
+interna operationer. Använd inte dessa namn för användardata:
+.RS 0
+.PD 0
+.HP 4
+.I .snapraidignore
+Lokal fil med exkluderingsregler.
+.HP 4
+.I .snapraid
+Katalog för container av ögonblicksbilder.
+.HP 4
+.I snapraid\-*
+ZFS\-ögonblicksbildnamn som hanteras av SnapRAID.
+.HP 4
+.I *.unrecoverable
+Skadade filer satta i karantän under återställning.
+.HP 4
+.I CONTENT.tmp
+Temporär fil för content\-uppdateringar.
+.HP 4
+.I CONTENT.lock
+Content\-låsfil.
+.HP 4
+.I PARITY.spaceholder
+Temporär platshållarfil under paritetstilldelning
+i Windows.
+.PD
+.RE
+.PP
+Om du använder dessa namn för orelaterade data kan filer eller ögonblicksbilder
+ignoreras, feltolkas som metadata, skrivas över, döpas om eller raderas.
+.PP
+I Windows är även alla skiftlägesvarianter reserverade, även i NTFS\-kataloger
+som konfigurerats för att skilja på stora och små bokstäver (till exempel
+.SNAPRAIDIGNORE, .SnapRaid, CONTENT.TMP och CONTENT.Lock).
 .SH ÖVERSäTTNING (TRANSLATION) 
 Detta dokument är en automatisk översättning av den engelska manualen.
 Se den engelska manualen för den officiella versionen.

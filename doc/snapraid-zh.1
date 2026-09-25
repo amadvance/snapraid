@@ -2159,6 +2159,41 @@ SnapRAID 仅对选定的块进行操作，而不执行文件级别的最终化�
 如果所有磁盘都运行良好，在进行进一步更改之前完成中断的 \`sync\` 可以消除
 这种不确定性。如果磁盘发生故障且需要恢复，在运行 \`check\` 或 \`fix\` 之前
 请避免修改任何数据磁盘。
+.SS 保留的文件和目录名称 
+SnapRAID 保留了一些文件、目录和快照名称用于其内部操作。请勿将这些名称
+用于用户数据：
+.RS 0
+.PD 0
+.HP 4
+.I .snapraidignore
+本地排除规则文件。
+.HP 4
+.I .snapraid
+快照容器目录。
+.HP 4
+.I snapraid\-*
+由 SnapRAID 管理的 ZFS 快照名称。
+.HP 4
+.I *.unrecoverable
+在恢复过程中被隔离的受损文件。
+.HP 4
+.I CONTENT.tmp
+用于 content 更新的临时文件。
+.HP 4
+.I CONTENT.lock
+content 锁定文件。
+.HP 4
+.I PARITY.spaceholder
+在 Windows 上分配奇偶校验期间使用的临时占位文件。
+.PD
+.RE
+.PP
+将这些名称用于无关数据可能会导致文件或快照被忽略、被误认为是元数据、
+被覆盖、重命名或删除。
+.PP
+在 Windows 上，所有大小写变体也都被保留，即使在配置为区分大小写的 NTFS
+目录中也是如此（例如 .SNAPRAIDIGNORE、.SnapRaid、CONTENT.TMP 和
+CONTENT.Lock）。
 .SH 翻译 (TRANSLATION) 
 本文档是英文手册的自动翻译。
 请参阅英文手册以获取权威版本。

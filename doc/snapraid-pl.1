@@ -2427,6 +2427,43 @@ Jeśli wszystkie dyski są sprawne, dokończenie przerwanego \`sync\` przed
 wprowadzeniem dalszych zmian usuwa tę niejednoznaczność. Jeśli nastąpiła
 awaria dysku i konieczne jest odzyskanie danych, należy unikać modyfikacji
 dysków danych przed uruchomieniem \`check\` lub \`fix\`.
+.SS Zastrzeżone nazwy plików i katalogów 
+SnapRAID rezerwuje niektóre nazwy plików, katalogów i migawek do swoich
+wewnętrznych operacji. Nie używaj tych nazw dla danych użytkownika:
+.RS 0
+.PD 0
+.HP 4
+.I .snapraidignore
+Lokalny plik reguł wykluczeń.
+.HP 4
+.I .snapraid
+Katalog kontenera migawek.
+.HP 4
+.I snapraid\-*
+Nazwy migawek ZFS zarządzanych przez SnapRAID.
+.HP 4
+.I *.unrecoverable
+Uszkodzone pliki objęte kwarantanną podczas odzyskiwania.
+.HP 4
+.I CONTENT.tmp
+Plik tymczasowy do aktualizacji pliku content.
+.HP 4
+.I CONTENT.lock
+Plik blokady pliku content.
+.HP 4
+.I PARITY.spaceholder
+Tymczasowy plik rezerwacji miejsca podczas alokacji
+parzystości w systemie Windows.
+.PD
+.RE
+.PP
+Użycie tych nazw dla niepowiązanych danych może spowodować, że pliki lub
+migawki zostaną zignorowane, błędnie zinterpretowane jako metadane,
+nadpisane, przemianowane lub usunięte.
+.PP
+W systemie Windows wszystkie warianty wielkości liter są również zastrzeżone,
+nawet w katalogach NTFS skonfigurowanych do rozróżniania wielkości liter
+(na przykład .SNAPRAIDIGNORE, .SnapRaid, CONTENT.TMP i CONTENT.Lock).
 .SH TłUMACZENIE (TRANSLATION) 
 Ten dokument jest automatycznym tłumaczeniem angielskiej instrukcji.
 Wersję oficjalną stanowi oryginalny podręcznik w języku angielskim.

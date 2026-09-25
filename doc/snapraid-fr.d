@@ -2062,6 +2062,28 @@ Problèmes connus (Known Issues)
 	est tombé en panne et qu'une récupération est requise, évitez de modifier
 	les disques de données avant d'exécuter `check` ou `fix`.
 
+  Noms de fichiers et de répertoires réservés
+	SnapRAID réserve certains noms de fichiers, répertoires et instantanés pour son
+	fonctionnement interne. N'utilisez pas ces noms pour des données utilisateur :
+
+	.snapraidignore - Fichier local de règles d'exclusion.
+	.snapraid - Répertoire conteneur d'instantanés.
+	snapraid-* - Noms d'instantanés ZFS gérés par SnapRAID.
+	*.unrecoverable - Fichiers endommagés mis en quarantaine lors de la
+		récupération.
+	CONTENT.tmp - Fichier temporaire pour les mises à jour du fichier content.
+	CONTENT.lock - Fichier de verrouillage du fichier content.
+	PARITY.spaceholder - Fichier temporaire réservant de l'espace lors de
+		l'allocation de parité sous Windows.
+
+	L'utilisation de ces noms pour des données non liées peut entraîner l'ignorance,
+	une mauvaise interprétation en tant que métadonnées, l'écrasement, le renommage
+	ou la suppression de fichiers ou d'instantanés.
+
+	Sous Windows, toutes les variantes de casse sont également réservées, même
+	dans les répertoires NTFS configurés pour respecter la casse (par exemple,
+	.SNAPRAIDIGNORE, .SnapRaid, CONTENT.TMP et CONTENT.Lock).
+
 Traduction (Translation)
 	Ce document est une traduction automatique du manuel en anglais.
 	Veuillez vous référer au manuel en anglais pour la version officielle.

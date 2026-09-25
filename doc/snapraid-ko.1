@@ -2320,6 +2320,43 @@ SnapRAID가 이전 패리티와 새 패리티의 일치하지 않는 혼합을 �
 완료하면 이러한 불확실성이 제거됩니다. 디스크에 오류가 발생하여 복구가
 필요한 경우 \`check\` 또는 \`fix\`를 실행하기 전에 데이터 디스크를 수정하지
 마십시오.
+.SS 예약된 파일 및 디렉터리 이름 
+SnapRAID는 내부 작업을 위해 일부 파일, 디렉터리 및 스냅샷 이름을
+예약합니다. 사용자 데이터에 이러한 이름을 사용하지 마십시오:
+.RS 0
+.PD 0
+.HP 4
+.I .snapraidignore
+로컬 제외 규칙 파일.
+.HP 4
+.I .snapraid
+스냅샷 컨테이너 디렉터리.
+.HP 4
+.I snapraid\-*
+SnapRAID에서 관리하는 ZFS 스냅샷 이름.
+.HP 4
+.I *.unrecoverable
+복구 중 격리된 손상된 파일.
+.HP 4
+.I CONTENT.tmp
+content 업데이트용 임시 파일.
+.HP 4
+.I CONTENT.lock
+content 잠금 파일.
+.HP 4
+.I PARITY.spaceholder
+Windows 패리티 할당 중 사용되는 임시
+공간 확보 파일.
+.PD
+.RE
+.PP
+관련 없는 데이터에 이러한 이름을 사용하면 파일이나 스냅샷이 무시되거나,
+메타데이터로 잘못 해석되거나, 덮어쓰기되거나, 이름이 바뀌거나, 삭제될 수
+있습니다.
+.PP
+Windows에서는 대소문자를 구분하도록 구성된 NTFS 디렉터리에서도 모든
+대소문자 변형이 마찬가지로 예약됩니다(예: .SNAPRAIDIGNORE, .SnapRaid,
+CONTENT.TMP, CONTENT.Lock).
 .SH 번역 (TRANSLATION) 
 이 문서는 영어 매뉴얼의 자동 번역본입니다.
 공식 버전은 영어 매뉴얼을 참조하십시오.

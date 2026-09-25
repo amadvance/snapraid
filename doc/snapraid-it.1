@@ -2536,6 +2536,44 @@ Se tutti i dischi sono integri, completare il \`sync\` interrotto prima
 di apportare ulteriori modifiche rimuove questa ambiguità. Se un disco
 si è guastato ed è necessario il recupero, evitare di modificare i dischi
 dati prima di eseguire \`check\` o \`fix\`.
+.SS Nomi di file e directory riservati 
+SnapRAID riserva alcuni nomi di file, directory e snapshot per le proprie
+operazioni interne. Non usare questi nomi per i dati utente:
+.RS 0
+.PD 0
+.HP 4
+.I .snapraidignore
+File locale delle regole di esclusione.
+.HP 4
+.I .snapraid
+Directory contenitore degli snapshot.
+.HP 4
+.I snapraid\-*
+Nomi degli snapshot ZFS gestiti da SnapRAID.
+.HP 4
+.I *.unrecoverable
+File danneggiati messi in quarantena durante il ripristino.
+.HP 4
+.I CONTENT.tmp
+File temporaneo per gli aggiornamenti del content.
+.HP 4
+.I CONTENT.lock
+File di blocco per il content.
+.HP 4
+.I PARITY.spaceholder
+File segnaposto temporaneo durante l\'allocazione
+della parità su Windows.
+.PD
+.RE
+.PP
+L\'uso di questi nomi per dati non correlati può causare l\'ignoramento,
+l\'errata interpretazione come metadati, la sovrascrittura, la ridenominazione
+o l\'eliminazione di file o snapshot.
+.PP
+Su Windows, tutte le varianti di maiuscole e minuscole sono anch\'esse
+riservate, anche nelle directory NTFS configurate per il funzionamento con
+distinzione tra maiuscole e minuscole (ad esempio, .SNAPRAIDIGNORE,
+.SnapRaid, CONTENT.TMP e CONTENT.Lock).
 .SH TRADUZIONE (TRANSLATION) 
 Questo documento è una traduzione automatica del manuale in inglese.
 Fare riferimento al manuale in inglese per la versione ufficiale.

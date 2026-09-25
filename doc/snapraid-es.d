@@ -2017,6 +2017,29 @@ Problemas conocidos (Known Issues)
 	y se requiere recuperación, evite modificar los discos de datos antes
 	de ejecutar `check` o `fix`.
 
+  Nombres de archivos y directorios reservados
+	SnapRAID reserva algunos nombres de archivos, directorios e instantáneas para
+	sus operaciones internas. No use estos nombres para datos de usuario:
+
+	.snapraidignore - Archivo local de reglas de exclusión.
+	.snapraid - Directorio contenedor de instantáneas.
+	snapraid-* - Nombres de instantáneas ZFS gestionadas por SnapRAID.
+	*.unrecoverable - Archivos dañados puestos en cuarentena durante la
+		recuperación.
+	CONTENT.tmp - Archivo temporal para actualizaciones de content.
+	CONTENT.lock - Archivo de bloqueo de content.
+	PARITY.spaceholder - Archivo temporal de reserva de espacio durante la
+		asignación de paridad en Windows.
+
+	El uso de estos nombres para datos no relacionados puede hacer que los archivos
+	o instantáneas sean ignorados, interpretados erróneamente como metadatos,
+	sobrescritos, renombrados o eliminados.
+
+	En Windows, todas las variantes de mayúsculas y minúsculas también están
+	reservadas, incluso en directorios NTFS configurados para distinguir entre
+	mayúsculas y minúsculas (por ejemplo, .SNAPRAIDIGNORE, .SnapRaid, CONTENT.TMP
+	y CONTENT.Lock).
+
 Traducción (Translation)
 	Este documento es una traducción automática del manual en inglés.
 	Consulte el manual en inglés para obtener la versión oficial.
