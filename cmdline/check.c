@@ -1822,6 +1822,26 @@ static int file_recover(struct snapraid_state* state, int fix, int partial, bloc
 			/* LCOV_EXCL_STOP */
 		}
 
+		/*
+		 * A recovery write changes the file modification time. With syncedonly,
+		 * later recovery writes are allowed only while the file still matches
+		 * the metadata stored in the content file. Restore the original mtime
+		 * after every successful write so an interruption between blocks does
+		 * not make a partially recovered file appear unsynced on the next run.
+		 */
+		if (state->opt.syncedonly) {
+			ret = handle_utime(failed[j].handle);
+			if (ret == -1) {
+				/* LCOV_EXCL_START */
+				file_flag_set(failed[j].file, FILE_IS_DAMAGED);
+				log_tag("%s:%" PRIu64 ":%s:%s: Time error. %s.\n", es(errno), block_pos, failed[j].disk->name, esc_tag(failed[j].file->sub), strerror(errno));
+				log_fatal_errno(errno, failed[j].disk->name);
+				log_fatal(errno, "Stopping at block %" PRIu64 "\n", block_pos);
+				return -1;
+				/* LCOV_EXCL_STOP */
+			}
+		}
+
 		/* if we are not sure that the recovered content is uptodate */
 		if (failed[j].recovery == RECOVERY_OUTOFDATE)
 			continue;

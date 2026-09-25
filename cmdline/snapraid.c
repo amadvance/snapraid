@@ -1280,6 +1280,20 @@ int snapraid_main(int argc, char* argv[])
 		/* LCOV_EXCL_STOP */
 	}
 
+	if (opt.syncedonly && blockstart_set) {
+		/* LCOV_EXCL_START */
+		log_fatal(EUSER, "You cannot use -S, --start with -e, --filter-error or -b, --filter-block-error\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (opt.syncedonly && blockcount_set) {
+		/* LCOV_EXCL_START */
+		log_fatal(EUSER, "You cannot use -B, --count with -e, --filter-error or -b, --filter-block-error\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
 	if (opt.prehash && opt.force_nocopy) {
 		/* LCOV_EXCL_START */
 		log_fatal(EUSER, "You cannot use the -h, --pre-hash and -N, --force-nocopy options simultaneously\n");
