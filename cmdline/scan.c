@@ -1523,8 +1523,36 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 		tommy_list_insert_tail(&list, &entry->node, entry);
 
 		/* process ignore files */
-		if (pathcmp(".snapraidignore", dd->d_name) == 0)
-			state_load_ignore_file(&scan->local_filter_list, path_next, sub_next);
+		if (pathcmp(".snapraidignore", dd->d_name) == 0) {
+			int d_type;
+#if HAVE_STRUCT_DIRENT_D_TYPE
+			d_type = dd->d_type;
+#else
+			d_type = DT_UNKNOWN;
+#endif
+
+			if (d_type == DT_UNKNOWN) {
+				struct stat st_ignore;
+
+				if (lstat(path_next, &st_ignore) != 0) {
+					/* LCOV_EXCL_START */
+					log_fatal(errno, "Error stating the ignore file '%s'. %s.\n", path_next, strerror(errno));
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
+
+				if (S_ISREG(st_ignore.st_mode))
+					d_type = DT_REG;
+			}
+
+			if (d_type != DT_REG) {
+				log_fatal(EUSER, "Ignore file '%s' is not a regular file.\n", path_next);
+				exit(EXIT_FAILURE);
+			}
+
+			if (state_load_ignore_file(&scan->local_filter_list, path_next, sub_next) != 0)
+				exit(EXIT_FAILURE);
+		}
 	}
 
 	if (closedir(d) != 0) {

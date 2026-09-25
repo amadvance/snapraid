@@ -6695,16 +6695,17 @@ int state_write_barrier(struct snapraid_state* state, struct snapraid_io* io, st
 	return 0;
 }
 
-void state_load_ignore_file(tommy_list* filter_list, const char* path, const char* sub)
+int state_load_ignore_file(tommy_list* filter_list, const char* path, const char* sub)
 {
 	STREAM* f;
 	int line;
+	int error = 0;
 
-	f = sopen_read(path, 0);
+	f = sopen_read(path, STREAM_FLAGS_NOFOLLOW);
 	if (!f) {
 		/* LCOV_EXCL_START */
-		log_error(errno, "Error opening the ignore file '%s'. %s.\n", path, strerror(errno));
-		return;
+		log_fatal(errno, "Error opening the ignore file '%s'. %s.\n", path, strerror(errno));
+		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 
@@ -6721,7 +6722,8 @@ void state_load_ignore_file(tommy_list* filter_list, const char* path, const cha
 		ret = sgetline(f, buffer, sizeof(buffer));
 		if (ret < 0) {
 			/* LCOV_EXCL_START */
-			log_error(EUSER, "Too long line in '%s' at line %u\n", path, line);
+			log_fatal(EUSER, "Too long line in '%s' at line %u\n", path, line);
+			error = 1;
 			break;
 			/* LCOV_EXCL_STOP */
 		}
@@ -6736,7 +6738,8 @@ void state_load_ignore_file(tommy_list* filter_list, const char* path, const cha
 			filter = filter_alloc_file(-1, sub, buffer);
 			if (!filter) {
 				/* LCOV_EXCL_START */
-				log_error(EUSER, "Invalid ignore specification '%s' in '%s' at line %u\n", buffer, path, line);
+				log_fatal(EUSER, "Invalid ignore specification '%s' in '%s' at line %u\n", buffer, path, line);
+				error = 1;
 				break;
 				/* LCOV_EXCL_STOP */
 			}
@@ -6751,7 +6754,8 @@ void state_load_ignore_file(tommy_list* filter_list, const char* path, const cha
 		}
 		if (c != '\n') {
 			/* LCOV_EXCL_START */
-			log_error(EUSER, "Extra data in '%s' at line %u\n", path, line);
+			log_fatal(EUSER, "Extra data in '%s' at line %u\n", path, line);
+			error = 1;
 			break;
 			/* LCOV_EXCL_STOP */
 		}
@@ -6760,11 +6764,19 @@ void state_load_ignore_file(tommy_list* filter_list, const char* path, const cha
 
 	if (serror(f)) {
 		/* LCOV_EXCL_START */
-		log_error(errno, "Error reading the ignore file '%s' at line %u\n", path, line);
+		log_fatal(errno, "Error reading the ignore file '%s' at line %u. %s.\n", path, line, strerror(errno));
+		error = 1;
 		/* LCOV_EXCL_STOP */
 	}
 
-	sclose(f);
+	if (sclose(f) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(errno, "Error closing the ignore file '%s'. %s.\n", path, strerror(errno));
+		error = 1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	return error ? -1 : 0;
 }
 
 static int state_snapshot_dir(struct fssnapshot_struct* fss, const char* name, struct snapraid_disk* disk)

@@ -25,6 +25,8 @@ STREAM* sopen_read(const char* file, int flags)
 	advise_init(&s->advise[0], s->flags & STREAM_FLAGS_ADVISE_MASK);
 
 	int open_flags = O_RDONLY | O_BINARY | advise_flags(&s->advise[0]);
+	if ((s->flags & STREAM_FLAGS_NOFOLLOW) != 0)
+		open_flags |= O_NOFOLLOW;
 
 	pathcpy(s->handle[0].path, sizeof(s->handle[0].path), file);
 	s->handle[0].f = open(file, open_flags);

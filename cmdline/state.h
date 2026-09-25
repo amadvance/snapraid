@@ -438,7 +438,7 @@ int state_thermal_begin(struct snapraid_state* state, time_t now);
 /**
  * Load the ignore file .snapraidignore
  */
-void state_load_ignore_file(tommy_list* filter_list, const char* path, const char* sub);
+int state_load_ignore_file(tommy_list* filter_list, const char* path, const char* sub);
 
 /**
  * Report attributes into the log

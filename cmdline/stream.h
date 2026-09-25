@@ -12,6 +12,7 @@
 
 #define STREAM_FLAGS_ADVISE_MASK 0xFF /**< Low bits containing one of ADVISE_*. */
 #define STREAM_FLAGS_CRC 0x100 /**< Enable the CRC computation. */
+#define STREAM_FLAGS_NOFOLLOW 0x200 /**< Don't follow the final symbolic link on open. */
 
 /**
  * Size of the buffer of the stream.
