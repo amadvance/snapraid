@@ -2429,7 +2429,7 @@ static int fssnapshot_inode(const char* path, uint32_t magic, uint64_t root_inod
 	pathslash(resolved, sizeof(resolved));
 	pathcpy(current_path, sizeof(current_path), resolved);
 
-	/* walk up the directory tree to find the subvolume root (Inode 256) */
+	/* walk up the directory tree to find the requested subvolume root inode */
 	while (1) {
 		struct stat st;
 		if (stat(current_path, &st) != 0) {
@@ -2475,6 +2475,79 @@ static int fssnapshot_inode(const char* path, uint32_t magic, uint64_t root_inod
 			/* LCOV_EXCL_STOP */
 		}
 	}
+}
+
+static int fssnapshot_bcachefs(const char* path, struct fssnapshot_struct* fss)
+{
+	char resolved[PATH_MAX];
+	char current_path[PATH_MAX];
+	struct stat st;
+	struct fsidentity identity;
+
+	if (realpath(path, resolved) == 0)
+		return -1;
+
+	pathslash(resolved, sizeof(resolved));
+	pathcpy(current_path, sizeof(current_path), resolved);
+
+	if (stat(current_path, &st) != 0) {
+		/* LCOV_EXCL_START */
+		log_error(errno, "Error stating '%s'. %s.\n", current_path, strerror(errno));
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (fsidentity(current_path, &st, &identity) != 0) {
+		/* LCOV_EXCL_START */
+		log_error(errno, "Error getting filesystem identity for '%s'. %s.\n", current_path, strerror(errno));
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (identity.subvol == 0) {
+		/* LCOV_EXCL_START */
+		errno = ENOTSUP;
+		log_error(errno, "Bcachefs subvolume identity unavailable for '%s'. %s.\n", current_path, strerror(errno));
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	while (1) {
+		char parent_path[PATH_MAX];
+		struct stat parent_st;
+		struct fsidentity parent_identity;
+
+		pathcpy(parent_path, sizeof(parent_path), current_path);
+		pathup(parent_path);
+
+		if (parent_path[0] == 0)
+			break;
+
+		if (stat(parent_path, &parent_st) != 0) {
+			/* LCOV_EXCL_START */
+			log_error(errno, "Error stating '%s'. %s.\n", parent_path, strerror(errno));
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (fsidentity(parent_path, &parent_st, &parent_identity) != 0) {
+			/* LCOV_EXCL_START */
+			log_error(errno, "Error getting filesystem identity for '%s'. %s.\n", parent_path, strerror(errno));
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+
+		/* a bind mount may share the subvolume ID with its parent */
+		if (parent_identity.subvol != identity.subvol
+			|| parent_identity.mnt_id != identity.mnt_id
+			|| parent_identity.device != identity.device)
+			break;
+
+		pathcpy(current_path, sizeof(current_path), parent_path);
+		st = parent_st;
+	}
+
+	return fssnapshot_inode(path, BCACHEFS_SUPER_MAGIC, st.st_ino, fss);
 }
 #endif
 
@@ -2596,8 +2669,7 @@ int fssnapshot_mount(const char* path, struct fssnapshot_struct* fss)
 		/* btrfs reserved inode 256 for subvolume roots */
 		ret = fssnapshot_inode(path, BTRFS_SUPER_MAGIC, 256, fss);
 	} else if (statfs_type(&sfs) == BCACHEFS_SUPER_MAGIC) {
-		/* Bcachefs reserves inode 4096 for each subvolume's root directory */
-		ret = fssnapshot_inode(path, BCACHEFS_SUPER_MAGIC, 4096, fss);
+		ret = fssnapshot_bcachefs(path, fss);
 	} else if (statfs_type(&sfs) == ZFS_SUPER_MAGIC) {
 		ret = fssnapshot_zfs(path, ZFS_SUPER_MAGIC, fss);
 	} else {
