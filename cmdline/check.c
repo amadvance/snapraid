@@ -2547,6 +2547,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			struct stat st;
 			struct snapraid_file* file;
 			int unsuccessful = 0;
+			int unrecoverable = 0;
 
 			file = node->data;
 			node = node->next; /* next node */
@@ -2561,11 +2562,13 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				continue;
 			}
 
-			/* stat the file */
+			/* lstat the file */
 			pathprint(path, sizeof(path), "%s%s", disk->dir, file->sub);
-			ret = stat(path, &st);
+			ret = lstat(path, &st);
 			if (ret == -1) {
 				unsuccessful = 1;
+				if (errno != ENOENT)
+					unrecoverable = 1;
 
 				log_error(errno, "Error stating empty file '%s'. %s.\n", path, strerror(errno));
 				log_tag("empty_%s:%s:%s: Empty file stat error\n", es(errno), disk->name, esc_tag(file->sub));
@@ -2577,10 +2580,26 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				}
 			} else if (!S_ISREG(st.st_mode)) {
 				unsuccessful = 1;
+				unrecoverable = 1;
 
 				log_error(ESOFT, "Error stating empty file '%s' for not regular file.\n", path);
 				log_tag("empty_error:%s:%s: Empty file error for not regular file\n", disk->name, esc_tag(file->sub));
 				++soft_error;
+#if HAVE_LSTAT_SYNC
+				/* NTFS hard-link directory entries may report a stale size. */
+			} else if (lstat_sync(path, &st, 0) != 0) {
+				unsuccessful = 1;
+				unrecoverable = 1;
+
+				log_error(errno, "Error stating empty file '%s'. %s.\n", path, strerror(errno));
+				log_tag("empty_%s:%s:%s: Empty file stat error\n", es(errno), disk->name, esc_tag(file->sub));
+
+				if (is_hw(errno)) {
+					++io_error;
+				} else {
+					++soft_error;
+				}
+#endif
 			} else if (st.st_size != 0) {
 				unsuccessful = 1;
 
@@ -2589,7 +2608,15 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				++soft_error;
 			}
 
-			if (fix && unsuccessful) {
+			/*
+			 * In check mode a type mismatch is still potentially recoverable if the
+			 * conflicting object is removed manually. In fix mode, however, we don't
+			 * remove objects of a different type automatically.
+			 */
+			if (fix && unrecoverable)
+				++unrecoverable_error;
+
+			if (fix && unsuccessful && !unrecoverable) {
 				int f;
 
 				/* create the ancestor directories */
@@ -2858,6 +2885,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			struct stat st;
 			struct snapraid_dir* dir;
 			int unsuccessful = 0;
+			int unrecoverable = 0;
 
 			dir = node->data;
 			node = node->next; /* next node */
@@ -2867,11 +2895,13 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				continue;
 			}
 
-			/* stat the dir */
+			/* lstat the dir */
 			pathprint(path, sizeof(path), "%s%s", disk->dir, dir->sub);
-			ret = stat(path, &st);
+			ret = lstat(path, &st);
 			if (ret == -1) {
 				unsuccessful = 1;
+				if (errno != ENOENT)
+					unrecoverable = 1;
 
 				log_error(errno, "Error stating dir '%s'. %s.\n", path, strerror(errno));
 				log_tag("dir_%s:%s:%s: Dir stat error. %s.\n", es(errno), disk->name, esc_tag(dir->sub), strerror(errno));
@@ -2883,12 +2913,21 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				}
 			} else if (!S_ISDIR(st.st_mode)) {
 				unsuccessful = 1;
+				unrecoverable = 1;
 
 				log_tag("dir_error:%s:%s: Dir error for not directory\n", disk->name, esc_tag(dir->sub));
 				++soft_error;
 			}
 
-			if (fix && unsuccessful) {
+			/*
+			 * In check mode a type mismatch is still potentially recoverable if the
+			 * conflicting object is removed manually. In fix mode, however, we don't
+			 * remove objects of a different type automatically.
+			 */
+			if (fix && unrecoverable)
+				++unrecoverable_error;
+
+			if (fix && unsuccessful && !unrecoverable) {
 				/* create the ancestor directories */
 				ret = mkancestor(path);
 				if (ret != 0) {
