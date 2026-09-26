@@ -24,15 +24,16 @@ struct snapraid_handle {
 };
 
 /**
- * Create or reopen a recovery file.
+ * Open or create a recovery file.
  * A new recovery attempt always uses the normal filename, even if a previous .unrecoverable file exists.
  * FILE_IS_QUARANTINED determines whether the .unrecoverable filename is opened in the current run.
- * If the normal file is created, the handle->created is set.
+ * If create is non-zero, a missing file is created and handle->created is set.
+ * If create is zero, a missing file is not created, returning -1 with errno == ENOENT.
  * The initial size of the file is stored in the file->st struct.
  * If the file cannot be opened for write access, it's opened with read-only access.
  * The read-only access works only if the file has already the correct size and doesn't need to be modified.
  */
-int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, int mode);
+int handle_open_create(struct snapraid_handle* handle, struct snapraid_file* file, int mode, int create);
 
 /**
  * Move an opened file to its persistent .unrecoverable name.

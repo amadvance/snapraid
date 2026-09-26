@@ -10,7 +10,7 @@
 /****************************************************************************/
 /* handle */
 
-int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, int mode)
+int handle_open_create(struct snapraid_handle* handle, struct snapraid_file* file, int mode, int create)
 {
 	int ret;
 	int flags;
@@ -26,13 +26,6 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 
 	pathprint(path, sizeof(path), "%s%s", handle->disk->dir, file->sub);
 	pathprint(path_unrecoverable, sizeof(path_unrecoverable), "%s.unrecoverable", path);
-
-	ret = mkancestor(path);
-	if (ret != 0) {
-		/* LCOV_EXCL_START */
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
 
 	/* initial values, changed later if required */
 	handle->created = 0;
@@ -94,8 +87,15 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 			}
 		}
 
-		/* if failed for missing file */
-		if (handle->f == -1 && errno == ENOENT) {
+		/* if failed for missing file and creation allowed */
+		if (handle->f == -1 && errno == ENOENT && create) {
+			ret = mkancestor(path);
+			if (ret != 0) {
+				/* LCOV_EXCL_START */
+				return -1;
+				/* LCOV_EXCL_STOP */
+			}
+
 			handle->f = open(path, flags | O_RDWR | O_CREAT | O_EXCL, 0600);
 			if (handle->f != -1) {
 				handle->created = 1;
@@ -109,11 +109,19 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 	}
 
 	if (handle->f == -1) {
-		/* LCOV_EXCL_START */
-		log_fatal(errno, "Error opening file '%s'. %s.\n", handle->path, strerror(errno));
+		/*
+		 * If creation was not requested, a missing file is an expected condition,
+		 * not a fatal error.
+		 */
+		if (create || errno != ENOENT) {
+			/* LCOV_EXCL_START */
+			log_fatal(errno, "Error opening file '%s'. %s.\n", handle->path, strerror(errno));
+			/* LCOV_EXCL_STOP */
+		}
+		int saved_errno = errno;
 		handle_close(handle);
+		errno = saved_errno;
 		return -1;
-		/* LCOV_EXCL_STOP */
 	}
 
 	/* just opened */
@@ -182,10 +190,10 @@ int handle_quarantine(struct snapraid_handle* handle, struct snapraid_file* file
 	file_flag_set(file, FILE_IS_QUARANTINED);
 
 	/*
-	 * FILE_IS_QUARANTINED is set, so handle_create() reopens the
+	 * FILE_IS_QUARANTINED is set, so handle_open_create() reopens the
 	 * .unrecoverable file belonging to the current recovery attempt.
 	 */
-	ret = handle_create(handle, file, mode);
+	ret = handle_open_create(handle, file, mode, 0);
 	if (ret != 0)
 		return -1;
 #else

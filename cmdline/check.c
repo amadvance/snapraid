@@ -208,7 +208,7 @@
  *
  * A quarantined file may be reopened later during the same fix run. In that case
  * FILE_IS_QUARANTINED identifies it as belonging to the current failed recovery and
- * handle_create() continues operating on its .unrecoverable file.
+ * handle_open_create() continues operating on its .unrecoverable file.
  *
  * A partial -S/-B fix operates only at block level and therefore never performs
  * file-level finalization.
@@ -1523,7 +1523,7 @@ static int file_post(struct snapraid_state* state, int fix, int partial, block_o
 				}
 
 				/* reopen the file for writing, as required to set the mtime on Windows */
-				ret = handle_create(&handle[j], file, state->file_mode);
+				ret = handle_open_create(&handle[j], file, state->file_mode, 0);
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
 					log_tag("%s:%" PRIu64 ":%s:%s: Open error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
@@ -2072,26 +2072,50 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 
 				/* if fixing, and the file is not excluded, we must open for writing */
 				if (fix && !file_flag_has(file, FILE_IS_EXCLUDED)) {
-					/* if fixing, create the file, open for writing and resize if required */
-					ret = handle_create(&handle[j], file, state->file_mode);
-					if (ret == -1) {
-						/* LCOV_EXCL_START */
-						log_tag("%s:%" PRIu64 ":%s:%s: Create error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
-						log_fatal_errno(errno, disk->name);
-						log_fatal(errno, "Stopping at block %" PRIu64 "\n", i);
+					if (!state->opt.syncedonly) {
+						/* ordinary fix: create the file, open for writing and resize if required */
+						ret = handle_open_create(&handle[j], file, state->file_mode, 1);
+						if (ret == -1) {
+							/* LCOV_EXCL_START */
+							log_tag("%s:%" PRIu64 ":%s:%s: Create error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
+							log_fatal_errno(errno, disk->name);
+							log_fatal(errno, "Stopping at block %" PRIu64 "\n", i);
 
-						++unrecoverable_error;
-						goto bail;
-						/* LCOV_EXCL_STOP */
-					}
+							++unrecoverable_error;
+							goto bail;
+							/* LCOV_EXCL_STOP */
+						}
 
-					/* check if the file was just created */
-					if (handle[j].created != 0) {
-						/*
-						 * If fragmented, it may be reopened, so remember that the file
-						 * was originally missing
-						 */
-						file_flag_set(file, FILE_IS_CREATED);
+						/* check if the file was just created */
+						if (handle[j].created != 0) {
+							/*
+							 * If fragmented, it may be reopened, so remember that the file
+							 * was originally missing
+							 */
+							file_flag_set(file, FILE_IS_CREATED);
+						}
+					} else {
+						/* in syncedonly mode, open for writing but do not create missing files */
+						if (!file_flag_has(file, FILE_IS_MISSING)) {
+							ret = handle_open_create(&handle[j], file, state->file_mode, 0);
+						} else {
+							errno = ENOENT;
+							ret = -1;
+						}
+
+						/* if missing, mark as unsynced and let common error handler record the missing block */
+						if (ret == -1 && errno == ENOENT) {
+							file_flag_set(file, FILE_IS_UNSYNCED);
+						} else if (ret == -1) {
+							/* LCOV_EXCL_START */
+							log_tag("%s:%" PRIu64 ":%s:%s: Open error. %s.\n", es(errno), i, disk->name, esc_tag(file->sub), strerror(errno));
+							log_fatal_errno(errno, disk->name);
+							log_fatal(errno, "Stopping at block %" PRIu64 "\n", i);
+
+							++unrecoverable_error;
+							goto bail;
+							/* LCOV_EXCL_STOP */
+						}
 					}
 				} else {
 					/* open the file only for reading */
@@ -2101,34 +2125,35 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						errno = ENOENT;
 						ret = -1; /* if the file is missing, we cannot open it */
 					}
-					if (ret == -1) {
-						/* save the failed block for the check/fix */
-						failed[failed_count].is_bad = 1;
-						failed[failed_count].recovery = RECOVERY_NONE;
-						failed[failed_count].index = j;
-						failed[failed_count].block = block;
-						failed[failed_count].disk = disk;
-						failed[failed_count].file = file;
-						failed[failed_count].file_pos = file_pos;
-						failed[failed_count].handle = &handle[j];
-						++failed_count;
+				}
 
-						log_tag("%s:%" PRIu64 ":%s:%s: Open error at position %" PRIu64 ". %s.\n", es(errno), i, disk->name, esc_tag(file->sub), file_pos, strerror(errno));
+				if (ret == -1) {
+					/* save the failed block for the check/fix */
+					failed[failed_count].is_bad = 1;
+					failed[failed_count].recovery = RECOVERY_NONE;
+					failed[failed_count].index = j;
+					failed[failed_count].block = block;
+					failed[failed_count].disk = disk;
+					failed[failed_count].file = file;
+					failed[failed_count].file_pos = file_pos;
+					failed[failed_count].handle = &handle[j];
+					++failed_count;
 
-						if (is_hw(errno)) {
-							++io_error;
-						} else {
-							++soft_error;
-						}
+					log_tag("%s:%" PRIu64 ":%s:%s: Open error at position %" PRIu64 ". %s.\n", es(errno), i, disk->name, esc_tag(file->sub), file_pos, strerror(errno));
 
-						/*
-						 * Mark the file as missing, to avoid to retry to open it again
-						 * note that this can be done only if we are not fixing it
-						 * otherwise, it could be recreated
-						 */
-						file_flag_set(file, FILE_IS_MISSING);
-						continue;
+					if (is_hw(errno)) {
+						++io_error;
+					} else {
+						++soft_error;
 					}
+
+					/*
+					 * Mark the file as missing, to avoid to retry to open it again
+					 * note that this can be done only if we are not fixing it
+					 * or if syncedonly is active so it won't be recreated
+					 */
+					file_flag_set(file, FILE_IS_MISSING);
+					continue;
 				}
 
 				/* if it's the first open, and not excluded */
