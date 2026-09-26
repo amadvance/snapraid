@@ -80,12 +80,16 @@ SnapRAID is designed to recover from an interruption, including `SIGKILL`, at an
 - `Makefile.am`: Source file lists, dependencies, install hooks (including rules for generating documentation)
 - `uncrustify.cfg`: Code formatting rules for main application source files
 - `linux.cfg`: Code formatting rules for `raid/` directory and its subdirectories
-- Run `make doc` to regenerate all manual pages (`*.1`) and text manuals (`*.txt`)
+- Run `(cd linux && make doc)` to regenerate all manual pages (`*.1`) and text manuals (`*.txt`)
 - Always use parallel compilation with `make -j$(nproc)` instead of plain `make`
 - Create temporary files and directories under `/tmp/snapraid/`.
-- To cross-compile for Windows x64: build out-of-tree in `/tmp/snapraid/` so the Linux configuration is preserved:
-  `mkdir -p /tmp/snapraid/windows && (cd /tmp/snapraid/windows && /path/to/configure.windows-x64 && make -j$(nproc))`
-  Subsequent Windows rebuilds only require: `(cd /tmp/snapraid/windows && make -j$(nproc))`
+- Both Linux and Windows builds are out-of-tree in dedicated subdirectories (`linux/` and `windows/`) in the project directory, keeping the root directory clean:
+  - Linux build:
+    `mkdir -p linux && (cd linux && ../configure && make -j$(nproc))`
+    Subsequent Linux rebuilds: `(cd linux && make -j$(nproc))`
+  - Windows x64 cross-compilation:
+    `mkdir -p windows && (cd windows && ../configure.windows-x64 && make -j$(nproc))`
+    Subsequent Windows rebuilds: `(cd windows && make -j$(nproc))`
 - The Windows build needs to be tested only when modifying Windows-specific code (e.g., `os/mingw.*`, `cmdline/mingwapp.c`, or Windows-specific `#ifdef` paths)
 
 ## Code Style Guidelines
@@ -137,8 +141,8 @@ SnapRAID is designed to recover from an interruption, including `SIGKILL`, at an
 #### Testing Changes
 
 - Never run `make check` because it's too expansive
-- Run `./snapraid test` for the regression test
-- The `test` and `selftest` suites (in `cmdline/selftest.c` and `./snapraid test`) must be strictly memory-only without creating files or performing filesystem I/O
-- If running the speed benchmark (`./snapraid -T`), always use `--speed-test-period 100` (e.g. `./snapraid -T --speed-test-period 100`) to run it faster
+- Run `./linux/snapraid test` for the regression test
+- The `test` and `selftest` suites (in `cmdline/selftest.c` and `./linux/snapraid test`) must be strictly memory-only without creating files or performing filesystem I/O
+- If running the speed benchmark (`./linux/snapraid -T`), always use `--speed-test-period 100` (e.g. `./linux/snapraid -T --speed-test-period 100`) to run it faster
 - The Windows build needs to be tested only when modifying Windows-specific code
 - Verify error paths and recovery scenarios (the test suite covers aborted sync, UUID changes, disk failures)

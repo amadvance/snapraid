@@ -1,1 +1,3 @@
-./configure CC=/usr/libexec/ccc-analyzer
+DIR=$(dirname "$0")
+"$DIR/configure" CC=/usr/libexec/ccc-analyzer
+

@@ -47,3 +47,6 @@ sudo sh makeslackware.sh
 sudo sh makearch.sh
 sudo sh makedeb.sh
 sudo sh makerpm.sh
+
+make distclean
+

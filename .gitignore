@@ -36,6 +36,8 @@ install-sh
 missing
 stamp-h1
 .dirstamp
+linux/
+windows/
 
 # objects
 snapraid
