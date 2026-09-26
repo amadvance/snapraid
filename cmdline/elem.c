@@ -1104,6 +1104,8 @@ int fs_is_empty(struct snapraid_disk* disk, block_off_t blockmax)
 		return 0;
 	if (!tommy_list_empty(&disk->dirlist))
 		return 0;
+	if (!tommy_list_empty(&disk->dealloclist))
+		return 0;
 
 	fs_lock(disk);
 
