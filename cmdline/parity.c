@@ -214,8 +214,8 @@ int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_p
 
 		/**
 		 * If the parity size is not yet set, set it now.
-		 * This happens when expanding the number of parities,
-		 * or when upgrading from a content file that has not split->size data.
+		 * This happens when adding a new parity level or split that has
+		 * no persisted size yet.
 		 */
 		if (split->size == PARITY_SIZE_INVALID) {
 			split->size = split->st.st_size;
@@ -870,8 +870,8 @@ int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_par
 
 		/**
 		 * If the parity size is not yet set, set it now.
-		 * This happens when expanding the number of parities,
-		 * or when upgrading from a content file that has not split->size data.
+		 * This happens when adding a new parity level or split that has
+		 * no persisted size yet.
 		 */
 		if (split->size == PARITY_SIZE_INVALID) {
 			split->size = split->st.st_size;

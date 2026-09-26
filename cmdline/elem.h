@@ -559,9 +559,9 @@ struct snapraid_map {
 /**
  * Invalid parity size.
  *
- * This value is used to identify new parities,
- * like when you alter the configuration adding
- * a new parity level, creating it with 'fix'.
+ * This value identifies new parity levels or splits
+ * added in the configuration, for example when
+ * creating a new parity level with 'fix'.
  * Given that 'fix' doesn't write the content file,
  * the new size will be written only at the next
  * 'sync'.

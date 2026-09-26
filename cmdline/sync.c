@@ -2311,7 +2311,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	 *
 	 * Similarly, if sync was skipped before parity modification (e.g. on prehash
 	 * failure), state_snapshot_pending() was bypassed (leaving SNAPSHOT_SCAN
-	 * unpromoted), and legacy parity splits or newly added levels may still have
+	 * unpromoted), and newly added parity splits or levels may still have
 	 * split sizes set to PARITY_SIZE_INVALID (only resolved in the parity handles).
 	 * Requiring sync durability ensures that snapshots, split sizes, and physical
 	 * parity are completely consistent and serializable before invoking state_write().

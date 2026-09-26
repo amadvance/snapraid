@@ -1781,28 +1781,6 @@ static void state_map(struct snapraid_state* state)
 	unsigned l, s;
 
 	/*
-	 * Remove all the mapping without a disk
-	 * this happens when a disk is removed from the configuration file
-	 * From SnapRAID 4.0 mappings are automatically removed if a disk is not used
-	 * when saving the content file, but we keep this code to import older content files.
-	 */
-	for (i = state->maplist; i != 0; ) {
-		struct snapraid_map* map = i->data;
-		struct snapraid_disk* disk;
-
-		disk = find_disk_by_name(state, map->name);
-
-		/* go to the next mapping before removing */
-		i = i->next;
-
-		if (disk == 0) {
-			/* disk not found, remove the mapping */
-			tommy_list_remove_existing(&state->maplist, &map->node);
-			map_free(map);
-		}
-	}
-
-	/*
 	 * Maps each unmapped disk present in the configuration file in the first available hole
 	 * this happens when you add disks for the first time in the configuration file
 	 */
@@ -2309,12 +2287,6 @@ static void decoding_error(const char* path, STREAM* f)
 	}
 }
 
-enum state_block_hash_mode {
-	STATE_BLOCK_HASH_READ,
-	STATE_BLOCK_HASH_ZERO,
-	STATE_BLOCK_HASH_DISCARD
-};
-
 /**
  * Read and initialize a complete run of file blocks.
  *
@@ -2322,25 +2294,10 @@ enum state_block_hash_mode {
  * pointer directly over cached hashes therefore preserves the same integrity
  * check performed by sread().
  */
-static int state_read_block_run(STREAM* f, struct snapraid_file* file, block_off_t file_pos, block_off_t count, unsigned state, enum state_block_hash_mode hash_mode)
+static int state_read_block_run(STREAM* f, struct snapraid_file* file, block_off_t file_pos, block_off_t count, unsigned state, int discard_hash)
 {
 	unsigned char* block_ptr = (unsigned char*)file_block(file, file_pos);
 	size_t block_stride = block_sizeof();
-	unsigned char discard_hash[HASH_MAX];
-
-	if (hash_mode == STATE_BLOCK_HASH_ZERO) {
-		while (count) {
-			struct snapraid_block* block = (struct snapraid_block*)block_ptr;
-
-			block_state_set(block, state);
-			hash_zero_set(block->hash);
-
-			block_ptr += block_stride;
-			--count;
-		}
-
-		return 0;
-	}
 
 	while (count) {
 		size_t available = (size_t)(f->end - f->pos);
@@ -2355,14 +2312,11 @@ static int state_read_block_run(STREAM* f, struct snapraid_file* file, block_off
 			int ret;
 
 			block_state_set(block, state);
-			if (hash_mode == STATE_BLOCK_HASH_DISCARD) {
-				ret = sread(f, discard_hash, BLOCK_HASH_SIZE);
-				hash_invalid_set(block->hash);
-			} else {
-				ret = sread(f, block->hash, BLOCK_HASH_SIZE);
-			}
+			ret = sread(f, block->hash, BLOCK_HASH_SIZE);
 			if (ret < 0)
 				return -1;
+			if (discard_hash)
+				hash_invalid_set(block->hash);
 
 			block_ptr += block_stride;
 			--count;
@@ -2374,7 +2328,7 @@ static int state_read_block_run(STREAM* f, struct snapraid_file* file, block_off
 			struct snapraid_block* block = (struct snapraid_block*)block_ptr;
 
 			block_state_set(block, state);
-			if (hash_mode == STATE_BLOCK_HASH_DISCARD)
+			if (discard_hash)
 				hash_invalid_set(block->hash);
 			else
 				hash_copy(block->hash, input);
@@ -2481,21 +2435,23 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 
 	/*
 	 * File format versions:
-	 *  - SNAPCNT1/SnapRAID 4.0 First version.
-	 *  - SNAPCNT2/SnapRAID 7.0 Adds entries 'M' and 'P', to add free_blocks support.
-	 *    The previous 'm' entry is now deprecated, but supported for importing.
-	 *    Similarly for text file, we add 'mapping' and 'parity' deprecating 'map'.
+	 *  - SNAPCNT1/2 are legacy formats without 'Q' parity split sizes and are unsupported.
 	 *  - SNAPCNT3/SnapRAID 11.0 Adds entry 'y' for hash size.
 	 *  - SNAPCNT3/SnapRAID 11.0 Adds entry 'Q' for multi parity file.
-	 *    The previous 'P' entry is now deprecated, but supported for importing.
-	 *  - SNAPCNT4 adds:
-	 *    - entry 'd' for deallocated files;
-	 *    - block type 'r' / BLOCK_STATE_REBUILD for persistent in-place parity
-	 *      rebuilds.
+	 *  - SNAPCNT4/SnapRAID 15.0 Adds entry 'd' for deallocated files;
+	 *  - SNAPCNT4/SnapRAID 15.0 Adds block type 'r' / BLOCK_STATE_REBUILD for persistent in-place parity rebuilds.
 	 */
-	if (memcmp(buffer, "SNAPCNT1\n\3\0\0", 12) != 0
-		&& memcmp(buffer, "SNAPCNT2\n\3\0\0", 12) != 0
-		&& memcmp(buffer, "SNAPCNT3\n\3\0\0", 12) != 0
+	if (memcmp(buffer, "SNAPCNT1\n\3\0\0", 12) == 0
+		|| memcmp(buffer, "SNAPCNT2\n\3\0\0", 12) == 0
+	) {
+		/* LCOV_EXCL_START */
+		log_fatal(ECONTENT, "Legacy content format is no longer supported.\n");
+		log_fatal(ECONTENT, "Run 'snapraid sync' with SnapRAID 14.x to upgrade the content file.\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (memcmp(buffer, "SNAPCNT3\n\3\0\0", 12) != 0
 		&& memcmp(buffer, "SNAPCNT4\n\3\0\0", 12) != 0
 	) {
 		/* LCOV_EXCL_START */
@@ -2648,7 +2604,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				block_off_t v_count;
 				block_off_t v_file_pos;
 				unsigned v_state;
-				enum state_block_hash_mode hash_mode;
+				int discard_hash;
 
 				/* get the "subcommand */
 				c = sgetc(f);
@@ -2685,18 +2641,13 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					/* LCOV_EXCL_STOP */
 				}
 
-				hash_mode = STATE_BLOCK_HASH_READ;
+				discard_hash = 0;
 				switch (c) {
 				case 'b' :
 					v_state = BLOCK_STATE_BLK;
 					break;
 				case 'r' :
 					v_state = BLOCK_STATE_REBUILD;
-					break;
-				case 'n' :
-					/* deprecated NEW blocks are converted to CHG ones with a ZERO hash */
-					v_state = BLOCK_STATE_CHG;
-					hash_mode = STATE_BLOCK_HASH_ZERO;
 					break;
 				case 'g' :
 					v_state = BLOCK_STATE_CHG;
@@ -2705,7 +2656,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					if (state->opt.force_nocopy) {
 						/* discard stored copy hashes and convert REP blocks to CHG */
 						v_state = BLOCK_STATE_CHG;
-						hash_mode = STATE_BLOCK_HASH_DISCARD;
+						discard_hash = 1;
 					} else {
 						v_state = BLOCK_STATE_REP;
 					}
@@ -2723,7 +2674,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					has_invalid_parity = 1;
 
 				v_file_pos = v_idx;
-				ret = state_read_block_run(f, file, v_file_pos, v_count, v_state, hash_mode);
+				ret = state_read_block_run(f, file, v_file_pos, v_count, v_state, discard_hash);
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
@@ -2959,7 +2910,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					tommy_list_insert_tail(&disk->deletedlist, &deleted->nodelist, deleted);
 
 					/* read all blocks in the deleted run */
-					ret = state_read_block_run(f, deleted, 0, v_count, BLOCK_STATE_DELETED, STATE_BLOCK_HASH_READ);
+					ret = state_read_block_run(f, deleted, 0, v_count, BLOCK_STATE_DELETED, 0);
 					if (ret < 0) {
 						/* LCOV_EXCL_START */
 						decoding_error(path, f);
@@ -3453,7 +3404,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
-		} else if (c == 'm' || c == 'M') {
+		} else if (c == 'M') {
 			struct snapraid_map* map;
 			char uuid[UUID_MAX];
 			uint32_t v_idx;
@@ -3493,27 +3444,20 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
-			/* from SnapRAID 7.0 the 'M' command includes the free space */
-			if (c == 'M') {
-				ret = sgetb64(f, &v_total_blocks);
-				if (ret < 0) {
-					/* LCOV_EXCL_START */
-					decoding_error(path, f);
-					os_abort();
-					/* LCOV_EXCL_STOP */
-				}
+			ret = sgetb64(f, &v_total_blocks);
+			if (ret < 0) {
+				/* LCOV_EXCL_START */
+				decoding_error(path, f);
+				os_abort();
+				/* LCOV_EXCL_STOP */
+			}
 
-				ret = sgetb64(f, &v_free_blocks);
-				if (ret < 0) {
-					/* LCOV_EXCL_START */
-					decoding_error(path, f);
-					os_abort();
-					/* LCOV_EXCL_STOP */
-				}
-
-			} else {
-				v_total_blocks = 0;
-				v_free_blocks = 0;
+			ret = sgetb64(f, &v_free_blocks);
+			if (ret < 0) {
+				/* LCOV_EXCL_START */
+				decoding_error(path, f);
+				os_abort();
+				/* LCOV_EXCL_STOP */
 			}
 
 			/* read the uuid */
@@ -3557,77 +3501,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			tommy_array_grow(&disk_mapping, mapping_max + 1);
 			tommy_array_set(&disk_mapping, mapping_max, disk);
 			++mapping_max;
-		} else if (c == 'P') {
-			/*
-			 * From SnapRAID 7.0 the 'P' command includes the free space
-			 * from SnapRAID 11.0 the 'P' command is deprecated by 'Q'
-			 */
-			char v_uuid[UUID_MAX];
-			uint32_t v_level;
-			block_off_t v_total_blocks;
-			block_off_t v_free_blocks;
-
-			ret = sgetb32(f, &v_level);
-			if (ret < 0) {
-				/* LCOV_EXCL_START */
-				decoding_error(path, f);
-				os_abort();
-				/* LCOV_EXCL_STOP */
-			}
-
-			ret = sgetb64(f, &v_total_blocks);
-			if (ret < 0) {
-				/* LCOV_EXCL_START */
-				decoding_error(path, f);
-				os_abort();
-				/* LCOV_EXCL_STOP */
-			}
-
-			ret = sgetb64(f, &v_free_blocks);
-			if (ret < 0) {
-				/* LCOV_EXCL_START */
-				decoding_error(path, f);
-				os_abort();
-				/* LCOV_EXCL_STOP */
-			}
-
-			ret = sgetbs(f, v_uuid, sizeof(v_uuid));
-			if (ret < 0) {
-				/* LCOV_EXCL_START */
-				decoding_error(path, f);
-				os_abort();
-				/* LCOV_EXCL_STOP */
-			}
-
-			if (v_level >= LEV_MAX) {
-				/* LCOV_EXCL_START */
-				decoding_error(path, f);
-				log_fatal(ECONTENT, "Invalid parity level '%u' in the configuration file!\n", v_level);
-				exit(EXIT_FAILURE);
-				/* LCOV_EXCL_STOP */
-			}
-
-			/* auto configure if configuration is missing */
-			if (state->no_conf) {
-				if (v_level >= state->level)
-					state->level = v_level + 1;
-			}
-
-			/* if we use this parity entry */
-			if (v_level < state->level) {
-				/* if the configuration has more splits, keep them */
-				if (state->parity[v_level].split_mac < 1)
-					state->parity[v_level].split_mac = 1;
-				/* set the parity info */
-				if (state->no_conf) {
-					pathcpy(state->parity[v_level].split_map[0].uuid, sizeof(state->parity[v_level].split_map[0].uuid), v_uuid);
-				}
-				pathcpy(state->parity[v_level].split_map[0].content_uuid, sizeof(state->parity[v_level].split_map[0].content_uuid), v_uuid);
-				state->parity[v_level].total_blocks = v_total_blocks;
-				state->parity[v_level].free_blocks = v_free_blocks;
-			}
 		} else if (c == 'Q') {
-			/* from SnapRAID 11.0 the 'Q' command include size info and multi file support  */
 			uint32_t v_level;
 			block_off_t v_total_blocks;
 			block_off_t v_free_blocks;
@@ -3855,9 +3729,29 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 
 	if (!has_blockmax) {
 		/* LCOV_EXCL_START */
-		decoding_error(path, f);
-		log_fatal(EINTERNAL, "Internal inconsistency: Missing 'blockmax' in the content file!\n");
-		os_abort();
+		log_fatal(ECONTENT, "Missing 'blockmax' in the content file!\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (!has_block_size) {
+		/* LCOV_EXCL_START */
+		log_fatal(ECONTENT, "Missing 'blocksize' in the content file!\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (!has_hash_size) {
+		/* LCOV_EXCL_START */
+		log_fatal(ECONTENT, "Missing 'hashsize' in the content file!\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (!has_hash) {
+		/* LCOV_EXCL_START */
+		log_fatal(ECONTENT, "Missing 'hash' in the content file!\n");
+		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 
@@ -5063,7 +4957,6 @@ void state_read(struct snapraid_state* state)
 	struct stat st;
 	tommy_node* node;
 	int ret;
-	int c;
 	uint64_t start;
 	struct state_read_context context;
 	uint32_t map_idx;
@@ -5166,49 +5059,17 @@ void state_read(struct snapraid_state* state)
 		node = node->next;
 	}
 
-	/*
-	 * Start with a undefined default.
-	 * it's for compatibility with version 1.0 where MD5 was implicit.
-	 */
-	state->hash = HASH_UNDEFINED;
-
-	/* start with a zero seed, it was the default in old versions */
-	memset(state->hashseed, 0, HASH_MAX);
-
 	/* previous hash, start with an undefined value */
 	state->prevhash = HASH_UNDEFINED;
 
 	/* intentionally not set the prevhashseed, if used valgrind will warn about it */
 
-	/* get the first char to detect the file type */
-	c = sgetc(f);
-	sungetc(c, f);
-
-	/* guess the file type from the first char */
-	if (c == 'S') {
-		/* parsing is the only user of the extent trees until the content is loaded */
-		fs_single_thread(state, 1);
-		state_read_content(state, path, f, &context);
-		fs_single_thread(state, 0);
-	} else {
-		/* LCOV_EXCL_START */
-		log_fatal(EUSER, "From SnapRAID v9.0 the text content file is not supported anymore.\n");
-		log_fatal(EUSER, "You have first to upgrade to SnapRAID v8.1 to convert it to binary format.\n");
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
+	/* parsing is the only user of the extent trees until the content is loaded */
+	fs_single_thread(state, 1);
+	state_read_content(state, path, f, &context);
+	fs_single_thread(state, 0);
 
 	sclose(f);
-
-	if (state->hash == HASH_UNDEFINED) {
-		/* LCOV_EXCL_START */
-		log_fatal(EUSER, "The checksum to use is not specified.\n");
-		log_fatal(EUSER, "This happens because you are likely upgrading from SnapRAID 1.0.\n");
-		log_fatal(EUSER, "To use a new SnapRAID you must restart from scratch,\n");
-		log_fatal(EUSER, "deleting all the content and parity files.\n");
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
 
 	msg_progress("Loaded state in %" PRIu64 " seconds\n", (os_tick_ms() - start) / 1000);
 
@@ -6674,12 +6535,7 @@ void generate_configuration(const char* path)
 			else
 				printf("?");
 			printf("\n");
-			printf("# SIZE:");
-			if (state.parity[l].split_map[s].size != PARITY_SIZE_INVALID)
-				printf("%" PRIu64, state.parity[l].split_map[s].size);
-			else
-				printf("?");
-			printf("\n");
+			printf("# SIZE:%" PRIu64 "\n", state.parity[l].split_map[s].size);
 			printf("# UUID:");
 			if (state.parity[l].split_map[s].uuid[0])
 				printf("%s", state.parity[l].split_map[s].uuid);
