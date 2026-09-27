@@ -2755,9 +2755,9 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			}
 
 			if (link_flag_has(slink, FILE_IS_HARDLINK)) {
-				/* stat the link */
+				/* stat the hardlink itself without following symbolic links */
 				pathprint(path, sizeof(path), "%s%s", disk->dir, slink->sub);
-				ret = stat(path, &st);
+				ret = lstat(path, &st);
 				if (ret == -1) {
 					unsuccessful = 1;
 
@@ -2775,11 +2775,25 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					log_error(ESOFT, "Error stating hardlink '%s' for not regular file.\n", path);
 					log_tag("hardlink_error:%s:%s:%s: Hardlink error for not regular file\n", disk->name, esc_tag(slink->sub), esc_tag(slink->linkto));
 					++soft_error;
+#if HAVE_LSTAT_SYNC
+					/* Windows lstat doesn't report the file identity required to validate hardlinks. */
+				} else if (lstat_sync(path, &st, 0) != 0) {
+					unsuccessful = 1;
+
+					log_error(errno, "Error stating hardlink '%s'. %s.\n", path, strerror(errno));
+					log_tag("hardlink_%s:%s:%s:%s: Hardlink stat error. %s.\n", es(errno), disk->name, esc_tag(slink->sub), esc_tag(slink->linkto), strerror(errno));
+
+					if (is_hw(errno)) {
+						++io_error;
+					} else {
+						++soft_error;
+					}
+#endif
 				}
 
-				/* stat the "to" file */
+				/* stat the target itself without following symbolic links */
 				pathprint(pathto, sizeof(pathto), "%s%s", disk->dir, slink->linkto);
-				ret = stat(pathto, &stto);
+				ret = lstat(pathto, &stto);
 				if (ret == -1) {
 					unsuccessful = 1;
 
@@ -2807,15 +2821,32 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					}
 				} else if (!S_ISREG(stto.st_mode)) {
 					unsuccessful = 1;
+					unrecoverable = 1;
 
-					log_error(ESOFT, "Error stating hardlink-to '%s' for not regular file.\n", path);
+					log_error(ESOFT, "Error stating hardlink-to '%s' for not regular file.\n", pathto);
 					log_tag("hardlink_error:%s:%s:%s: Hardlink-to error for not regular file\n", disk->name, esc_tag(slink->sub), esc_tag(slink->linkto));
 					++soft_error;
-				} else if (!unsuccessful && st.st_ino != INODE_INVALID && stto.st_ino != INODE_INVALID && st.st_ino != stto.st_ino) {
+					if (fix)
+						++unrecoverable_error;
+#if HAVE_LSTAT_SYNC
+					/* Windows lstat doesn't report the file identity required to validate hardlinks. */
+				} else if (lstat_sync(pathto, &stto, 0) != 0) {
 					unsuccessful = 1;
 
-					log_error(ESOFT, "Mismatch hardlink '%s' and '%s'. Different inode.\n", path, pathto);
-					log_tag("hardlink_error:%s:%s:%s: Hardlink mismatch for different inode\n", disk->name, esc_tag(slink->sub), esc_tag(slink->linkto));
+					log_error(errno, "Error stating hardlink-to '%s'. %s.\n", pathto, strerror(errno));
+					log_tag("hardlink_%s:%s:%s:%s: Hardlink to stat error. %s.\n", es(errno), disk->name, esc_tag(slink->sub), esc_tag(slink->linkto), strerror(errno));
+
+					if (is_hw(errno)) {
+						++io_error;
+					} else {
+						++soft_error;
+					}
+#endif
+				} else if (!unsuccessful && st.st_ino != INODE_INVALID && stto.st_ino != INODE_INVALID && (st.st_dev != stto.st_dev || st.st_ino != stto.st_ino)) {
+					unsuccessful = 1;
+
+					log_error(ESOFT, "Mismatch hardlink '%s' and '%s'. Different file identity.\n", path, pathto);
+					log_tag("hardlink_error:%s:%s:%s: Hardlink mismatch for different file identity\n", disk->name, esc_tag(slink->sub), esc_tag(slink->linkto));
 					++soft_error;
 				}
 			} else {
