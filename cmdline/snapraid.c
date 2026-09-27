@@ -1777,7 +1777,12 @@ int snapraid_main(int argc, char* argv[])
 			if (import_content != 0)
 				state_import(&state, import_content);
 
-			/* import from all the array */
+			/*
+			 * Search the live array before switching reference disks to snapshots.
+			 * The search is intended to find files copied or moved since the last sync;
+			 * snapshots are instead used later for the historical state matching parity.
+			 * Keep this before state_snapshot_write(), or recent live copies may be missed.
+			 */
 			if (!state.opt.force_nocopy)
 				state_search_array(&state);
 		}
