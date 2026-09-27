@@ -3099,15 +3099,37 @@ int fssnapshot_delete(const struct fssnapshot_struct* fss, const char* name)
 #if HAVE_LINUX_DEVICE
 static int fssnapshot_fs_rename(const struct fssnapshot_struct* fss, const char* old_name, const char* new_name)
 {
-	char old_path[PATH_MAX];
-	char new_path[PATH_MAX];
+	int dir_fd;
 
-	pathcpy(old_path, sizeof(old_path), fss->snapshot_dir);
-	pathcat(old_path, sizeof(old_path), old_name);
-	pathcpy(new_path, sizeof(new_path), fss->snapshot_dir);
-	pathcat(new_path, sizeof(new_path), new_name);
+	dir_fd = open(fss->snapshot_dir, O_RDONLY | O_DIRECTORY);
+	if (dir_fd < 0) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
 
-	if (rename(old_path, new_path) < 0) {
+	if (renameat(dir_fd, old_name, dir_fd, new_name) < 0) {
+		/* LCOV_EXCL_START */
+		close(dir_fd);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	/*
+	 * Make the snapshot rename durable before returning.
+	 *
+	 * The caller may start modifying parity after this function succeeds,
+	 * so after a crash the renamed snapshot must not revert to the previous
+	 * directory state while the parity updates remain durable.
+	 */
+	if (fsync(dir_fd) != 0) {
+		/* LCOV_EXCL_START */
+		close(dir_fd);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (close(dir_fd) != 0) {
 		/* LCOV_EXCL_START */
 		return -1;
 		/* LCOV_EXCL_STOP */
