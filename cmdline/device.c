@@ -828,12 +828,23 @@ static void state_smart(struct snapraid_state* state, size_t n, tommy_list* low)
 	printf(" -----------------------------------------------------------------------\n");
 	for (j = 0; j < RAID_PARITY_MAX; ++j) {
 		printf("%6u", j + 1);
-		printf("    ");
-		printp(raid_prob_of_one_or_more_failures(array_failure_rate, 365.0 / 7, n, j + 1) * 100, 19);
-		printf("    ");
-		printp(raid_prob_of_one_or_more_failures(array_failure_rate, 365.0 / 30, n, j + 1) * 100, 17);
-		printf("    ");
-		printp(raid_prob_of_one_or_more_failures(array_failure_rate, 365.0 / 90, n, j + 1) * 100, 13);
+
+		if (j + 1 >= n) {
+			printf("    ");
+			printl("N/A", 19);
+			printf("    ");
+			printl("N/A", 17);
+			printf("    ");
+			printl("N/A", 13);
+		} else {
+			printf("    ");
+			printp(raid_prob_of_one_or_more_failures(array_failure_rate, 365.0 / 7, n, j + 1) * 100, 19);
+			printf("    ");
+			printp(raid_prob_of_one_or_more_failures(array_failure_rate, 365.0 / 30, n, j + 1) * 100, 17);
+			printf("    ");
+			printp(raid_prob_of_one_or_more_failures(array_failure_rate, 365.0 / 90, n, j + 1) * 100, 13);
+		}
+
 		printf("\n");
 	}
 
