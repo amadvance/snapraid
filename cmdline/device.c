@@ -1129,6 +1129,10 @@ int state_device_force(struct snapraid_state* state, int operation, tommy_list* 
 		if (filterlist_disk != 0 && filter_path(filterlist_disk, 0, disk->name, 0) != 0)
 			continue;
 
+		/* skips inaccessible disks from all device operations */
+		if (disk->skip_access)
+			continue;
+
 		entry = calloc_nofail(1, sizeof(devinfo_t));
 
 		entry->device = disk->mount_device;
@@ -1149,6 +1153,10 @@ int state_device_force(struct snapraid_state* state, int operation, tommy_list* 
 		unsigned s;
 
 		if (filterlist_disk != 0 && filter_path(filterlist_disk, 0, lev_config_name(j), 0) != 0)
+			continue;
+
+		/* skips inaccessible parities from all device operations */
+		if (state->parity[j].skip_access)
 			continue;
 
 		for (s = 0; s < state->parity[j].split_mac; ++s) {
@@ -1229,9 +1237,14 @@ int state_device_force(struct snapraid_state* state, int operation, tommy_list* 
 		}
 	}
 
-	/* if the list is empty, it's not supported in this platform */
-	if (ret == 0 && tommy_list_empty(&low))
+	/* distinguish skipped devices from unsupported device queries */
+	if (ret == 0 && tommy_list_empty(&low)) {
 		ret = -1;
+		if (tommy_list_empty(&high)) {
+			log_error(ESOFT, "No accessible devices selected for this operation.\n");
+			goto bail;
+		}
+	}
 
 	if (ret != 0) {
 		const char* ope = 0;
