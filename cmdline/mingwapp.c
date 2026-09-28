@@ -1750,12 +1750,17 @@ retry:
 		log_tag("attr:%s:%s:power:standby\n", file, name);
 		*power = POWER_STANDBY;
 	} else {
-		log_tag("attr:%s:%s:power:active\n", file, name);
-		*power = POWER_ACTIVE;
-
 		/* store the smartctl return value */
 		if (smart)
 			smart[SMART_FLAGS].raw = WEXITSTATUS(ret);
+
+		if (WEXITSTATUS(ret) & SMARTCTL_FLAG_OPEN) {
+			log_tag("attr:%s:%s:power:unknown\n", file, name);
+			*power = POWER_UNKNOWN;
+		} else {
+			log_tag("attr:%s:%s:power:active\n", file, name);
+			*power = POWER_ACTIVE;
+		}
 	}
 
 	return 0;
@@ -1913,7 +1918,8 @@ static int devdownifup(uint64_t device, const char* name, const char* smartctl, 
 	if (devprobe(device, name, smartctl, smartctl_info, power, 0, 0, 0, 0, 0, 0) != 0)
 		return -1;
 
-	if (*power == POWER_ACTIVE)
+	/* a failed probe may hide an active disk, so skip only confirmed standby */
+	if (*power != POWER_STANDBY)
 		return devdown(device, name, smartctl);
 
 	return 0;
@@ -2089,7 +2095,7 @@ static void* thread_spindownifup(void* arg)
 			/* LCOV_EXCL_STOP */
 		}
 
-		if (power == POWER_ACTIVE)
+		if (power != POWER_STANDBY)
 			msg_status("Spundown device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, os_tick_ms() - start);
 	}
 

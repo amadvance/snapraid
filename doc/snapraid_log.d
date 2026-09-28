@@ -1170,6 +1170,10 @@ Command Smart And Probe Tags
 		Logs a successful spin-down operation initiated via the
 		smartctl command.
 
+	=attr:<device_file>:<disk_name>[/<split_index>]:power:unknown
+		Logs that the device power state could not be determined
+		after a status probe.
+
 	=stat:<disk_name>:<access_number>
 		Logs the total number of read and write accesses done on the
 		disk. This is a cumulative value that include all the devices
