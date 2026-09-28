@@ -3506,6 +3506,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			block_off_t v_total_blocks;
 			block_off_t v_free_blocks;
 			uint32_t v_split_mac;
+			uint64_t v_size_total = 0;
 			unsigned s;
 
 			ret = sgetb32(f, &v_level);
@@ -3608,6 +3609,16 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
+
+				if (v_size > INT64_MAX - v_size_total) {
+					/* LCOV_EXCL_START */
+					decoding_error(path, f);
+					log_fatal(ECONTENT, "Internal inconsistency: Total parity split size is too large!\n");
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
+
+				v_size_total += v_size;
 
 				if (!has_block_size) {
 					/* LCOV_EXCL_START */
@@ -5467,6 +5478,8 @@ static void state_write_check(struct snapraid_state* state)
 	}
 
 	for (l = 0; l < state->level; ++l) {
+		data_off_t size_total = 0;
+
 		if (state->parity[l].split_mac == 0 || state->parity[l].split_mac > SPLIT_MAX) {
 			log_fatal(EINTERNAL, "Internal inconsistency: Invalid parity split count %u!\n", state->parity[l].split_mac);
 			os_abort();
@@ -5477,6 +5490,13 @@ static void state_write_check(struct snapraid_state* state)
 				log_fatal(EINTERNAL, "Internal inconsistency: Invalid parity split size %" PRIi64 "!\n", state->parity[l].split_map[s].size);
 				os_abort();
 			}
+
+			/* keep the total within the bound enforced when reading the content file */
+			if (state->parity[l].split_map[s].size > INT64_MAX - size_total) {
+				log_fatal(EINTERNAL, "Internal inconsistency: Total parity split size is too large!\n");
+				os_abort();
+			}
+			size_total += state->parity[l].split_map[s].size;
 		}
 	}
 
