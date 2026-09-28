@@ -212,6 +212,14 @@ int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_p
 			/* LCOV_EXCL_STOP */
 		}
 
+		if (!S_ISREG(split->st.st_mode)) {
+			/* LCOV_EXCL_START */
+			errno = ESOFT;
+			log_fatal(errno, "Error accessing parity file '%s' for not regular file.\n", split->path);
+			goto bail;
+			/* LCOV_EXCL_STOP */
+		}
+
 		/**
 		 * If the parity size is not yet set, set it now.
 		 * This happens when adding a new parity level or split that has
@@ -864,6 +872,14 @@ int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_par
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
 			log_fatal(errno, "Error accessing parity file '%s'. %s.\n", split->path, strerror(errno));
+			goto bail;
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (!S_ISREG(split->st.st_mode)) {
+			/* LCOV_EXCL_START */
+			errno = ESOFT;
+			log_fatal(errno, "Error accessing parity file '%s' for not regular file.\n", split->path);
 			goto bail;
 			/* LCOV_EXCL_STOP */
 		}

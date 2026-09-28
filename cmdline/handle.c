@@ -137,6 +137,15 @@ int handle_open_create(struct snapraid_handle* handle, struct snapraid_file* fil
 		/* LCOV_EXCL_STOP */
 	}
 
+	if (!S_ISREG(handle->st.st_mode)) {
+		/* LCOV_EXCL_START */
+		errno = ESOFT;
+		log_fatal(errno, "Error accessing file '%s' for not regular file.\n", handle->path);
+		handle_close(handle);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
 	ret = advise_open(&handle->advise, handle->f);
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
@@ -318,6 +327,15 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int 
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
 		log_error(errno, "Error accessing file '%s'. %s.\n", handle->path, strerror(errno));
+		handle_close(handle);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (!S_ISREG(handle->st.st_mode)) {
+		/* LCOV_EXCL_START */
+		errno = ESOFT;
+		log_error(errno, "Error accessing file '%s' for not regular file.\n", handle->path);
 		handle_close(handle);
 		return -1;
 		/* LCOV_EXCL_STOP */
