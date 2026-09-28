@@ -240,25 +240,26 @@ static int filter_apply(struct snapraid_filter* filter, struct snapraid_filter**
 	 *
 	 * This is done allowing a partial matching as far it ends at a directory separator
 	 */
-	int match_sub = 0;
-	if (filter->is_dir && !is_dir)
-		match_sub = 1;
+	int match_sub = filter->is_dir;
 
 	int ret = 0;
 
 	if (filter->is_abs) {
 		/* preserve the skipped slash because it gives an initial ** its recursive meaning */
-		if (wnmatch_sub_prev(filter->pattern + 1, path, match_sub, '/') == 0)
+		if (wnmatch_sub_prev(filter->pattern + 1, path, match_sub, '/') == 0
+			|| (is_dir && wnmatch_sub_prev(filter->pattern + 1, path, 0, '/') == 0))
 			ret = filter->direction;
 	} else {
 		/* the path is relative, first try to match from the root */
-		if (wnmatch_sub(filter->pattern, path, match_sub) == 0) {
+		if (wnmatch_sub(filter->pattern, path, match_sub) == 0
+			|| (is_dir && wnmatch_sub(filter->pattern, path, 0) == 0)) {
 			ret = filter->direction;
 		} else {
 			/* then try to match after all the / presents */
 			const char* slash = strchr(path, '/');
 			while (slash) {
-				if (wnmatch_sub(filter->pattern, slash + 1, match_sub) == 0) {
+				if (wnmatch_sub(filter->pattern, slash + 1, match_sub) == 0
+					|| (is_dir && wnmatch_sub(filter->pattern, slash + 1, 0) == 0)) {
 					ret = filter->direction;
 					break;
 				}

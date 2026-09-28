@@ -1757,14 +1757,19 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 					/* recurse */
 					pathslash(path_next, PATH_MAX);
 					pathslash(sub_next, PATH_MAX);
-					if (scan_sub(scan, level + 1, is_diff, path_next, sub_next, tmp) == 0) {
+					if (scan_sub(scan, level + 1, is_diff, path_next, sub_next, tmp) != 0) {
+						processed = 1;
+					} else {
 						/* restore removing additions */
 						pathcatl(sub_next, sub_len, PATH_MAX, name);
-						/* scan the directory as empty dir */
-						scan_emptydir(scan, sub_next);
+
+						/* scan the directory as empty dir only if selected */
+						if (filter_emptydir(&state->filterlist, &reason, disk->name, sub_next) == 0
+							&& filter_emptydir(&scan->local_filter_list, &reason, disk->name, sub_next) == 0) {
+							scan_emptydir(scan, sub_next);
+							processed = 1;
+						}
 					}
-					/* or we processed something internally, or we have added the empty dir */
-					processed = 1;
 				}
 			} else {
 				msg_verbose("Excluding directory '%s' for rule '%s'\n", path_next, filter_type(reason, tmp, PATH_MAX));

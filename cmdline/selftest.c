@@ -1466,8 +1466,8 @@ static const struct filter_scenario FILTER_SCENARIOS[] = {
 			{ "d1", "file.tmp", -1, 0, 0 },
 			{ "d1", "sub/file.tmp", -1, 0, 0 },
 			{ "d1", "cache", 0, -1, -1 },
-			{ "d1", "cache/data.bin", -1, 0, 0 },
-			{ "d1", "sub/tmp/data.bin", -1, 0, 0 },
+			{ "d1", "cache/data.bin", -1, -1, -1 },
+			{ "d1", "sub/tmp/data.bin", -1, -1, -1 },
 			{ "d1", "sub/tmp", 0, -1, -1 },
 			{ "d1", "doc.pdf", 0, 0, 0 },
 			{ "d1", "other/doc.pdf", 0, 0, 0 },
@@ -1485,11 +1485,41 @@ static const struct filter_scenario FILTER_SCENARIOS[] = {
 		{
 			{ "d1", "song.mp3", 0, 0, -1 },
 			{ "d1", "audio/song.mp3", 0, 0, -1 },
-			{ "d1", "music/track.flac", 0, 0, -1 },
+			{ "d1", "music/track.flac", 0, 0, 0 },
 			{ "d1", "music", -1, 0, 0 },
 			{ "d1", "photo.jpg", -1, 0, -1 },
 			{ "d1", "photos/photo.jpg", -1, 0, -1 },
 			{ "d1", "photos", -1, 0, -1 },
+			{ 0 }
+		}
+	},
+	{
+		"directory rules include descendant directories",
+		{
+			{ 1, 0, "", "/music/" },
+			{ 0 }
+		},
+		{
+			{ "d1", "music", -1, 0, 0 },
+			{ "d1", "music/live", 0, 0, 0 },
+			{ "d1", "music/live/empty", 0, 0, 0 },
+			{ "d1", "other", -1, 0, -1 },
+			{ "d1", "other/empty", -1, 0, -1 },
+			{ 0 }
+		}
+	},
+	{
+		"directory rules exclude descendant directories",
+		{
+			{ -1, 0, "", "/cache/" },
+			{ 0 }
+		},
+		{
+			{ "d1", "cache", 0, -1, -1 },
+			{ "d1", "cache/sub", -1, -1, -1 },
+			{ "d1", "cache/sub/empty", -1, -1, -1 },
+			{ "d1", "other", 0, 0, 0 },
+			{ "d1", "other/empty", 0, 0, 0 },
 			{ 0 }
 		}
 	},
@@ -1502,8 +1532,8 @@ static const struct filter_scenario FILTER_SCENARIOS[] = {
 		},
 		{
 			{ "d1", "keep", 0, -1, -1 },
-			{ "d1", "keep/file.dat", 0, 0, 0 },
-			{ "d1", "keep/other.dat", -1, 0, 0 },
+			{ "d1", "keep/file.dat", 0, -1, -1 },
+			{ "d1", "keep/other.dat", -1, -1, -1 },
 			{ "d1", "other/file.txt", 0, 0, 0 },
 			{ 0 }
 		}
@@ -1561,7 +1591,7 @@ static const struct filter_scenario FILTER_SCENARIOS[] = {
 		{
 			{ "d1", "cache.tmp", -1, 0, -1 },
 			{ "d1", "media", -1, 0, 0 },
-			{ "d1", "media/movie.mkv", 0, 0, -1 },
+			{ "d1", "media/movie.mkv", 0, 0, 0 },
 			{ "d1", "docs/readme.txt", -1, 0, -1 },
 			{ 0 }
 		}
@@ -1575,7 +1605,7 @@ static const struct filter_scenario FILTER_SCENARIOS[] = {
 		},
 		{
 			{ "d1", "logs", 0, -1, -1 },
-			{ "d1", "logs/a.txt", -1, 0, 0 },
+			{ "d1", "logs/a.txt", -1, -1, -1 },
 			{ "d1", "report", -1, 0, 0 },
 			{ "d1", "report/a.txt", 0, 0, 0 },
 			{ 0 }
@@ -1590,12 +1620,12 @@ static const struct filter_scenario FILTER_SCENARIOS[] = {
 		},
 		{
 			{ "d1", "abs_tmp", 0, -1, -1 },
-			{ "d1", "abs_tmp/file.txt", -1, 0, 0 },
+			{ "d1", "abs_tmp/file.txt", -1, -1, -1 },
 			{ "d1", "sub/abs_tmp/file.txt", 0, 0, 0 },
 			{ "d1", "rel_tmp", 0, -1, -1 },
-			{ "d1", "rel_tmp/file.txt", -1, 0, 0 },
+			{ "d1", "rel_tmp/file.txt", -1, -1, -1 },
 			{ "d1", "sub/rel_tmp", 0, -1, -1 },
-			{ "d1", "sub/rel_tmp/file.txt", -1, 0, 0 },
+			{ "d1", "sub/rel_tmp/file.txt", -1, -1, -1 },
 			{ 0 }
 		}
 	},
@@ -1634,7 +1664,7 @@ static const struct filter_scenario FILTER_SCENARIOS[] = {
 		},
 		{
 			{ "d1", "projects/sub/build", 0, -1, -1 },
-			{ "d1", "projects/sub/build/output.o", -1, 0, 0 },
+			{ "d1", "projects/sub/build/output.o", -1, -1, -1 },
 			{ "d1", "projects/sub/nested/build", 0, 0, 0 },
 			{ "d1", "projects/sub/nested/build/output.o", 0, 0, 0 },
 			{ "d1", "projects/submarine/build", 0, 0, 0 },
@@ -1654,8 +1684,8 @@ static const struct filter_scenario FILTER_SCENARIOS[] = {
 			{ "d1", "src/components/ui/button.js", 0, 0, -1 },
 			{ "d1", "src/test", -1, -1, -1 },
 			{ "d1", "src/components/test", -1, -1, -1 },
-			{ "d1", "src/test/app.js", -1, 0, -1 },
-			{ "d1", "src/components/test/app.js", -1, 0, -1 },
+			{ "d1", "src/test/app.js", -1, -1, -1 },
+			{ "d1", "src/components/test/app.js", -1, -1, -1 },
 			{ "d1", "src/app.css", -1, 0, -1 },
 			{ 0 }
 		}
@@ -1741,7 +1771,7 @@ static const struct filter_scenario FILTER_SCENARIOS[] = {
 		{
 			{ "d1", "foo", 0, -1, -1 },
 			{ "d1", "a/b/foo", 0, -1, -1 },
-			{ "d1", "a/b/foo/file", -1, 0, 0 },
+			{ "d1", "a/b/foo/file", -1, -1, -1 },
 			{ "d1", "a/b/bar", 0, 0, 0 },
 			{ 0 }
 		}
