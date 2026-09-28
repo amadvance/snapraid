@@ -1103,7 +1103,12 @@ static int extract_zfs(const char* dir, char* dataset, size_t dataset_size, char
 		}
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
-			log_error(ESOFT, "Failed to list ZFS dataset '%s' (status %d).\n", mounted_dataset, ret);
+			if (WIFEXITED(ret))
+				log_error(ESOFT, "Failed to list ZFS dataset '%s' (exit status %d).\n", mounted_dataset, WEXITSTATUS(ret));
+			else if (WIFSIGNALED(ret))
+				log_error(ESOFT, "Failed to list ZFS dataset '%s' (signal %d).\n", mounted_dataset, WTERMSIG(ret));
+			else
+				log_error(ESOFT, "Failed to list ZFS dataset '%s' (unexpected wait status %d).\n", mounted_dataset, ret);
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
@@ -1236,7 +1241,24 @@ static int devdereference_zfs(uint64_t device, const char* dir, tommy_list* devl
 		log_tag("dereference:zfs:%s:%u:%u:%u:%u\n", dir, major(device), minor(device), major(dev->device), minor(dev->device));
 	}
 
-	os_pclose(fp);
+	int ret = os_pclose(fp);
+	if (ret < 0) {
+		/* LCOV_EXCL_START */
+		log_error(errno, "Failed to close ZFS pool status for '%s'. %s.\n", pool, strerror(errno));
+		goto bail;
+		/* LCOV_EXCL_STOP */
+	}
+	if (ret != 0) {
+		/* LCOV_EXCL_START */
+		if (WIFEXITED(ret))
+			log_error(ESOFT, "Failed to get ZFS pool status for '%s' (exit status %d).\n", pool, WEXITSTATUS(ret));
+		else if (WIFSIGNALED(ret))
+			log_error(ESOFT, "Failed to get ZFS pool status for '%s' (signal %d).\n", pool, WTERMSIG(ret));
+		else
+			log_error(ESOFT, "Failed to get ZFS pool status for '%s' (unexpected wait status %d).\n", pool, ret);
+		goto bail;
+		/* LCOV_EXCL_STOP */
+	}
 
 	if (tommy_list_empty(devlist))
 		goto bail;
