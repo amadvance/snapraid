@@ -365,7 +365,7 @@ void state_thermal_cooldown(struct snapraid_state* state)
 		 * effective; it does not allow the operation to resume while a measurable disk
 		 * is still above the temperature limit.
 		 */
-		state_device(state, DEVICE_DOWN, 0);
+		state_device_force(state, DEVICE_DOWN, 0, 1);
 
 		msg_progress("Cooldown...\n");
 
@@ -376,7 +376,7 @@ void state_thermal_cooldown(struct snapraid_state* state)
 
 		/* every 30 seconds spin down any disk that was spunup */
 		while (sleep_time > 0 && !os_signal_interrupt()) {
-			state_device(state, DEVICE_DOWNIFUP, 0);
+			state_device_force(state, DEVICE_DOWNIFUP, 0, 1);
 
 			sleep(30);
 			sleep_time -= 30;

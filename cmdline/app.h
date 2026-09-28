@@ -422,8 +422,9 @@ void device_name_set(devinfo_t* dev, const char* name, int index);
 
 /**
  * Sync filesystems associated with the "high" level devices.
+ * Return 0 on success, -1 on error.
  */
-void devsync(tommy_list* high);
+int devsync(tommy_list* high);
 
 /**
  * Query all the "high" level devices and produce a list of "low" level devices.

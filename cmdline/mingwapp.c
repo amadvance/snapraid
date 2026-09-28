@@ -2178,9 +2178,10 @@ static int device_thread(tommy_list* list, void* (*func)(void* arg))
 	return 0;
 }
 
-void devsync(tommy_list* high)
+int devsync(tommy_list* high)
 {
 	(void)high;
+	return 0;
 }
 
 int devquery(tommy_list* high, tommy_list* low)

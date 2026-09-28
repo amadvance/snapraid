@@ -276,6 +276,11 @@ void state_devmap(struct snapraid_state* state);
 int state_device(struct snapraid_state* state, int operation, tommy_list* filterlist_disk);
 
 /**
+ * Perform a device operation, continuing after a failed flush when force is set.
+ */
+int state_device_force(struct snapraid_state* state, int operation, tommy_list* filterlist_disk, int force);
+
+/**
  * Sync the parity data.
  */
 int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t blockcount);

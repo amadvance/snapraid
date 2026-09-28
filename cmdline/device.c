@@ -1090,13 +1090,14 @@ void state_devmap(struct snapraid_state* state)
 	}
 }
 
-int state_device(struct snapraid_state* state, int operation, tommy_list* filterlist_disk)
+int state_device_force(struct snapraid_state* state, int operation, tommy_list* filterlist_disk, int force)
 {
 	tommy_node* i;
 	unsigned j;
 	tommy_list high;
 	tommy_list low;
 	int ret;
+	int sync_failed = 0;
 	time_t now = time(0);
 
 	switch (operation) {
@@ -1192,9 +1193,19 @@ int state_device(struct snapraid_state* state, int operation, tommy_list* filter
 	if (state->opt.fake_device) {
 		ret = devtest(&high, &low, operation);
 	} else {
-		/* issue pending filesystem writes before the underlying devices enter standby */
-		if (operation == DEVICE_DOWN)
-			devsync(&high);
+		/*
+		 * Flush before DOWN, but not DOWNIFUP: syncfs() could wake disks
+		 * already in standby during the repeated thermal cooldown checks.
+		 */
+		if (operation == DEVICE_DOWN) {
+			ret = devsync(&high);
+			if (ret != 0) {
+				/* thermal cooldown must attempt spindown even after a failed flush */
+				if (!force)
+					goto bail;
+				sync_failed = 1;
+			}
+		}
 
 		ret = devquery(&high, &low);
 		if (ret > 0) {
@@ -1254,7 +1265,14 @@ bail:
 		ret = 1;
 	if (ret == 0 && query_failed)
 		ret = -1;
+	if (sync_failed)
+		ret = -1;
 
 	return ret;
+}
+
+int state_device(struct snapraid_state* state, int operation, tommy_list* filterlist_disk)
+{
+	return state_device_force(state, operation, filterlist_disk, 0);
 }
 

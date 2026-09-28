@@ -4265,11 +4265,13 @@ static int device_thread(tommy_list* list, void* (*func)(void* arg))
 	return 0;
 }
 
-void devsync(tommy_list* high)
+int devsync(tommy_list* high)
 {
 #if HAVE_SYNCFS
 	tommy_node* i;
+	int ret = 0;
 
+	/* flush every filesystem even if one fails before a forced thermal spindown */
 	for (i = tommy_list_head(high); i != 0; i = i->next) {
 		devinfo_t* devinfo = i->data;
 		int f;
@@ -4279,13 +4281,28 @@ void devsync(tommy_list* high)
 			continue;
 
 		f = open(devinfo->mount, O_RDONLY);
-		if (f >= 0) {
-			syncfs(f);
-			close(f);
+		if (f < 0) {
+			log_error(errno, "Failed to open filesystem at '%s'. %s.\n", devinfo->mount, strerror(errno));
+			ret = -1;
+			continue;
+		}
+
+		if (syncfs(f) != 0) {
+			int err = errno;
+			log_error(err, "Failed to sync filesystem at '%s'. %s.\n", devinfo->mount, strerror(err));
+			ret = -1;
+		}
+
+		if (close(f) != 0) {
+			log_error(errno, "Failed to close filesystem at '%s'. %s.\n", devinfo->mount, strerror(errno));
+			ret = -1;
 		}
 	}
+
+	return ret;
 #else
 	(void)high;
+	return 0;
 #endif
 }
 
