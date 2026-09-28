@@ -40,9 +40,9 @@ int state_status(struct snapraid_state* state)
 	block_off_t count;
 	unsigned l;
 	unsigned dayoldest, daymedian, daynewest;
-	unsigned bar_scrubbed[GRAPH_COLUMN];
-	unsigned bar_new[GRAPH_COLUMN];
-	unsigned barmax;
+	block_off_t bar_scrubbed[GRAPH_COLUMN];
+	block_off_t bar_new[GRAPH_COLUMN];
+	block_off_t barmax;
 	time_t oldest, newest, median;
 	unsigned x, y;
 	tommy_node* node_disk;
@@ -325,10 +325,10 @@ int state_status(struct snapraid_state* state)
 	}
 
 	/* output scrub history as structured data */
-	log_tag("scrub_graph_range:%u:%u\n", GRAPH_COLUMN, barmax);
+	log_tag("scrub_graph_range:%u:%" PRIu64 "\n", GRAPH_COLUMN, barmax);
 	for (l = 0; l < GRAPH_COLUMN; ++l) {
 		unsigned days_ago = dayoldest - (dayoldest - daynewest) * l / (GRAPH_COLUMN - 1);
-		log_tag("scrub_graph_bar:%u:%u:%u:%u\n", l, days_ago, bar_scrubbed[l], bar_new[l]);
+		log_tag("scrub_graph_bar:%u:%u:%" PRIu64 ":%" PRIu64 "\n", l, days_ago, bar_scrubbed[l], bar_new[l]);
 	}
 
 	printf("\n\n");
@@ -344,10 +344,10 @@ int state_status(struct snapraid_state* state)
 		else
 			printf("    |");
 		for (x = 0; x < GRAPH_COLUMN; ++x) {
-			unsigned pivot_upper = barmax * (GRAPH_ROW - y) / GRAPH_ROW;
-			unsigned pivot_lower = barmax * (GRAPH_ROW - 1 - y) / GRAPH_ROW;
-			unsigned both = bar_scrubbed[x] + bar_new[x];
-			unsigned scrubbed = bar_scrubbed[x];
+			block_off_t pivot_upper = barmax * (GRAPH_ROW - y) / GRAPH_ROW;
+			block_off_t pivot_lower = barmax * (GRAPH_ROW - 1 - y) / GRAPH_ROW;
+			block_off_t both = bar_scrubbed[x] + bar_new[x];
+			block_off_t scrubbed = bar_scrubbed[x];
 
 			if (both > pivot_upper) {
 				if (scrubbed > pivot_lower)
