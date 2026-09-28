@@ -2175,12 +2175,15 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				 * Missing data inside a short file is handled block by block by normal
 				 * recovery writes, which extend the file as needed.
 				 *
-				 * Extra data past the expected end is different: it has no content block and
-				 * therefore no later block recovery can remove it. Fix must truncate that
-				 * untracked tail explicitly.
+				 * Extra data past the expected end has no content block and therefore requires
+				 * a file-level truncate during a full fix.
+				 *
+				 * A partial -S/-B fix operates only at block level, so it must leave any
+				 * untracked tail untouched, even if the file is larger than expected.
 				 */
 				if (!file_flag_has(file, FILE_IS_OPENED)
 					&& !file_flag_has(file, FILE_IS_EXCLUDED)
+					&& !partial
 					&& !(state->opt.syncedonly && file_flag_has(file, FILE_IS_UNSYNCED))
 					&& handle[j].st.st_size > file->size
 				) {
