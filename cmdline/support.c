@@ -2356,21 +2356,21 @@ int smartctl_attribute(OS_FILE* f, const char* file, const char* name, struct sm
 
 			smart[id].raw = raw;
 
-			v = strtoul(norm, &e, 10);
+			v = strtonl(norm, &e, 10);
 			if (e != norm || *e == 0) {
 				smart[id].norm = v;
 			} else {
 				smart[id].norm = SMART_UNASSIGNED;
 			}
 
-			v = strtoul(worst, &e, 10);
+			v = strtonl(worst, &e, 10);
 			if (e != worst || *e == 0) {
 				smart[id].worst = v;
 			} else {
 				smart[id].worst = SMART_UNASSIGNED;
 			}
 
-			v = strtoul(thresh, &e, 10);
+			v = strtonl(thresh, &e, 10);
 			if (e != thresh || *e == 0) {
 				smart[id].thresh = v;
 			} else {

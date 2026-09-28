@@ -487,15 +487,9 @@ static int parse_option_size(const char* arg, uint64_t* out_size)
 	char* e;
 	uint64_t mult = 1;
 
-	while (isspace((unsigned char)*arg))
-		++arg;
-
-	if (*arg == '-')
-		return -1;
-
 	/* parse the number part */
 	errno = 0;
-	uint64_t size = strtoull(arg, &e, 10);
+	uint64_t size = strtonll(arg, &e, 10);
 	if (e == arg || errno == ERANGE)
 		return -1;
 
@@ -701,7 +695,7 @@ int snapraid_main(int argc, char* argv[])
 			}
 			break;
 		case 'o' :
-			olderthan = strtou(optarg, &e, 10);
+			olderthan = strton(optarg, &e, 10);
 			if (e == optarg || *e || olderthan > 1000) {
 				/* LCOV_EXCL_START */
 				log_fatal(EUSER, "Invalid number of days '%s'\n", optarg);
@@ -726,7 +720,7 @@ int snapraid_main(int argc, char* argv[])
 			break;
 		case 'S' :
 			blockstart_set = 1;
-			blockstart = strtoull(optarg, &e, 0);
+			blockstart = strtonll(optarg, &e, 0);
 			if (e == optarg || *e) {
 				/* LCOV_EXCL_START */
 				log_fatal(EUSER, "Invalid start position '%s'\n", optarg);
@@ -736,7 +730,7 @@ int snapraid_main(int argc, char* argv[])
 			break;
 		case 'B' :
 			blockcount_set = 1;
-			blockcount = strtoull(optarg, &e, 0);
+			blockcount = strtonll(optarg, &e, 0);
 			if (e == optarg || *e) {
 				/* LCOV_EXCL_START */
 				log_fatal(EUSER, "Invalid count number '%s'\n", optarg);
@@ -745,7 +739,7 @@ int snapraid_main(int argc, char* argv[])
 			}
 			break;
 		case 'L' :
-			opt.io_error_limit = strtou(optarg, &e, 0);
+			opt.io_error_limit = strton(optarg, &e, 0);
 			if (e == optarg || *e) {
 				/* LCOV_EXCL_START */
 				log_fatal(EUSER, "Invalid error limit number '%s'\n", optarg);
@@ -857,7 +851,7 @@ int snapraid_main(int argc, char* argv[])
 			opt.gui_touch_before = 1;
 			break;
 		case OPT_GUI_THRESHOLD_REMOVES :
-			opt.gui_threshold_removes = strtou(optarg, &e, 0);
+			opt.gui_threshold_removes = strton(optarg, &e, 0);
 			if (e == optarg || *e) {
 				/* LCOV_EXCL_START */
 				log_fatal(EUSER, "Invalid threshold '%s'\n", optarg);
@@ -866,7 +860,7 @@ int snapraid_main(int argc, char* argv[])
 			}
 			break;
 		case OPT_GUI_THRESHOLD_UPDATES :
-			opt.gui_threshold_updates = strtou(optarg, &e, 0);
+			opt.gui_threshold_updates = strton(optarg, &e, 0);
 			if (e == optarg || *e) {
 				/* LCOV_EXCL_START */
 				log_fatal(EUSER, "Invalid threshold '%s'\n", optarg);

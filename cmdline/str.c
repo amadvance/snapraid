@@ -299,6 +299,111 @@ unsigned strtou(const char* nptr, char** endptr, int base)
 	return (unsigned)val;
 }
 
+unsigned strton(const char* nptr, char** endptr, int base)
+{
+	const char* p = nptr;
+	unsigned val;
+	int save_errno = errno;
+
+	while (isspace((unsigned char)*p)) {
+		++p;
+	}
+
+	if (*p == '-') {
+		if (endptr) {
+			*endptr = (char*)nptr;
+		}
+		errno = ERANGE;
+		return (unsigned)-1;
+	}
+
+	errno = 0;
+	val = strtou(nptr, endptr, base);
+
+	if (errno == ERANGE) {
+		if (endptr) {
+			*endptr = (char*)nptr;
+		}
+		return (unsigned)-1;
+	}
+
+	if (errno == 0) {
+		errno = save_errno;
+	}
+
+	return val;
+}
+
+unsigned long strtonl(const char* nptr, char** endptr, int base)
+{
+	const char* p = nptr;
+	unsigned long val;
+	int save_errno = errno;
+
+	while (isspace((unsigned char)*p)) {
+		++p;
+	}
+
+	if (*p == '-') {
+		if (endptr) {
+			*endptr = (char*)nptr;
+		}
+		errno = ERANGE;
+		return (unsigned long)-1;
+	}
+
+	errno = 0;
+	val = strtoul(nptr, endptr, base);
+
+	if (errno == ERANGE) {
+		if (endptr) {
+			*endptr = (char*)nptr;
+		}
+		return (unsigned long)-1;
+	}
+
+	if (errno == 0) {
+		errno = save_errno;
+	}
+
+	return val;
+}
+
+unsigned long long strtonll(const char* nptr, char** endptr, int base)
+{
+	const char* p = nptr;
+	unsigned long long val;
+	int save_errno = errno;
+
+	while (isspace((unsigned char)*p)) {
+		++p;
+	}
+
+	if (*p == '-') {
+		if (endptr) {
+			*endptr = (char*)nptr;
+		}
+		errno = ERANGE;
+		return (unsigned long long)-1;
+	}
+
+	errno = 0;
+	val = strtoull(nptr, endptr, base);
+
+	if (errno == ERANGE) {
+		if (endptr) {
+			*endptr = (char*)nptr;
+		}
+		return (unsigned long long)-1;
+	}
+
+	if (errno == 0) {
+		errno = save_errno;
+	}
+
+	return val;
+}
+
 /****************************************************************************/
 /* wnmatch */
 

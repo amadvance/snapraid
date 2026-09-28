@@ -520,7 +520,7 @@ static unsigned parse_cpulist(const char* str, unsigned* cpus, unsigned max_cpus
 			break;
 
 		char* end;
-		unsigned long start = strtoul(p, &end, 10);
+		unsigned long start = strtonl(p, &end, 10);
 		if (end == p)
 			break;
 
@@ -528,7 +528,7 @@ static unsigned parse_cpulist(const char* str, unsigned* cpus, unsigned max_cpus
 		p = end;
 		if (*p == '-') {
 			++p;
-			stop = strtoul(p, &end, 10);
+			stop = strtonl(p, &end, 10);
 			if (end == p)
 				break;
 			p = end;
@@ -3297,7 +3297,7 @@ static dev_t devread(const char* path)
 
 	buf[len] = 0;
 
-	ma = strtou(buf, &e, 10);
+	ma = strton(buf, &e, 10);
 	if (*e != ':') {
 		/* LCOV_EXCL_START */
 		log_error(EEXTERNAL, "Invalid format in '%s' for '%s'.\n", path, buf);
@@ -3305,7 +3305,7 @@ static dev_t devread(const char* path)
 		/* LCOV_EXCL_STOP */
 	}
 
-	mi = strtou(e + 1, &e, 10);
+	mi = strton(e + 1, &e, 10);
 	if (*e != 0 && !isspace((unsigned char)*e)) {
 		/* LCOV_EXCL_START */
 		log_error(EEXTERNAL, "Invalid format in '%s' for '%s'.\n", path, buf);
@@ -3495,7 +3495,7 @@ static int devstat(dev_t device, uint64_t* count)
 			break;
 		*i++ = 0; /* put a terminator */
 
-		v = strtoull(n, &e, 10);
+		v = strtonll(n, &e, 10);
 		if (*e != 0) {
 			/* LCOV_EXCL_START */
 			break;

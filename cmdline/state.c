@@ -1444,7 +1444,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 					/* LCOV_EXCL_STOP */
 				}
 
-				int val = strtou(buffer, &e, 0);
+				int val = strton(buffer, &e, 0);
 
 				if (e && !*e) {
 					/* numerical form */
@@ -1593,7 +1593,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				/* LCOV_EXCL_STOP */
 			}
 
-			state->autosave = strtoul(buffer, &e, 0);
+			state->autosave = strtonl(buffer, &e, 0);
 
 			if (!e || *e) {
 				/* LCOV_EXCL_START */

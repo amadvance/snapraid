@@ -115,6 +115,15 @@ int strtoi(const char* nptr, char** endptr, int base);
  */
 unsigned strtou(const char* nptr, char** endptr, int base);
 
+/**
+ * Convert strings to non-negative unsigned integers.
+ * Negative or out-of-range values are rejected by returning (type)-1,
+ * setting errno to ERANGE, and setting endptr to nptr.
+ */
+unsigned strton(const char* nptr, char** endptr, int base);
+unsigned long strtonl(const char* nptr, char** endptr, int base);
+unsigned long long strtonll(const char* nptr, char** endptr, int base);
+
 /****************************************************************************/
 /* match */
 
