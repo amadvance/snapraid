@@ -202,8 +202,10 @@ static void search_dir(struct snapraid_state* state, struct snapraid_disk* disk,
 
 		/* exclude hidden files even before calling lstat() */
 		if (disk != 0 && filter_hidden(state->filter_hidden, dd) != 0) {
-			msg_verbose("Excluding hidden '%s'\n", path_next);
-			continue;
+			if (pathcmp(".snapraidignore", dd->d_name) != 0) {
+				msg_verbose("Excluding hidden '%s'\n", path_next);
+				continue;
+			}
 		}
 
 		/* exclude content files even before calling lstat() */
@@ -248,10 +250,12 @@ static void search_dir(struct snapraid_state* state, struct snapraid_disk* disk,
 #endif
 
 		if (S_ISREG(st.st_mode)) {
-			if (disk == 0 || filter_path(&state->filterlist, &reason, disk->name, sub_next) == 0) {
+			if (disk == 0
+				|| pathcmp(".snapraidignore", name) == 0
+				|| filter_path(&state->filterlist, &reason, disk->name, sub_next) == 0) {
 				search_file(state, path_next, st.st_size, st.st_mtime, STAT_NSEC(&st));
 			} else {
-				msg_verbose("Excluding link '%s' for rule '%s'\n", path_next, filter_type(reason, out, sizeof(out)));
+				msg_verbose("Excluding file '%s' for rule '%s'\n", path_next, filter_type(reason, out, sizeof(out)));
 			}
 		} else if (S_ISDIR(st.st_mode)) {
 			if (disk == 0 || filter_subdir(&state->filterlist, &reason, disk->name, sub_next) == 0) {
