@@ -6,8 +6,12 @@
 ifeq ($(wildcard Makefile),Makefile)
 include Makefile
 else ifeq ($(wildcard linux/Makefile),linux/Makefile)
-all doc:
+all:
 	$(MAKE) -C linux $@
+
+doc:
+	$(MAKE) -C linux $@
+	cp -a linux/doc/*.1 linux/doc/*.txt doc/
 
 .DEFAULT:
 	$(MAKE) -C linux $@
