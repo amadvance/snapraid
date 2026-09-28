@@ -111,6 +111,19 @@ int state_touch(struct snapraid_state* state)
 					/* LCOV_EXCL_STOP */
 				}
 
+				/*
+				 * Touch only files that are still unchanged compared to
+				 * the content file. Otherwise changing the timestamp here
+				 * could hide a modification from the following scan.
+				 */
+				if (st.st_size != file->size
+					|| st.st_mtime != file->mtime_sec
+					|| STAT_NSEC(&st) != file->mtime_nsec
+				) {
+					close(f);
+					continue;
+				}
+
 				/* set the tweaked modification time, with new nano seconds */
 				ret = fmtime(f, st.st_mtime, nsec);
 				if (ret != 0) {
