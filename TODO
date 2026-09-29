@@ -40,6 +40,13 @@ Future
 
 - Major
 
+* Optimize `sync` on Btrfs by using `btrfs send -p <prev> <curr> --no-data`
+  to identify modified files and extent offsets, avoiding a full filesystem
+  metadata scan. Parity recomputation still reads from the latest snapshot.
+  Store the Btrfs snapshot generation (and UUID) in the content file to verify
+  that the parent snapshot strictly matches the content state before diffing,
+  falling back to a full scan if mismatched.
+
 * Size-Based Checkpointing (autosave) using a write-ahead log (WAL).
   Instead of writing the full content file periodically (autosave), write incremental
   updates to companion `.wal` files. Use the existing bit-efficient `STREAM`
