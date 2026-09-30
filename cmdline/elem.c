@@ -375,7 +375,7 @@ int filter_existence(int filter_missing, const char* dir, const char* sub)
 
 	if (lstat(path, &st) != 0) {
 		/* if the file doesn't exist, we don't filter it out */
-		if (errno == ENOENT)
+		if (errno == ENOENT || errno == ENOTDIR)
 			return 0;
 		/* LCOV_EXCL_START */
 		log_fatal(errno, "Error in stat file '%s'. %s.\n", path, strerror(errno));

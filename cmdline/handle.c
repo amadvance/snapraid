@@ -113,7 +113,7 @@ int handle_open_create(struct snapraid_handle* handle, struct snapraid_file* fil
 		 * If creation was not requested, a missing file is an expected condition,
 		 * not a fatal error.
 		 */
-		if (create || errno != ENOENT) {
+		if (create || (errno != ENOENT && errno != ENOTDIR)) {
 			/* LCOV_EXCL_START */
 			log_fatal(errno, "Error opening file '%s'. %s.\n", handle->path, strerror(errno));
 			/* LCOV_EXCL_STOP */
