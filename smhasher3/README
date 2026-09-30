@@ -29,12 +29,50 @@ museair_snapraid.cpp
 MuseAir-128.bfast-snapraid.txt
     SMHasher3 output for museair_snapraid.cpp.
 
-    Result comparison:
+  Result comparison:
     The SnapRAID variant passes all 252 tests. The official MuseAir
     BFast-128 also passes its complete test set. The different short-input
     path used by SnapRAID shows no statistical regression. Small differences
     in the p-value distribution are not significant enough to rank either
     version as better.
+
+  Known collision analysis:
+    MuseAir v2 has two known adversarial collision constructions:
+
+    1. Short path: A published 32-byte message pair collides with rate
+       ~2^-17.5 over random seeds (and a similar rate for 128-bit functions
+       with independent 64-bit seed halves).
+
+    2. Long path without compression: An algebraic product-exchange
+       construction produces collisions for 80, 88, and 96-byte inputs when
+       no 96-byte compression round is executed. For MuseAir-128, the
+       published 80-byte pair collides only when seed_b == 0 (a 2^-64 weak-key
+       condition over uniformly random seeds).
+
+    The product-exchange construction relies on relations between the initial
+    state words and the finalizer products. A single 96-byte compression round
+    destroys these relations; the construction does not survive when preceded
+    by a common 96-byte block or placed within a 192-byte message.
+
+  Relevance to SnapRAID:
+    The known constructions do not currently affect SnapRAID's intended use:
+
+    - The Short path is never used: SnapRAID routes all inputs through the
+      Long path.
+    - The no-compression construction does not survive SnapRAID's block format.
+      SnapRAID hashes full canonical RAID blocks (with zero-padding for partial
+      blocks). A typical block (e.g., 256 KiB) executes thousands of 96-byte
+      compression rounds, which destroy the product-exchange relations.
+
+    While SnapRAID's fixed zero seed happens to satisfy the weak-key condition
+    seed_b == 0, finding collisions with a known seed in non-cryptographic
+    hashes is expected and does not indicate a weakness for detecting random
+    data corruption.
+
+  References:
+    https://thomasahle.com/blog/adversarial-examples-for-hashes/
+    https://thomasahle.com/blog/adversarial-examples-for-hashes/records/witness-searches/reanalysis-2026-09/README.html
+    https://thomasahle.com/blog/adversarial-examples-for-hashes/records/witness-searches/reanalysis-2026-09/museair-v2/README.html
 
 spooky2_snapraid.cpp
     SpookyHash V2 128-bit as used by SnapRAID. SnapRAID always uses the
@@ -43,11 +81,47 @@ spooky2_snapraid.cpp
 SpookyHash2-128-snapraid.txt
     SMHasher3 output for spooky2_snapraid.cpp.
 
-    Result comparison:
+  Result comparison:
     The SnapRAID variant passes all 252 tests. The official SpookyHash V2
     128-bit implementation has strong BIC failures on several short input
     lengths. Those failures come from the Short path. Always using the Long
     path, as SnapRAID does, removes the observed BIC weakness.
+
+  Known collision analysis:
+    An adversarial collision has been demonstrated in the SpookyHash V2 Long
+    path itself. Published 275- and 286-byte message pairs introduce controlled
+    differences in the final 96-byte Mix block and cancel them in the End block.
+
+    The required sign of the correction depends on a single internal state bit.
+    Two complementary pairs cover both possible values of this bit, each
+    colliding for approximately half (~2^-1) of randomly tested seeds. When the
+    cancellation succeeds, the entire 768-bit internal state matches before the
+    finalization rounds, yielding an identical 128-bit hash.
+
+    Because the differential is injected in the final Mix block, the attack can
+    be extended to larger inputs by prepending common 96-byte blocks, provided
+    the final block preserves the required offset.
+
+  Relevance to SnapRAID:
+    SnapRAID stores its 128-bit SpookyHash seed in the content file. Because the
+    seed is public, an attacker can determine the appropriate variant rather
+    than relying on a random ~2^-1 success rate.
+
+    Furthermore, unlike MuseAir, SpookyHash does not pad partial blocks. A final
+    file block can therefore have arbitrary lengths (such as 275 or 286 bytes),
+    making the published lengths directly applicable. For full blocks, extending
+    the attack requires common 96-byte prefixes that preserve the required End
+    block structure.
+
+    However, finding collisions with a public seed in non-cryptographic hashes
+    is expected and does not impact SnapRAID's intended use: accidental storage
+    corruption remains random and is not crafted to exploit the known seed or
+    internal hash state.
+
+  References:
+    https://thomasahle.com/blog/adversarial-examples-for-hashes/
+    https://thomasahle.com/blog/adversarial-examples-for-hashes/verify/spookyhash2-64/README.html
+    https://github.com/thomasahle/hash-collision-witnesses/tree/main/spookyhash2-64
 
 murmur3_snapraid.cpp
     MurmurHash3 x86_128 as used by SnapRAID, with the SnapRAID 128-bit
@@ -56,7 +130,7 @@ murmur3_snapraid.cpp
 MurmurHash3-128-snapraid.txt
     SMHasher3 output for murmur3_snapraid.cpp.
 
-    Result comparison:
+  Result comparison:
     The SnapRAID variant passes 179 of 252 tests, compared with 154 of 250
     for the official MurmurHash3 x86_128 int32 variant. Most data-path
     failures are the same, including BIC, Text, TwoBytes, PerlinNoise and
