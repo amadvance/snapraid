@@ -217,7 +217,10 @@ $(CLI_PREFIX)sync.$(OBJEXT): $(CLI_INCLUDES)
 $(CLI_PREFIX)thermal.$(OBJEXT): $(CLI_INCLUDES)
 $(CLI_PREFIX)touch.$(OBJEXT): $(CLI_INCLUDES)
 $(CLI_PREFIX)unixapp.$(OBJEXT): $(CLI_INCLUDES)
-$(CLI_PREFIX)util.$(OBJEXT): $(CLI_INCLUDES)
+$(CLI_PREFIX)util.$(OBJEXT): $(CLI_INCLUDES) \
+	$(srcdir)/cmdline/murmur3.c \
+	$(srcdir)/cmdline/spooky2.c \
+	$(srcdir)/cmdline/museair.c
 
 # Add the .version file in the distribution
 dist-hook:

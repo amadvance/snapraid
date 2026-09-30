@@ -96,7 +96,7 @@
 //
 #define sc_const 0xdeadbeefdeadbeefULL
 
-void SpookyHash128(const void* data, size_t size, const uint8_t* seed, uint8_t* digest)
+static void SpookyHash128(const void* data, size_t size, const uint8_t* seed, uint8_t* digest)
 {
 	uint64_t h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11;
 	uint8_t buf[sc_blockSize];
@@ -117,6 +117,11 @@ void SpookyHash128(const void* data, size_t size, const uint8_t* seed, uint8_t* 
 	end = p + nblocks * sc_blockSize;
 
 	/* body */
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC unroll 1
+#elif defined(__clang__)
+#pragma unroll 1
+#endif
 	while (p < end) {
 		Mix(p, h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11);
 		p += sc_blockSize;

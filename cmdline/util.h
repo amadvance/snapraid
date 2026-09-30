@@ -110,6 +110,11 @@ uint32_t crc32c_shift(uint32_t crc, size_t size);
  */
 static inline uint32_t crc32c_gen_plain(uint32_t crc, const unsigned char* ptr, size_t size)
 {
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC unroll 1
+#elif defined(__clang__)
+#pragma unroll 1
+#endif
 	while (size >= 4) {
 		crc ^= ptr[0] | (uint32_t)ptr[1] << 8 | (uint32_t)ptr[2] << 16 | (uint32_t)ptr[3] << 24;
 		crc = CRC32C_3[crc & 0xff] ^ CRC32C_2[(crc >> 8) & 0xff] ^ CRC32C_1[(crc >> 16) & 0xff] ^ CRC32C_0[crc >> 24];

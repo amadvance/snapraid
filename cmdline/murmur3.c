@@ -26,42 +26,16 @@ static inline uint32_t fmix32(uint32_t h)
 }
 
 /*
- * Warning!
- * Don't declare these variables static, otherwise the gcc optimizer
- * may generate very slow code for multiplication with these constants,
- * like:
-
-   -> .cpp
-   k1 *= c1;
-   -> .asm
-   152:   8d 14 80                lea    (%eax,%eax,4),%edx
-   155:   8d 14 90                lea    (%eax,%edx,4),%edx
-   158:   c1 e2 03                shl    $0x3,%edx
-   15b:   29 c2                   sub    %eax,%edx
-   15d:   8d 14 d2                lea    (%edx,%edx,8),%edx
-   160:   8d 14 90                lea    (%eax,%edx,4),%edx
-   163:   8d 14 d0                lea    (%eax,%edx,8),%edx
-   166:   8d 14 90                lea    (%eax,%edx,4),%edx
-   169:   8d 14 50                lea    (%eax,%edx,2),%edx
-   16c:   8d 14 90                lea    (%eax,%edx,4),%edx
-   16f:   8d 14 92                lea    (%edx,%edx,4),%edx
-   172:   8d 14 50                lea    (%eax,%edx,2),%edx
-   175:   8d 04 d0                lea    (%eax,%edx,8),%eax
-   178:   8d 14 c5 00 00 00 00    lea    0x0(,%eax,8),%edx
-   17f:   29 d0                   sub    %edx,%eax
-
- * resulting in speeds of 500 MB/s instead of 3000 MB/s.
- *
- * Verified with gcc 4.4.4 compiling with :
- *
- * g++ -g -c -O2 MurmurHash3.cpp -o MurmurHash3.o
+ * Non-static variables are intentionally used instead of static const
+ * because keeping these constants in CPU registers yields measurably
+ * higher throughput than using 32-bit immediate constants in imul.
  */
 uint32_t c1 = 0x239b961b;
 uint32_t c2 = 0xab0e9789;
 uint32_t c3 = 0x38b34ae5;
 uint32_t c4 = 0xa1e38b93;
 
-void MurmurHash3_x86_128(const void* data, size_t size, const uint8_t* seed, void* digest)
+static void MurmurHash3_x86_128(const void* data, size_t size, const uint8_t* seed, void* digest)
 {
 	const uint8_t* p;
 	const uint8_t* end;
@@ -77,6 +51,11 @@ void MurmurHash3_x86_128(const void* data, size_t size, const uint8_t* seed, voi
 	end = p + (size & ~15);
 
 	/* body */
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC unroll 8
+#elif defined(__clang__)
+#pragma unroll 8
+#endif
 	while (p < end) {
 		uint32_t k1 = util_read32(p + 0);
 		uint32_t k2 = util_read32(p + 4);

@@ -190,6 +190,11 @@ static void MuseAirLoong(const void* bytes, size_t len, const uint8_t* seed, uin
 	state[5] ^= seed_b & MASK_K;
 
 	if (unlikely(q > u64x(12))) {
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC unroll 2
+#elif defined(__clang__)
+#pragma unroll 2
+#endif
 		do {
 			state[0] ^= util_read64(p + u64x(0));
 			state[1] ^= util_read64(p + u64x(1));
