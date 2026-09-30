@@ -219,6 +219,9 @@ $(CLI_PREFIX)touch.$(OBJEXT): $(CLI_INCLUDES)
 $(CLI_PREFIX)unixapp.$(OBJEXT): $(CLI_INCLUDES)
 $(CLI_PREFIX)util.$(OBJEXT): $(CLI_INCLUDES)
 
+# Use -O3 -funroll-loops to optimize the hash implementations included by util.c
+$(CLI_PREFIX)util.$(OBJEXT): CFLAGS += -O3 -funroll-loops
+
 # Add the .version file in the distribution
 dist-hook:
 	$(srcdir)/autover.sh > $(distdir)/.version
