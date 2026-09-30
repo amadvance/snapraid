@@ -877,6 +877,9 @@ void windows_errno(DWORD error)
 	case ERROR_PATH_NOT_FOUND : /* in GetFileAttributeW() if internal path not found */
 		errno = ENOENT;
 		break;
+	case ERROR_DIRECTORY :
+		errno = ENOTDIR;
+		break;
 	case ERROR_ACCESS_DENIED : /* in CreateDirectoryW() if dir is scheduled for deletion */
 	case ERROR_CURRENT_DIRECTORY : /* in RemoveDirectoryW() if removing the current directory */
 	case ERROR_SHARING_VIOLATION : /* in RemoveDirectoryW() if in use */
@@ -4688,3 +4691,4 @@ void os_done(void)
 }
 
 #endif
+

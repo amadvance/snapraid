@@ -90,6 +90,14 @@ int state_touch(struct snapraid_state* state)
 				}
 #endif
 				if (f == -1) {
+					/*
+					 * Ignore missing files because they may have been deleted
+					 * or moved since the last sync. Also ignore symbolic links
+					 * which fail with ELOOP due to O_NOFOLLOW.
+					 */
+					if (errno == ENOENT || errno == ENOTDIR || errno == ELOOP)
+						continue;
+
 					/* LCOV_EXCL_START */
 					log_error(errno, "Error opening file '%s'. %s.\n", path, strerror(errno));
 					++error;
@@ -112,11 +120,12 @@ int state_touch(struct snapraid_state* state)
 				}
 
 				/*
-				 * Touch only files that are still unchanged compared to
+				 * Touch only regular files that are still unchanged compared to
 				 * the content file. Otherwise changing the timestamp here
 				 * could hide a modification from the following scan.
 				 */
-				if (st.st_size != file->size
+				if (!S_ISREG(st.st_mode)
+					|| st.st_size != file->size
 					|| st.st_mtime != file->mtime_sec
 					|| STAT_NSEC(&st) != file->mtime_nsec
 				) {
