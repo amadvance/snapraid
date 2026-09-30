@@ -1067,6 +1067,7 @@ int snapraid_main(int argc, char* argv[])
 	app_init();
 	raid_init();
 	crc32c_init();
+	hash_init();
 	random_reseed();
 
 	if (speedtest != 0) {

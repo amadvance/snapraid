@@ -153,7 +153,15 @@ static struct hash_test_vector TEST_MUSEAIR[] = {
 	{ 0, 0, { 0 }, { 0 } }
 };
 
-#define HASH_TEST_MAX 512 /* tests are never longer than 512 bytes */
+/**
+ * Test vectors for XXH3
+ */
+static struct hash_test_vector TEST_XXH3[] = {
+#include "xxh3test.c"
+	{ 0, 0, { 0 }, { 0 } }
+};
+
+#define HASH_TEST_MAX 4096 /* tests are never longer than 4096 bytes */
 
 static void test_hash(void)
 {
@@ -236,6 +244,69 @@ static void test_hash(void)
 		if (memcmp(digest, TEST_MUSEAIR[i].digest, HASH_MAX) != 0) {
 			/* LCOV_EXCL_START */
 			log_fatal(EINTERNAL, "Failed MuseAir test\n");
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+	}
+
+	for (i = 0; TEST_XXH3[i].data; ++i) {
+		unsigned char digest[HASH_MAX];
+		memcpy(buffer_aligned, TEST_XXH3[i].data, TEST_XXH3[i].len);
+		memcpy(seed_aligned, TEST_XXH3[i].seed, HASH_MAX);
+
+		xxh3_128(buffer_aligned, TEST_XXH3[i].len, seed_aligned, digest);
+		if (memcmp(digest, TEST_XXH3[i].digest, HASH_MAX) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal(EINTERNAL, "Failed XXH3 test\n");
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+#if CONFIG_X86
+		if (raid_cpu_has_sse2()) {
+			xxh3_128_sse2(buffer_aligned, TEST_XXH3[i].len, seed_aligned, digest);
+			if (memcmp(digest, TEST_XXH3[i].digest, HASH_MAX) != 0) {
+				/* LCOV_EXCL_START */
+				log_fatal(EINTERNAL, "Failed XXH3 SSE2 test\n");
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+		}
+
+		if (raid_cpu_has_avx2()) {
+			xxh3_128_avx2(buffer_aligned, TEST_XXH3[i].len, seed_aligned, digest);
+			if (memcmp(digest, TEST_XXH3[i].digest, HASH_MAX) != 0) {
+				/* LCOV_EXCL_START */
+				log_fatal(EINTERNAL, "Failed XXH3 AVX2 test\n");
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+		}
+
+		if (raid_cpu_has_avx512f()) {
+			xxh3_128_avx512(buffer_aligned, TEST_XXH3[i].len, seed_aligned, digest);
+			if (memcmp(digest, TEST_XXH3[i].digest, HASH_MAX) != 0) {
+				/* LCOV_EXCL_START */
+				log_fatal(EINTERNAL, "Failed XXH3 AVX512 test\n");
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+		}
+#endif
+#if defined(CONFIG_NEON) || defined(CONFIG_NEON32)
+		xxh3_128_neon(buffer_aligned, TEST_XXH3[i].len, seed_aligned, digest);
+		if (memcmp(digest, TEST_XXH3[i].digest, HASH_MAX) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal(EINTERNAL, "Failed XXH3 NEON test\n");
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+#endif
+
+		memhash(HASH_XXH3, seed_aligned, digest, buffer_aligned, TEST_XXH3[i].len);
+		if (memcmp(digest, TEST_XXH3[i].digest, HASH_MAX) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal(EINTERNAL, "Failed XXH3 memhash test\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -2924,6 +2995,7 @@ void test(int argc, char* argv[])
 
 	lock_init();
 	crc32c_init();
+	hash_init();
 	raid_init();
 
 	msg_progress("Test...\n");

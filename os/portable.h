@@ -84,8 +84,19 @@
 #define CONFIG_X86_64 1
 #endif
 
-#if defined(__aarch64__) && defined(__ARM_FEATURE_CRC32)
+#if defined(__aarch64__)
+#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+#define CONFIG_NEON 1
+#endif
+#if defined(__ARM_FEATURE_CRC32)
 #define CONFIG_ARM_CRC 1
+#endif
+#endif
+
+#if defined(__arm__)
+#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+#define CONFIG_NEON32 1
+#endif
 #endif
 #endif
 
@@ -131,7 +142,6 @@
 #if HAVE_LINUX_FIEMAP_H
 #include <linux/fiemap.h>
 #endif
-
 
 /**
  * Includes some standard headers.

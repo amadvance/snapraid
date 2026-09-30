@@ -787,6 +787,7 @@ const char* memhashname(unsigned kind)
 	case HASH_MURMUR3 : return "murmur3";
 	case HASH_SPOOKY2 : return "spooky2";
 	case HASH_MUSEAIR : return "museair";
+	case HASH_XXH3 : return "xxh3";
 	}
 
 	return 0;
@@ -810,6 +811,26 @@ unsigned membesthash(void)
 #include "murmur3.c"
 #include "spooky2.c"
 #include "museair.c"
+#include "xxh3.c"
+
+static void (*xxh3)(const void* bytes, size_t len, const uint8_t* seed, uint8_t* out) = xxh3_128;
+
+void hash_init(void)
+{
+	xxh3 = xxh3_128;
+#if CONFIG_X86
+	if (raid_cpu_has_avx512f()) {
+		xxh3 = xxh3_128_avx512;
+	} else if (raid_cpu_has_avx2()) {
+		xxh3 = xxh3_128_avx2;
+	} else if (raid_cpu_has_sse2()) {
+		xxh3 = xxh3_128_sse2;
+	}
+#endif
+#if defined(CONFIG_NEON) || defined(CONFIG_NEON32)
+	xxh3 = xxh3_128_neon;
+#endif
+}
 
 void memhash(unsigned kind, const unsigned char* seed, void* digest, const void* src, size_t size)
 {
@@ -822,6 +843,9 @@ void memhash(unsigned kind, const unsigned char* seed, void* digest, const void*
 		break;
 	case HASH_MUSEAIR :
 		MuseAirLoong(src, size, seed, digest);
+		break;
+	case HASH_XXH3 :
+		xxh3(src, size, seed, digest);
 		break;
 	default :
 		/* LCOV_EXCL_START */
@@ -859,6 +883,7 @@ const char* hash_config_name(unsigned kind)
 	case HASH_MURMUR3 : return "murmur3";
 	case HASH_SPOOKY2 : return "spooky2";
 	case HASH_MUSEAIR : return "museair";
+	case HASH_XXH3 : return "xxh3";
 	default :
 		/* LCOV_EXCL_START */
 		return "unknown";

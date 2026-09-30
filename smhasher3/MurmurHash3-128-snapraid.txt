@@ -1,8 +1,3 @@
-WARNING: Hash with verification code 4a6673e7 was already registered: MetroHash-128
-         Are you certain MetroHash-128.snapraid is a unique implementation?
-WARNING: Hash with verification code d5f2cd8c was already registered: MetroHash-128
-         Are you certain MetroHash-128.snapraid is a unique implementation?
--------------------------------------------------------------------------------
 --- Testing MurmurHash3-128.snapraid "MurmurHash3 x86_128 with SnapRAID 128-bit seed interface"
 
 [[[ Sanity Tests ]]]

@@ -385,11 +385,25 @@ extern uint32_t (*crc32c)(uint32_t crc, const unsigned char* ptr, size_t size);
 uint32_t crc32c_gen(uint32_t crc, const unsigned char* ptr, size_t size);
 uint32_t crc32c_x86(uint32_t crc, const unsigned char* ptr, size_t size);
 uint32_t crc32c_arm64(uint32_t crc, const unsigned char* ptr, size_t size);
+void xxh3_128(const void* bytes, size_t len, const uint8_t* seed, uint8_t* out);
+#if CONFIG_X86
+void xxh3_128_sse2(const void* bytes, size_t len, const uint8_t* seed, uint8_t* out);
+void xxh3_128_avx2(const void* bytes, size_t len, const uint8_t* seed, uint8_t* out);
+void xxh3_128_avx512(const void* bytes, size_t len, const uint8_t* seed, uint8_t* out);
+#endif
+#if defined(CONFIG_NEON) || defined(CONFIG_NEON32)
+void xxh3_128_neon(const void* bytes, size_t len, const uint8_t* seed, uint8_t* out);
+#endif
 
 /**
  * Initialize the CRC-32 (Castagnoli) support.
  */
 void crc32c_init(void);
+
+/**
+ * Initialize the hash subsystem and select the best CPU backend.
+ */
+void hash_init(void);
 
 /****************************************************************************/
 /* hash */
@@ -406,6 +420,7 @@ void crc32c_init(void);
 #define HASH_MURMUR3 1
 #define HASH_SPOOKY2 2
 #define HASH_MUSEAIR 3
+#define HASH_XXH3 4
 
 /**
  * Return the hash that is expected to be the fastest in this architecture
@@ -448,12 +463,12 @@ void memhash_block(unsigned kind, const unsigned char* seed, void* digest, const
  *
  * Legacy hashes (Murmur3, Spooky2) preserve historical semantics and hash
  * only the logical file bytes.
- * Modern hashes (MuseAir) hash the complete zero-padded RAID block up to
+ * Modern hashes (MuseAir, XXH3) hash the complete zero-padded RAID block up to
  * block_size.
  */
 static inline int memhash_is_block(unsigned kind)
 {
-	return kind == HASH_MUSEAIR;
+	return kind == HASH_MUSEAIR || kind == HASH_XXH3;
 }
 
 /**

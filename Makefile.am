@@ -117,6 +117,8 @@ noinst_HEADERS = \
 	cmdline/spooky2test.c \
 	cmdline/museair.c \
 	cmdline/museairtest.c \
+	cmdline/xxh3.c \
+	cmdline/xxh3test.c \
 	cmdline/import.h \
 	cmdline/search.h \
 	cmdline/thermal.h \

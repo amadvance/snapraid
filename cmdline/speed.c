@@ -151,6 +151,18 @@ void speed_hash(int nd, void** v, int size, int delta, int period)
 	printf("%8s", "murmur3");
 	printf("%8s", "spooky2");
 	printf("%8s", "museair");
+	printf("%8s", "xxh3");
+#if CONFIG_X86
+	if (raid_cpu_has_sse2())
+		printf("%8s", "xsse2");
+	if (raid_cpu_has_avx2())
+		printf("%8s", "xavx2");
+	if (raid_cpu_has_avx512f())
+		printf("%8s", "xavx512");
+#endif
+#if defined(CONFIG_NEON) || defined(CONFIG_NEON32)
+	printf("%8s", "xneon");
+#endif
 	printf("\n");
 
 	printf("%8s", "hash");
@@ -179,6 +191,57 @@ void speed_hash(int nd, void** v, int size, int delta, int period)
 	} SPEED_STOP
 
 	printf("%8" PRIu64, ds / dt);
+	fflush(stdout);
+
+	SPEED_START {
+		for (i = 0; i < nd; ++i)
+			xxh3_128(v[i], size, seed, digest);
+	} SPEED_STOP
+
+	printf("%8" PRIu64, ds / dt);
+	fflush(stdout);
+
+#if CONFIG_X86
+	if (raid_cpu_has_sse2()) {
+		SPEED_START {
+			for (i = 0; i < nd; ++i)
+				xxh3_128_sse2(v[i], size, seed, digest);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
+
+	if (raid_cpu_has_avx2()) {
+		SPEED_START {
+			for (i = 0; i < nd; ++i)
+				xxh3_128_avx2(v[i], size, seed, digest);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
+
+	if (raid_cpu_has_avx512f()) {
+		SPEED_START {
+			for (i = 0; i < nd; ++i)
+				xxh3_128_avx512(v[i], size, seed, digest);
+		} SPEED_STOP
+
+		printf("%8" PRIu64, ds / dt);
+		fflush(stdout);
+	}
+#endif
+#if defined(CONFIG_NEON) || defined(CONFIG_NEON32)
+	SPEED_START {
+		for (i = 0; i < nd; ++i)
+			xxh3_128_neon(v[i], size, seed, digest);
+	} SPEED_STOP
+
+	printf("%8" PRIu64, ds / dt);
+	fflush(stdout);
+#endif
+
 	printf("\n");
 	printf("\n");
 }

@@ -260,6 +260,26 @@ static inline int raid_cpu_has_avx2gfni(void)
 	return raid_cpu_match_avx(leaf_1_ecx, leaf_7_ebx, leaf_7_ecx, xcr0);
 }
 
+static inline int raid_cpu_has_avx512f(void)
+{
+	/*
+	 * Intel Architecture Instruction Set Extensions Programming Reference
+	 * 319433-022 October 2014
+	 *
+	 * 2.2 Detection of 512-bit Instruction Groups of Intel AVX-512 Family
+	 * 1) Detect CPUID.1:ECX.OSXSAVE[bit 27] = 1 (XGETBV enabled for application use)
+	 * 2) Execute XGETBV and verify that XCR0[7:5] = `111b' (OPMASK state, upper 256-bit of
+	 * ZMM0-ZMM15 and ZMM16-ZMM31 state are enabled by OS) and that XCR0[2:1] = `11b'
+	 * (XMM state and YMM state are enabled by OS).
+	 * 3) Verify CPUID.0x7.0:EBX.AVX512F[bit 16] = 1.
+	 */
+	uint32_t leaf_1_ecx = 1 << 27; /* XSAVE/XGETBV */
+	uint32_t leaf_7_ebx = 1 << 16; /* AVX512F */
+	uint32_t xcr0 = (3 << 1) | (7 << 5); /* OS saves XMM, YMM and ZMM registers */
+
+	return raid_cpu_match_avx(leaf_1_ecx, leaf_7_ebx, 0, xcr0);
+}
+
 static inline int raid_cpu_has_avx512bw(void)
 {
 	/*

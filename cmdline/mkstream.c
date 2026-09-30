@@ -22,6 +22,7 @@ void test(int advise_mode)
 	uint32_t put_crc_stored;
 
 	crc32c_init();
+	hash_init();
 
 	s = sopen_multi_write(STREAM_MAX, advise_mode | STREAM_FLAGS_CRC);
 	for (i = 0; i < STREAM_MAX; ++i) {

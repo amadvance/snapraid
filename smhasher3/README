@@ -21,6 +21,35 @@ Date:   Tue Aug 4 11:58:32 2026 -0700
 Files and results
 =================
 
+xxh3_snapraid.cpp
+    XXH3-128 as used by SnapRAID. All inputs use the long accumulator
+    mode. Inputs shorter than 64 bytes are zero-padded to 64 bytes, with
+    the original length retained in finalization.
+
+XXH3-128-snapraid.txt
+    SMHasher3 output for xxh3_snapraid.cpp, using SSE2.
+
+    Result comparison:
+    The SnapRAID variant passes 250 of 252 tests, compared with 214 of 250
+    in the archived official XXH3-128 result. Always using the Long path
+    removes the observed short-input BIC failures and many seed-test
+    failures. Sanity, Avalanche and BIC all pass.
+
+    Two failures remain. Bitflip finds excess collisions in the high
+    32 bits for 20-byte inputs when flipping input bit 84: 2291 collisions
+    versus 2047.3 expected. This isolated anomaly needs confirmation with
+    different seeds. SeedZeroes shows strong differential collision and
+    distribution biases for all-zero inputs with lengths up to 8448 bytes
+    and sparse or complemented sparse seeds. The direct hash distribution
+    passes; the failure concerns XOR differences between hashes.
+
+    Official XXH3 also fails SeedZeroes. The remaining failure is consistent
+    with a limitation of the shared Long path, although these results alone
+    do not establish its cause. No full 128-bit collisions were observed.
+    MuseAir and SpookyHash V2 have cleaner results, passing all 252 tests.
+    The seed tests cover duplicated 64-bit seeds, not independent 128-bit
+    seed halves.
+
 museair_snapraid.cpp
     MuseAir BFast-128 as used by SnapRAID. Inputs shorter than 32 bytes
     are zero-padded to 32 bytes and processed with the Long path while
@@ -71,7 +100,7 @@ Seed mapping
 
 SMHasher3 exposes one 64-bit seed_t, while SnapRAID uses 128-bit seeds.
 
-For MuseAir and SpookyHash V2:
+For XXH3, MuseAir and SpookyHash V2:
 
 seed[0..7]  = seed_t
 seed[8..15] = seed_t
@@ -95,6 +124,7 @@ Copy the adapters into the SMHasher3 hashes directory:
 hashes/museair_snapraid.cpp
 hashes/spooky2_snapraid.cpp
 hashes/murmur3_snapraid.cpp
+hashes/xxh3_snapraid.cpp
 
 Add them to hashes/Hashsrc.cmake and rebuild SMHasher3.
 
@@ -105,6 +135,10 @@ Check the registrations with:
 
 Generating the result files
 ===========================
+
+./SMHasher3 XXH3-128-snapraid \
+    --extra --notest=Speed,Hashmap --ncpu=16 \
+    > ../../../../smhasher3/XXH3-128-snapraid.txt 2>&1
 
 ./SMHasher3 MuseAir-128.bfast-snapraid \
     --extra --notest=Speed,Hashmap --ncpu=16 \
@@ -127,6 +161,7 @@ The authoritative implementations remain the SnapRAID source files:
 cmdline/museair.c
 cmdline/spooky2.c
 cmdline/murmur3.c
+cmdline/xxh3.c
 
 SnapRAID repository:
 
