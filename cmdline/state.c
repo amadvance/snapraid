@@ -2548,15 +2548,20 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			}
 
 			ret = sgetb32(f, &v_mtime_nsec);
-			if (ret < 0 || v_mtime_nsec > 1000000000) {
+			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
-			/* STAT_NSEC_INVALID is encoded as 0 */
-			if (v_mtime_nsec == 0)
+			/*
+			 * STAT_NSEC_INVALID is encoded as 0.
+			 * Values > 1000000000 can occur in content files written by SnapRAID <= 14.10
+			 * on Windows for files with pre-1970 timestamps due to negative nanoseconds.
+			 * Normalize them to STAT_NSEC_INVALID.
+			 */
+			if (v_mtime_nsec == 0 || v_mtime_nsec > 1000000000)
 				v_mtime_nsec = STAT_NSEC_INVALID;
 			else
 				--v_mtime_nsec;
@@ -3008,15 +3013,20 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				}
 
 				ret = sgetb32(f, &v_mtime_nsec);
-				if (ret < 0 || v_mtime_nsec > 1000000000) {
+				if (ret < 0) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
 					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
 
-				/* STAT_NSEC_INVALID is encoded as 0 */
-				if (v_mtime_nsec == 0)
+				/*
+				 * STAT_NSEC_INVALID is encoded as 0.
+				 * Values > 1000000000 can occur in content files written by SnapRAID <= 14.10
+				 * on Windows for files with pre-1970 timestamps due to negative nanoseconds.
+				 * Normalize them to STAT_NSEC_INVALID.
+				 */
+				if (v_mtime_nsec == 0 || v_mtime_nsec > 1000000000)
 					v_mtime_nsec = STAT_NSEC_INVALID;
 				else
 					--v_mtime_nsec;
