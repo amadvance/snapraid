@@ -4537,26 +4537,27 @@ void os_abort(void)
 	size_t size;
 	unsigned i;
 
-	printf("Stacktrace of " PACKAGE " v" VERSION);
-	printf(", mingw");
+	fprintf(stderr, "Stacktrace of " PACKAGE " v" VERSION);
+	fprintf(stderr, ", mingw");
 #ifdef __GNUC__
-	printf(", gcc " __VERSION__);
+	fprintf(stderr, ", gcc " __VERSION__);
 #endif
-	printf(", %d-bit", (int)sizeof(void*) * 8);
-	printf(", PATH_MAX=%d", PATH_MAX);
-	printf("\n");
+	fprintf(stderr, ", %d-bit", (int)sizeof(void*) * 8);
+	fprintf(stderr, ", PATH_MAX=%d", PATH_MAX);
+	fprintf(stderr, "\n");
 
 	/* get stackstrace, but without symbols */
-	size = CaptureStackBackTrace(0, 32, stack, NULL);
+	size = CaptureStackBackTrace(0, 32, stack, 0);
 
 	for (i = 0; i < size; ++i)
-		printf("[bt] %02u: %p\n", i, stack[i]);
+		fprintf(stderr, "[bt] %02u: %p\n", i, stack[i]);
 
-	printf("Please report this error to the SnapRAID Issues:\n");
-	printf("https://github.com/amadvance/snapraid/issues\n");
+	fprintf(stderr, "Please report this error to the SnapRAID Issues:\n");
+	fprintf(stderr, "https://github.com/amadvance/snapraid/issues\n");
+	fflush(stderr);
 
-	/* use exit() and not abort to avoid the Windows abort dialog */
-	os_exit();
+	/* use exit(134) (128 + SIGABRT) and not abort to avoid the Windows abort dialog while distinguishing abort from normal failure */
+	exit(134);
 }
 
 void os_exit(void)
