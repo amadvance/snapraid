@@ -904,7 +904,7 @@ void dealloc_import(tommy_arrayblkof* infoarr, struct snapraid_disk* disk, struc
 			if (parity_pos == POS_NULL) {
 				/* LCOV_EXCL_START */
 				log_fatal(EINTERNAL, "Internal inconsistency: Missing parity position for dealloc block %" PRIu64 "\n", i);
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -920,7 +920,7 @@ void dealloc_import(tommy_arrayblkof* infoarr, struct snapraid_disk* disk, struc
 		default :
 			/* LCOV_EXCL_START */
 			log_fatal(EINTERNAL, "Internal inconsistency: State for dealloc block %" PRIu64 " state %u\n", i, block_state);
-			exit(EXIT_FAILURE);
+			os_abort();
 			/* LCOV_EXCL_STOP */
 		}
 	}

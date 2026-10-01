@@ -625,7 +625,7 @@ int parity_restore(struct snapraid_parity_handle* handle, data_off_t size, uint3
 		if ((run & block_mask) != 0) {
 			/* LCOV_EXCL_START */
 			errno = ENXIO;
-			log_fatal(EINTERNAL, "Internal inconsistency in split '%s' size with extra '%" PRIu64 "' bytes.\n", split->path, run & block_mask);
+			log_fatal(EINTERNAL, "Split '%s' size with extra '%" PRIu64 "' bytes.\n", split->path, run & block_mask);
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
@@ -731,7 +731,7 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 				if ((run & block_mask) != 0) {
 					/* LCOV_EXCL_START */
 					errno = ENXIO;
-					log_fatal(EINTERNAL, "Internal inconsistency in split '%s' size with extra '%" PRIu64 "' bytes.\n", split->path, run & block_mask);
+					log_fatal(EINTERNAL, "Split '%s' size with extra '%" PRIu64 "' bytes.\n", split->path, run & block_mask);
 					return -1;
 					/* LCOV_EXCL_STOP */
 				}

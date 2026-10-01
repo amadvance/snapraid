@@ -2428,7 +2428,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	if (ret < 0) {
 		/* LCOV_EXCL_START */
 		decoding_error(path, f);
-		log_fatal(ECONTENT, "Invalid header!\n");
+		log_fatal(ECONTENT, "Invalid header: read failed!\n");
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -2457,7 +2457,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 		/* LCOV_EXCL_START */
 		if (memcmp(buffer, "SNAPCNT", 7) != 0) {
 			decoding_error(path, f);
-			log_fatal(ECONTENT, "Invalid header!\n");
+			log_fatal(ECONTENT, "Invalid header: magic mismatch!\n");
 			os_abort();
 		} else {
 			log_fatal(ECONTENT, "The content file '%s' was generated with a newer version of SnapRAID!\n", path);
@@ -2491,7 +2491,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0 || mapping >= mapping_max) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(EINTERNAL, "Internal inconsistency: File mapping index out of range\n");
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'f' mapping index out of range\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -2501,6 +2501,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'f' has an invalid size\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -2509,23 +2510,23 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (v_size > INT64_MAX) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(ECONTENT, "Internal inconsistency: Invalid file size %" PRIu64 "!\n", v_size);
-				exit(EXIT_FAILURE);
+				log_fatal(ECONTENT, "Internal inconsistency: Field 'f' size %" PRIu64 " exceeds maximum!\n", v_size);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
 			if (state->block_size == 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(EINTERNAL, "Internal inconsistency: Zero blocksize\n");
-				exit(EXIT_FAILURE);
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'f' encountered with zero blocksize\n");
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
 			if (!has_blockmax) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(EINTERNAL, "Internal inconsistency: Missing 'blockmax' before file in the content file!\n");
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'f' missing 'blockmax' in the content file!\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -2534,7 +2535,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (v_size / state->block_size > blockmax) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(EINTERNAL, "Internal inconsistency: File size too big!\n");
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'f' size is too big!\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -2543,6 +2544,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'f' has an invalid mtime_sec\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -2551,6 +2553,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'f' has an invalid mtime_nsec\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -2570,6 +2573,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'f' has an invalid inode\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -2578,13 +2582,14 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'f' has an invalid subpath\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 			if (!path_is_sub(sub)) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(EINTERNAL, "Internal inconsistency: Invalid file '%s'!\n", sub);
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'f' has invalid subpath '%s'!\n", sub);
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -2618,6 +2623,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
+					log_fatal(EINTERNAL, "Internal inconsistency: Field 'f' block run has an invalid pos\n");
 					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
@@ -2626,6 +2632,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
+					log_fatal(EINTERNAL, "Internal inconsistency: Field 'f' block run has an invalid count\n");
 					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
@@ -2633,7 +2640,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				if (v_count == 0 || v_count > file->blockmax || v_idx > file->blockmax - v_count) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
-					log_fatal(EINTERNAL, "Internal inconsistency: Block number out of range\n");
+					log_fatal(EINTERNAL, "Internal inconsistency: Field 'f' block number out of range\n");
 					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
@@ -2641,7 +2648,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				if (v_count > blockmax || v_pos > blockmax - v_count) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
-					log_fatal(EINTERNAL, "Internal inconsistency: Block size %" PRIu64 "/%" PRIu64 "!\n", blockmax, v_pos + v_count);
+					log_fatal(EINTERNAL, "Internal inconsistency: Field 'f' block position out of range %" PRIu64 "/%" PRIu64 "!\n", blockmax, v_pos + v_count);
 					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
@@ -2669,7 +2676,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				default :
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
-					log_fatal(ECONTENT, "Invalid block type!\n");
+					log_fatal(ECONTENT, "Internal inconsistency: Field 'f' has invalid block type '%c'!\n", (char)c);
 					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
@@ -2683,6 +2690,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
+					log_fatal(EINTERNAL, "Internal inconsistency: Field 'f' error reading block run\n");
 					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
@@ -2703,7 +2711,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (has_info || !has_blockmax) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(EINTERNAL, "Internal inconsistency: Duplicate or misplaced 'info' in the content file!\n");
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'i' duplicate or misplaced in the content file!\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -2713,6 +2721,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'i' has an invalid oldest timestamp\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -2721,8 +2730,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (v_oldest > INT64_MAX) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(ECONTENT, "Internal inconsistency: Invalid info oldest timestamp %" PRIu64 "!\n", v_oldest);
-				exit(EXIT_FAILURE);
+				log_fatal(ECONTENT, "Internal inconsistency: Field 'i' has an out-of-range oldest timestamp %" PRIu64 "!\n", v_oldest);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -2739,6 +2748,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
+					log_fatal(EINTERNAL, "Internal inconsistency: Field 'i' run has an invalid count\n");
 					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
@@ -2746,7 +2756,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				if (v_count > blockmax || v_pos > blockmax - v_count) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
-					log_fatal(EINTERNAL, "Internal inconsistency: Info size %" PRIu64 "/%" PRIu64 "!\n", blockmax, v_pos + v_count);
+					log_fatal(EINTERNAL, "Internal inconsistency: Field 'i' run size out of range %" PRIu64 "/%" PRIu64 "!\n", blockmax, v_pos + v_count);
 					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
@@ -2755,6 +2765,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
+					log_fatal(EINTERNAL, "Internal inconsistency: Field 'i' has invalid flags\n");
 					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
@@ -2766,6 +2777,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					if (ret < 0) {
 						/* LCOV_EXCL_START */
 						decoding_error(path, f);
+						log_fatal(EINTERNAL, "Internal inconsistency: Field 'i' has an invalid timestamp\n");
 						os_abort();
 						/* LCOV_EXCL_STOP */
 					}
@@ -2774,8 +2786,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					if (t64 > INT64_MAX - v_oldest) {
 						/* LCOV_EXCL_START */
 						decoding_error(path, f);
-						log_fatal(ECONTENT, "Internal inconsistency: Invalid info timestamp %" PRIu64 "!\n", t64);
-						exit(EXIT_FAILURE);
+						log_fatal(ECONTENT, "Internal inconsistency: Field 'i' has an overflowing timestamp %" PRIu64 "!\n", t64);
+						os_abort();
 						/* LCOV_EXCL_STOP */
 					}
 
@@ -2794,7 +2806,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					if (rehash && state->prevhash == HASH_UNDEFINED) {
 						/* LCOV_EXCL_START */
 						decoding_error(path, f);
-						log_fatal(EINTERNAL, "Internal inconsistency: Missing previous checksum!\n");
+						log_fatal(EINTERNAL, "Internal inconsistency: Field 'i' requires previous checksum but none defined\n");
 						os_abort();
 						/* LCOV_EXCL_STOP */
 					}
@@ -2803,7 +2815,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					if (!info) {
 						/* LCOV_EXCL_START */
 						decoding_error(path, f);
-						log_fatal(EINTERNAL, "Internal inconsistency: Missing info!\n");
+						log_fatal(EINTERNAL, "Internal inconsistency: Field 'i' failed to create info object\n");
 						os_abort();
 						/* LCOV_EXCL_STOP */
 					}
@@ -2819,7 +2831,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 						if (fs_info_is_required(state, v_pos)) {
 							/* LCOV_EXCL_START */
 							decoding_error(path, f);
-							log_fatal(EINTERNAL, "Internal inconsistency: Missing info!\n");
+							log_fatal(EINTERNAL, "Internal inconsistency: Field 'i' missing required info for position %" PRIu64 "\n", (uint64_t)v_pos);
 							os_abort();
 							/* LCOV_EXCL_STOP */
 						}
@@ -2850,7 +2862,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0 || mapping >= mapping_max) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(EINTERNAL, "Internal inconsistency: Hole mapping index out of range\n");
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'h' mapping index out of range\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -2859,7 +2871,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (!has_blockmax) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(EINTERNAL, "Internal inconsistency: Missing 'blockmax' before hole in the content file!\n");
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'h' missing 'blockmax' in the content file!\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -2873,6 +2885,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
+					log_fatal(EINTERNAL, "Internal inconsistency: Field 'h' run has an invalid count\n");
 					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
@@ -2880,7 +2893,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				if (v_count == 0 || v_count > blockmax || v_pos > blockmax - v_count) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
-					log_fatal(EINTERNAL, "Internal inconsistency: Hole size %" PRIu64 "/%" PRIu64 "!\n", blockmax, v_pos + v_count);
+					log_fatal(EINTERNAL, "Internal inconsistency: Field 'h' size out of range %" PRIu64 "/%" PRIu64 "!\n", blockmax, v_pos + v_count);
 					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
@@ -2897,8 +2910,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					if (v_count > INT64_MAX / (uint64_t)state->block_size) {
 						/* LCOV_EXCL_START */
 						decoding_error(path, f);
-						log_fatal(ECONTENT, "Internal inconsistency: Invalid deleted block count %" PRIu64 "!\n", v_count);
-						exit(EXIT_FAILURE);
+						log_fatal(ECONTENT, "Internal inconsistency: Field 'h' deleted block count %" PRIu64 " overflows size!\n", v_count);
+						os_abort();
 						/* LCOV_EXCL_STOP */
 					}
 
@@ -2919,6 +2932,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					if (ret < 0) {
 						/* LCOV_EXCL_START */
 						decoding_error(path, f);
+						log_fatal(EINTERNAL, "Internal inconsistency: Field 'h' error reading deleted block run\n");
 						os_abort();
 						/* LCOV_EXCL_STOP */
 					}
@@ -2934,7 +2948,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				default :
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
-					log_fatal(ECONTENT, "Invalid hole type!\n");
+					log_fatal(ECONTENT, "Internal inconsistency: Field 'h' has invalid hole type '%c'!\n", (char)c);
 					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
@@ -2950,7 +2964,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0 || mapping >= mapping_max) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(EINTERNAL, "Internal inconsistency: Dealloc mapping index out of range\n");
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'd' mapping index out of range\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -2960,6 +2974,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'd' has an invalid count\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -2976,13 +2991,14 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
+					log_fatal(EINTERNAL, "Internal inconsistency: Field 'd' entry has an invalid subpath\n");
 					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
 				if (!path_is_sub(sub)) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
-					log_fatal(EINTERNAL, "Internal inconsistency: Invalid dealloc '%s'!\n", sub);
+					log_fatal(EINTERNAL, "Internal inconsistency: Field 'd' entry has invalid subpath '%s'!\n", sub);
 					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
@@ -2991,6 +3007,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
+					log_fatal(EINTERNAL, "Internal inconsistency: Field 'd' entry has an invalid size\n");
 					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
@@ -2999,8 +3016,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				if (v_size > INT64_MAX) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
-					log_fatal(ECONTENT, "Internal inconsistency: Invalid deallocated file size %" PRIu64 "!\n", v_size);
-					exit(EXIT_FAILURE);
+					log_fatal(ECONTENT, "Internal inconsistency: Field 'd' entry has an out-of-range size %" PRIu64 "!\n", v_size);
+					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
 
@@ -3008,6 +3025,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
+					log_fatal(EINTERNAL, "Internal inconsistency: Field 'd' entry has an invalid mtime_sec\n");
 					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
@@ -3016,6 +3034,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
+					log_fatal(EINTERNAL, "Internal inconsistency: Field 'd' entry has an invalid mtime_nsec\n");
 					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
@@ -3047,7 +3066,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 						if (state->prevhash == HASH_UNDEFINED) {
 							/* LCOV_EXCL_START */
 							decoding_error(path, f);
-							log_fatal(EINTERNAL, "Internal inconsistency: Previous dealloc hash without previous checksum!\n");
+							log_fatal(EINTERNAL, "Internal inconsistency: Field 'd' previous hash without previous checksum\n");
 							os_abort();
 							/* LCOV_EXCL_STOP */
 						}
@@ -3055,7 +3074,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					} else {
 						/* LCOV_EXCL_START */
 						decoding_error(path, f);
-						log_fatal(ECONTENT, "Invalid dealloc hash type!\n");
+						log_fatal(ECONTENT, "Internal inconsistency: Field 'd' has invalid hash type '%c'!\n", (char)c);
 						os_abort();
 						/* LCOV_EXCL_STOP */
 					}
@@ -3064,6 +3083,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					if (ret < 0) {
 						/* LCOV_EXCL_START */
 						decoding_error(path, f);
+						log_fatal(EINTERNAL, "Internal inconsistency: Field 'd' error reading block hash\n");
 						os_abort();
 						/* LCOV_EXCL_STOP */
 					}
@@ -3084,7 +3104,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0 || mapping >= mapping_max) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(EINTERNAL, "Internal inconsistency: Symlink mapping index out of range\n");
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 's' mapping index out of range\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -3094,6 +3114,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 's' has an invalid subpath\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -3101,7 +3122,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (!path_is_sub(sub)) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(EINTERNAL, "Internal inconsistency: Invalid symlink '%s'!\n", sub);
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 's' has invalid subpath '%s'!\n", sub);
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -3110,6 +3131,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 's' has an invalid target path\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -3135,7 +3157,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0 || mapping >= mapping_max) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(EINTERNAL, "Internal inconsistency: Hardlink mapping index out of range!\n");
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'a' mapping index out of range\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -3145,6 +3167,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'a' has an invalid subpath\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -3152,7 +3175,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (!path_is_sub(sub)) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(EINTERNAL, "Internal inconsistency: Invalid hardlink '%s'!\n", sub);
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'a' has invalid subpath '%s'!\n", sub);
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -3161,6 +3184,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'a' has an invalid target path\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -3168,7 +3192,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (!path_is_sub(linkto)) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(EINTERNAL, "Internal inconsistency: Invalid hardlink target '%s' for '%s'!\n", linkto, sub);
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'a' has invalid target '%s' for '%s'!\n", linkto, sub);
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -3193,7 +3217,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0 || mapping >= mapping_max) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(EINTERNAL, "Internal inconsistency: Dir mapping index out of range!\n");
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'r' mapping index out of range\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -3203,6 +3227,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'r' has an invalid subpath\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -3210,7 +3235,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (!path_is_sub(sub)) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(EINTERNAL, "Internal inconsistency: Invalid dir '%s'!\n", sub);
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'r' has invalid subpath '%s'!\n", sub);
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -3228,7 +3253,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (has_hash || mapping_max != 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(EINTERNAL, "Internal inconsistency: Duplicate or misplaced 'hash' in the content file!\n");
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'c' duplicate or misplaced the content file!\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -3247,7 +3272,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			default :
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(ECONTENT, "Invalid checksum!\n");
+				log_fatal(ECONTENT, "Internal inconsistency: Field 'c' has invalid checksum type '%c'!\n", (char)c);
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -3257,6 +3282,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'c' error reading hash seed\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -3264,7 +3290,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (has_prevhash || mapping_max != 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(EINTERNAL, "Internal inconsistency: Duplicate or misplaced 'prevhash' in the content file!\n");
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'C' duplicate or misplaced in the content file!\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -3283,7 +3309,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			default :
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(ECONTENT, "Invalid checksum!\n");
+				log_fatal(ECONTENT, "Internal inconsistency: Field 'C' has invalid checksum type '%c'!\n", (char)c);
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -3293,6 +3319,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'C' error reading hash seed\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -3302,7 +3329,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (has_block_size || mapping_max != 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(EINTERNAL, "Internal inconsistency: Duplicate or misplaced 'blocksize' in the content file!\n");
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'z' duplicate or misplaced in the content file!\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -3312,6 +3339,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'z' has an invalid block size\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -3319,8 +3347,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (block_size == 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(ECONTENT, "Zero 'blocksize' specification in the content file!\n");
-				exit(EXIT_FAILURE);
+				log_fatal(ECONTENT, "Internal inconsistency: Field 'z' has zero 'blocksize' specification in the content file!\n");
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -3343,7 +3371,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (has_hash_size || mapping_max != 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(EINTERNAL, "Internal inconsistency: Duplicate or misplaced 'hashsize' in the content file!\n");
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'y' duplicate or misplaced in the content file!\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -3353,6 +3381,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'y' has an invalid hash size\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -3368,7 +3397,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (hash_size < 4 || hash_size > HASH_MAX) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(ECONTENT, "Invalid 'hashsize' specification in the content file!\n");
+				log_fatal(ECONTENT, "Invalid 'hashsize' specification %" PRIu64 " in the content file!\n", hash_size);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -3390,7 +3419,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (has_blockmax || mapping_max != 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(EINTERNAL, "Internal inconsistency: Duplicate or misplaced 'blockmax' in the content file!\n");
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'x' duplicate or misplaced in the content file!\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -3400,6 +3429,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'x' has an invalid blockmax\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -3434,6 +3464,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'M' has an invalid disk name\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -3442,6 +3473,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'M' has an invalid disk index\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -3449,8 +3481,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (v_idx >= RAID_DATA_MAX) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(ECONTENT, "Invalid disk position '%u' in the content file!\n", v_idx);
-				exit(EXIT_FAILURE);
+				log_fatal(ECONTENT, "Internal inconsistency: Field 'M' invalid disk position '%u' in the content file!\n", v_idx);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -3458,6 +3490,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'M' has an invalid total_blocks count\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -3466,6 +3499,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'M' has an invalid free_blocks count\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -3475,6 +3509,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'M' has an invalid uuid\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -3523,6 +3558,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'Q' has an invalid parity level\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -3531,6 +3567,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'Q' has an invalid total_blocks count\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -3539,6 +3576,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'Q' has an invalid free_blocks count\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -3547,6 +3585,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
+				log_fatal(EINTERNAL, "Internal inconsistency: Field 'Q' has an invalid split count\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -3554,16 +3593,16 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (v_split_mac > SPLIT_MAX) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(ECONTENT, "Too many splits '%u' in the content file!\n", v_split_mac);
-				exit(EXIT_FAILURE);
+				log_fatal(ECONTENT, "Internal inconsistency: Field 'Q' has too many splits '%u' in the content file!\n", v_split_mac);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
 			if (v_level >= LEV_MAX) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(ECONTENT, "Invalid parity level '%u' in the configuration file!\n", v_level);
-				exit(EXIT_FAILURE);
+				log_fatal(ECONTENT, "Internal inconsistency: Field 'Q' has invalid parity level '%u' in the content file!\n", v_level);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -3591,6 +3630,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
+					log_fatal(EINTERNAL, "Internal inconsistency: Field 'Q' split has an invalid path\n");
 					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
@@ -3599,6 +3639,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
+					log_fatal(EINTERNAL, "Internal inconsistency: Field 'Q' split has an invalid uuid\n");
 					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
@@ -3607,6 +3648,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
+					log_fatal(EINTERNAL, "Internal inconsistency: Field 'Q' split has an invalid size\n");
 					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
@@ -3615,16 +3657,16 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				if (v_size > INT64_MAX) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
-					log_fatal(ECONTENT, "Internal inconsistency: Invalid split file size %" PRIu64 "!\n", v_size);
-					exit(EXIT_FAILURE);
+					log_fatal(ECONTENT, "Internal inconsistency: Field 'Q' split has an out-of-range size %" PRIu64 "!\n", v_size);
+					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
 
 				if (v_size > INT64_MAX - v_size_total) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
-					log_fatal(ECONTENT, "Internal inconsistency: Total parity split size is too large!\n");
-					exit(EXIT_FAILURE);
+					log_fatal(ECONTENT, "Internal inconsistency: Field 'Q' total parity split size is too large!\n");
+					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
 
@@ -3633,16 +3675,16 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				if (!has_block_size) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
-					log_fatal(ECONTENT, "Missing 'blocksize' before parity split information in the content file!\n");
-					exit(EXIT_FAILURE);
+					log_fatal(ECONTENT, "Internal inconsistency: Field 'Q' missing 'blocksize' parity split information in the content file!\n");
+					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
 
 				if (v_size % state->block_size != 0) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
-					log_fatal(ECONTENT, "Invalid parity split size %" PRIu64 " not aligned to block size %u!\n", v_size, state->block_size);
-					exit(EXIT_FAILURE);
+					log_fatal(ECONTENT, "Internal inconsistency: Field 'Q' parity split size %" PRIu64 " not aligned to block size %u!\n", v_size, state->block_size);
+					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
 
@@ -3723,7 +3765,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 		} else {
 			/* LCOV_EXCL_START */
 			decoding_error(path, f);
-			log_fatal(ECONTENT, "Invalid command '%c'!\n", (char)c);
+			log_fatal(ECONTENT, "Internal inconsistency: Invalid field command '%c'!\n", (char)c);
 			os_abort();
 			/* LCOV_EXCL_STOP */
 		}
@@ -3782,7 +3824,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	/* check that the stored parity size matches the loaded state */
 	if (blockmax != parity_allocated_size(state)) {
 		/* LCOV_EXCL_START */
-		log_fatal(EINTERNAL, "Internal inconsistency: Parity size %" PRIu64 "/%" PRIu64 " in '%s' at offset %" PRIi64 "\n", blockmax, parity_allocated_size(state), path, stell(f));
+		log_fatal(EINTERNAL, "Wrong parity size %" PRIu64 "/%" PRIu64 " in '%s' at offset %" PRIi64 "\n", blockmax, parity_allocated_size(state), path, stell(f));
 		if (state->opt.skip_content_check) {
 			log_fatal(ECONTENT, "Overriding.\n");
 			blockmax = parity_allocated_size(state);
@@ -4004,7 +4046,7 @@ static void* state_write_thread(void* arg)
 		if (!disk) {
 			/* LCOV_EXCL_START */
 			log_fatal(EINTERNAL, "Internal inconsistency: Unmapped disk '%s'\n", map->name);
-			goto bail;
+			os_abort();
 			/* LCOV_EXCL_STOP */
 		}
 
@@ -4165,7 +4207,7 @@ static void* state_write_thread(void* arg)
 				default :
 					/* LCOV_EXCL_START */
 					log_fatal(EINTERNAL, "Internal inconsistency: State for block %" PRIu64 " state %u\n", v_pos, v_state);
-					goto bail;
+					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
 

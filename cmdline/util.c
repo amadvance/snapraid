@@ -826,7 +826,7 @@ void memhash(unsigned kind, const unsigned char* seed, void* digest, const void*
 	default :
 		/* LCOV_EXCL_START */
 		log_fatal(EINTERNAL, "Internal inconsistency in hash function %u\n", kind);
-		exit(EXIT_FAILURE);
+		os_abort();
 		break;
 		/* LCOV_EXCL_STOP */
 	}
