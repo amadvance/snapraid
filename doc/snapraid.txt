@@ -1677,6 +1677,36 @@ snapshot used by the interrupted sync. A later sync may replace
 that snapshot, making intermediate file versions unavailable for
 recovery.
 
+9.1 External backups with filesystem snapshots
+----------------------------------------------
+
+When filesystem snapshots are enabled, SnapRAID accesses or creates
+snapshots at the root of each data subvolume, volume, or dataset.
+
+A simple way to avoid any interference with external tools is to point
+your `data` configuration to a regular subdirectory within the subvolume
+or volume (for example, `/mnt/subvol/data` instead of `/mnt/subvol`).
+SnapRAID always creates the snapshot directory at the subvolume root
+(for example, `/mnt/subvol/.snapraid/`), leaving the data subdirectory
+clean so that snapshots remain outside and invisible to backup tools
+operating inside it.
+
+Otherwise, if your configured `data` directory is itself the subvolume
+or volume root, SnapRAID creates the `.snapraid/` directory directly
+inside it (on Btrfs, Bcachefs, and NTFS). While SnapRAID automatically
+excludes this directory from its own scanning, external backup tools
+or file synchronizers will encounter it. If not excluded, they may
+traverse into the snapshots or directory links and copy the entire
+frozen data tree, duplicating data and potentially exhausting backup
+storage. Always configure external backup tools to exclude the
+`.snapraid/` directory.
+
+On ZFS, snapshots are exposed through the standard `.zfs/snapshot/`
+virtual directory rather than `.snapraid/`. By default (`snapdir=hidden`),
+ZFS hides this directory from directory listings, so external backup
+tools will not traverse it. If you have enabled `snapdir=visible`,
+ensure your backup tools exclude the `.zfs/` directory.
+
 
 10 PATTERN
 ==========

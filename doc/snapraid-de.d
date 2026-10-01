@@ -1669,6 +1669,38 @@ Lebenszyklus von Snapshots (Snapshots Lifecycle)
 	Ein späterer Sync könnte diesen Snapshot ersetzen, wodurch Zwischenversionen
 	von Dateien für die Wiederherstellung nicht mehr verfügbar sind.
 
+  Externe Sicherungen mit Dateisystem-Snapshots (External backups with filesystem snapshots)
+	Wenn Dateisystem-Snapshots aktiviert sind, greift SnapRAID auf Snapshots
+	an der Wurzel jedes Daten-Subvolumes, Volumes oder Datasets zu oder erstellt
+	diese dort.
+
+	Ein einfacher Weg, um jegliche Beeinträchtigung durch externe Tools zu
+	vermeiden, besteht darin, die `data`-Konfiguration auf ein reguläres
+	Unterverzeichnis innerhalb des Subvolumes oder Volumes verweisen zu lassen
+	(beispielsweise `/mnt/subvol/data` statt `/mnt/subvol`). SnapRAID erstellt
+	das Snapshot-Verzeichnis immer an der Wurzel des Subvolumes (beispielsweise
+	`/mnt/subvol/.snapraid/`), wodurch das Datenunterverzeichnis sauber bleibt
+	und Snapshots außerhalb und unsichtbar für Sicherungswerkzeuge bleiben, die
+	darin arbeiten.
+
+	Wenn das konfigurierte `data`-Verzeichnis hingegen selbst die Wurzel des
+	Subvolumes oder Volumes ist, erstellt SnapRAID ein `.snapraid/`-Verzeichnis
+	direkt darin (auf Btrfs, Bcachefs und NTFS). Während SnapRAID dieses
+	Verzeichnis bei seinen eigenen Scans automatisch ausschließt, werden
+	externe Sicherungs- oder Synchronisationswerkzeuge darauf stoßen. Wenn es
+	nicht ausgeschlossen wird, könnten sie in die Snapshots oder Verknüpfungen
+	eindringen und den gesamten eingefrorenen Datenbaum kopieren, was Daten
+	dupliziert und den Sicherungsspeicherplatz erschöpfen kann. Konfigurieren
+	Sie externe Sicherungswerkzeuge immer so, dass sie das Verzeichnis
+	`.snapraid/` ausschließen.
+
+	Bei ZFS werden Snapshots über das standardmäßige virtuelle Verzeichnis
+	`.zfs/snapshot/` anstelle von `.snapraid/` bereitgestellt. Standardmäßig
+	(`snapdir=hidden`) blendet ZFS dieses Verzeichnis in Verzeichnislisten aus,
+	sodass externe Sicherungswerkzeuge es nicht durchlaufen. Wenn Sie
+	`snapdir=visible` aktiviert haben, stellen Sie sicher, dass Ihre
+	Sicherungswerkzeuge das Verzeichnis `.zfs/` ausschließen.
+
 Muster (Pattern)
 	Muster bieten eine flexible Möglichkeit, Dateien für die Einbeziehung oder
 	den Ausschluss zu filtern. Durch die Verwendung von Globbing-Zeichen können Sie Regeln definieren,

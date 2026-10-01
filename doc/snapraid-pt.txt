@@ -1707,6 +1707,39 @@ instantâneo usado pelo sync interrompido. Um sync posterior pode substituir
 esse instantâneo, tornando as versões intermediárias dos arquivos indisponíveis
 para recuperação.
 
+9.1 Cópias de segurança externas com instantâneos do sistema de ficheiros (External backups with filesystem snapshots)
+----------------------------------------------------------------------------------------------------------------------
+
+Quando os instantâneos do sistema de ficheiros estão ativados, o SnapRAID
+acede ou cria instantâneos na raiz de cada subvolume, volume ou conjunto
+de dados (dataset).
+
+Uma forma simples de evitar qualquer interferência com ferramentas externas
+é apontar a configuração `data` para um subdiretório normal dentro do
+subvolume ou volume (por exemplo, `/mnt/subvol/data` em vez de `/mnt/subvol`).
+O SnapRAID cria sempre o diretório de instantâneos na raiz do subvolume
+(por exemplo, `/mnt/subvol/.snapraid/`), deixando o subdiretório de dados
+limpo, de modo que os instantâneos permaneçam fora e invisíveis para as
+ferramentas de cópia de segurança que operam dentro dele.
+
+Caso contrário, se o diretório `data` configurado for ele próprio a raiz
+do subvolume ou do volume, o SnapRAID cria um diretório `.snapraid/`
+diretamente dentro dele (em Btrfs, Bcachefs e NTFS). Embora o SnapRAID
+exclua automaticamente esse diretório das suas próprias verificações,
+ferramentas externas de cópia de segurança ou de sincronização irão
+encontrá-lo. Se não for excluído, podem atravessar os instantâneos ou
+ligações de diretório e copiar toda a árvore de dados congelada, duplicando
+dados e esgotando o armazenamento de backup. Configure sempre as
+ferramentas de cópia de segurança externas para excluir o diretório
+`.snapraid/`.
+
+No ZFS, os instantâneos são expostos através do diretório virtual padrão
+`.zfs/snapshot/` em vez de `.snapraid/`. Por predefinição (`snapdir=hidden`),
+o ZFS oculta esse diretório das listagens, de modo que ferramentas externas
+de cópia de segurança não o percorrem. Se tiver ativado `snapdir=visible`,
+certifique-se de que as suas ferramentas de cópia de segurança excluem o
+diretório `.zfs/`.
+
 
 10 PADRãO (PATTERN)
 ===================

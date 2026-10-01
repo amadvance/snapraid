@@ -2034,6 +2034,36 @@ con éxito. La paridad aún puede contener bloques calculados a partir de
 la instantánea utilizada por el sync interrumpido. Un sync posterior puede
 reemplazar esa instantánea, haciendo que las versiones intermedias de los
 archivos no estén disponibles para la recuperación.
+.SS Copias de seguridad externas con instantáneas del sistema de archivos (External backups with filesystem snapshots) 
+Cuando las instantáneas del sistema de archivos están habilitadas, SnapRAID
+accede o crea instantáneas en la raíz de cada subvolumen, volumen o conjunto
+de datos (dataset).
+.PP
+Una forma sencilla de evitar interferencias con herramientas externas es
+apuntar la configuración \`data\` a un subdirectorio normal dentro del
+subvolumen o volumen (por ejemplo, \`/mnt/subvol/data\` en lugar de
+\`/mnt/subvol\`). SnapRAID siempre crea el directorio de instantáneas en la
+raíz del subvolumen (por ejemplo, \`/mnt/subvol/.snapraid/\`), dejando limpio
+el subdirectorio de datos para que las instantáneas permanezcan fuera e
+invisibles para las herramientas de copia de seguridad que operan dentro
+de él.
+.PP
+De lo contrario, si el directorio \`data\` configurado es en sí mismo la raíz
+del subvolumen o volumen, SnapRAID crea un directorio \`.snapraid/\`
+directamente dentro de él (en Btrfs, Bcachefs y NTFS). Aunque SnapRAID
+excluye automáticamente este directorio de su propio escaneo, las
+herramientas externas de copia de seguridad o sincronización de archivos lo
+encontrarán. Si no se excluye, pueden acceder a las instantáneas o enlaces
+de directorio y copiar todo el árbol de datos congelado, duplicando datos y
+agotando el almacenamiento de respaldo. Configure siempre las herramientas
+de copia de seguridad externas para excluir el directorio \`.snapraid/\`.
+.PP
+En ZFS, las instantáneas se exponen a través del directorio virtual estándar
+\`.zfs/snapshot/\` en lugar de \`.snapraid/\`. De forma predeterminada
+(\`snapdir=hidden\`), ZFS oculta este directorio de los listados, por lo que
+las herramientas externas de copia de seguridad no lo recorrerán. Si ha
+habilitado \`snapdir=visible\`, asegúrese de que sus herramientas de copia
+de seguridad excluyan el directorio \`.zfs/\`.
 .SH PATRONES (PATTERN) 
 Los patrones proporcionan una forma flexible de filtrar archivos para su inclusión o
 exclusión. Al usar caracteres de globbing, puede definir reglas que coincidan con

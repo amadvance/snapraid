@@ -1668,6 +1668,37 @@ framgångsrikt. Pariteten kan fortfarande innehålla block som beräknats från
 synkronisering kan ersätta den ögonblicksbilden, vilket gör mellanliggande
 filversioner otillgängliga för återställning.
 
+9.1 Externa säkerhetskopior med ögonblicksbilder av filsystem (External backups with filesystem snapshots)
+----------------------------------------------------------------------------------------------------------
+
+När ögonblicksbilder av filsystem är aktiverade ansluter eller skapar
+SnapRAID ögonblicksbilder vid roten av varje dataundervolym, volym eller
+datauppsättning (dataset).
+
+Ett enkelt sätt att undvika konflikter med externa verktyg är att peka
+din `data`-konfiguration till en vanlig underkatalog i undervolymen eller
+volymen (till exempel `/mnt/subvol/data` istället för `/mnt/subvol`).
+SnapRAID skapar alltid katalogen för ögonblicksbilder i undervolymens rot
+(till exempel `/mnt/subvol/.snapraid/`), vilket håller underkatalogen för
+data ren så att ögonblicksbilderna förblir utanför och osynliga för
+säkerhetskopieringsverktyg som arbetar i den.
+
+Annars, om din konfigurerade `data`-katalog i sig är roten på undervolymen
+eller volymen, skapar SnapRAID en `.snapraid/`-katalog direkt i den (på
+Btrfs, Bcachefs och NTFS). Även om SnapRAID automatiskt utesluter denna
+katalog från sin egen skanning, kommer externa säkerhetskopieringsverktyg
+eller synkroniseringsprogram att stöta på den. Om den inte utesluts kan de
+gå in i ögonblicksbilderna eller kataloglänkarna och kopiera hela det frysta
+dataträdet, vilket duplicerar data och kan tömma lagringsutrymmet för
+säkerhetskopior. Konfigurera alltid externa säkerhetskopieringsverktyg till
+att utesluta katalogen `.snapraid/`.
+
+På ZFS exponeras ögonblicksbilder via den virtuella standardkatalogen
+`.zfs/snapshot/` istället för `.snapraid/`. Som standard (`snapdir=hidden`)
+döljer ZFS denna katalog från kataloglistor så att externa säkerhetskopieringsverktyg
+inte söker igenom den. Om du har aktiverat `snapdir=visible`, se till att dina
+säkerhetskopieringsverktyg utesluter katalogen `.zfs/`.
+
 
 10 MöNSTER (PATTERN)
 ====================

@@ -1557,6 +1557,37 @@ Ciclul de viață al snapshot-urilor (Snapshots Lifecycle)
 	acel snapshot, făcând versiunile intermediare ale fișierelor indisponibile
 	pentru recuperare.
 
+  Copii de rezervă externe cu snapshot-uri de sistem de fișiere (External backups with filesystem snapshots)
+	Când snapshot-urile sistemului de fișiere sunt activate, SnapRAID accesează
+	sau creează snapshot-uri la rădăcina fiecărui subvolum, volum sau set de
+	date (dataset).
+
+	O modalitate simplă de a evita orice interferență cu instrumentele externe
+	este de a configura discul `data` astfel încât să indice spre un subdirector
+	obișnuit din cadrul subvolumului sau volumului (de exemplu
+	`/mnt/subvol/data` în loc de `/mnt/subvol`). SnapRAID creează întotdeauna
+	directorul de snapshot-uri la rădăcina subvolumului (de exemplu
+	`/mnt/subvol/.snapraid/`), lăsând subdirectorul de date curat, astfel încât
+	snapshot-urile să rămână în exterior și invizibile pentru instrumentele de
+	backup care operează în interiorul său.
+
+	În caz contrar, dacă directorul `data` configurat este chiar rădăcina
+	subvolumului sau a volumului, SnapRAID creează un director `.snapraid/`
+	direct în interiorul acestuia (pe Btrfs, Bcachefs și NTFS). Deși SnapRAID
+	exclude automat acest director din scanarea proprie, instrumentele externe
+	de backup sau sincronizare îl vor întâlni. Dacă nu este exclus, acestea pot
+	traversa snapshot-urile sau legăturile de directoare și pot copia întregul
+	arbore de date înghețat, duplicând datele și epuizând spațiul de stocare al
+	backup-ului. Configurați întotdeauna instrumentele externe de backup să
+	excludă directorul `.snapraid/`.
+
+	Pe ZFS, snapshot-urile sunt expuse prin directorul virtual standard
+	`.zfs/snapshot/` în loc de `.snapraid/`. În mod implicit (`snapdir=hidden`),
+	ZFS ascunde acest director din listările de directoare, astfel încât
+	instrumentele externe de backup nu îl vor parcurge. Dacă ați activat
+	`snapdir=visible`, asigurați-vă că instrumentele de backup exclud
+	directorul `.zfs/`.
+
 Model (Pattern)
 	Modelele oferă o modalitate flexibilă de a filtra fișierele pentru includere sau
 	excludere. Folosind caractere de tip globbing, puteți defini reguli care să

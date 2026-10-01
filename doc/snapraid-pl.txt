@@ -1669,6 +1669,39 @@ kolejnej operacji `sync`. Parzystość może nadal zawierać bloki obliczone na 
 migawki użytej przez przerwaną synchronizację. Późniejsza synchronizacja może zastąpić
 tę migawkę, uniemożliwiając odzyskanie pośrednich wersji plików.
 
+9.1 Kopie zapasowe z migawkami systemu plików (External backups with filesystem snapshots)
+------------------------------------------------------------------------------------------
+
+Gdy migawki systemu plików są włączone, SnapRAID uzyskuje dostęp do migawek
+lub tworzy je w katalogu głównym każdego podwoluminu danych, woluminu lub
+zestawu danych (dataset).
+
+Prostym sposobem na uniknięcie jakichkolwiek konfliktów z zewnętrznymi
+narzędziami jest wskazanie w konfiguracji `data` zwykłego podkatalogu
+wewnątrz podwoluminu lub woluminu (na przykład `/mnt/subvol/data` zamiast
+`/mnt/subvol`). SnapRAID zawsze tworzy katalog migawek w katalogu głównym
+podwoluminu (na przykład `/mnt/subvol/.snapraid/`), pozostawiając podkatalog
+danych czysty, dzięki czemu migawki pozostają na zewnątrz i są niewidoczne
+dla narzędzi do tworzenia kopii zapasowych działających w tym katalogu.
+
+W przeciwnym razie, jeśli skonfigurowany katalog `data` jest sam w sobie
+katalogiem głównym podwoluminu lub woluminu, SnapRAID utworzy katalog
+`.snapraid/` bezpośrednio w nim (w systemach Btrfs, Bcachefs i NTFS).
+Chociaż SnapRAID automatycznie wyklucza ten katalog z własnego skanowania,
+zewnętrzne narzędzia do tworzenia kopii zapasowych lub synchronizacji
+plików napotkają go. Jeśli nie zostanie wykluczony, mogą wejść do migawek
+lub dowiązań katalogów i skopiować całe zamrożone drzewo danych, duplikując
+dane i wyczerpując przestrzeń dyskową kopii zapasowej. Zawsze konfiguruj
+zewnętrzne narzędzia do tworzenia kopii zapasowych tak, aby wykluczały
+katalog `.snapraid/`.
+
+W systemie ZFS migawki są udostępniane za pośrednictwem standardowego
+katalogu wirtualnego `.zfs/snapshot/` zamiast `.snapraid/`. Domyślnie
+(`snapdir=hidden`) system ZFS ukrywa ten katalog na listach katalogów, więc
+zewnętrzne narzędzia do tworzenia kopii zapasowych go nie przeskanują. Jeśli
+włączono opcję `snapdir=visible`, upewnij się, że narzędzia do tworzenia kopii
+zapasowych wykluczają katalog `.zfs/`.
+
 
 10 WZORCE (PATTERN)
 ===================

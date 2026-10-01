@@ -2055,6 +2055,34 @@ con successo. La parità potrebbe ancora contenere blocchi calcolati dallo
 snapshot utilizzato dal sync interrotto. Un sync successivo potrebbe sostituire
 tale snapshot, rendendo le versioni intermedie dei file non disponibili per il
 recupero.
+.SS Backup esterni con snapshot del filesystem (External backups with filesystem snapshots) 
+Quando gli snapshot del filesystem sono abilitati, SnapRAID accede o crea
+gli snapshot alla radice di ciascun sottovolume, volume o dataset di dati.
+.PP
+Un modo semplice per evitare interferenze con gli strumenti esterni consiste
+nel far puntare la configurazione \`data\` a una sottodirectory ordinaria
+all\'interno del subvolume o del volume (ad esempio \`/mnt/subvol/data\` invece
+di \`/mnt/subvol\`). SnapRAID crea sempre la directory degli snapshot alla
+radice del subvolume (ad esempio \`/mnt/subvol/.snapraid/\`), lasciando pulita
+la sottodirectory dei dati in modo che gli snapshot rimangano all\'esterno
+e invisibili agli strumenti di backup che operano al suo interno.
+.PP
+Altrimenti, se la directory \`data\` configurata è essa stessa la radice del
+subvolume o del volume, SnapRAID crea una directory \`.snapraid/\` direttamente
+al suo interno (su Btrfs, Bcachefs e NTFS). Sebbene SnapRAID escluda
+automaticamente questa directory dalla propria scansione, gli strumenti di
+backup esterni o i programmi di sincronizzazione dei file la incontreranno.
+Se non viene esclusa, potrebbero entrare negli snapshot o nei collegamenti
+di directory e copiare l\'intero albero dei dati congelato, duplicando i dati
+ed esaurendo lo spazio di archiviazione dei backup. Configurare sempre gli
+strumenti di backup esterni in modo da escludere la directory \`.snapraid/\`.
+.PP
+Su ZFS, gli snapshot sono esposti tramite la directory virtuale standard
+\`.zfs/snapshot/\` anziché \`.snapraid/\`. Di default (\`snapdir=hidden\`), ZFS
+nasconde questa directory dall\'elenco delle directory, quindi gli strumenti
+di backup esterni non la attraverseranno. Se è stato abilitato
+\`snapdir=visible\`, assicurarsi che gli strumenti di backup escludano la
+directory \`.zfs/\`.
 .SH PATTERN 
 I pattern offrono un modo flessibile per filtrare i file da includere o
 escludere. Usando i caratteri globbing, è possibile definire regole che

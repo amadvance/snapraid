@@ -2071,6 +2071,36 @@ avec succès. La parité peut encore contenir des blocs calculés à partir de
 l\'instantané utilisé par le sync interrompu. Un sync ultérieur peut remplacer
 cet instantané, rendant les versions intermédiaires des fichiers indisponibles
 pour la récupération.
+.SS Sauvegardes externes avec les instantanés de système de fichiers (External backups with filesystem snapshots) 
+Lorsque les instantanés de système de fichiers sont activés, SnapRAID accède
+aux instantanés ou les crée à la racine de chaque sous\-volume, volume ou
+jeu de données (dataset).
+.PP
+Un moyen simple d\'éviter toute interférence avec les outils externes
+consiste à faire pointer la configuration \`data\` vers un sous\-répertoire
+ordinaire au sein du sous\-volume ou du volume (par exemple
+\`/mnt/subvol/data\` au lieu de \`/mnt/subvol\`). SnapRAID crée toujours le
+répertoire d\'instantanés à la racine du sous\-volume (par exemple
+\`/mnt/subvol/.snapraid/\`), laissant le sous\-répertoire de données propre de
+sorte que les instantanés restent à l\'extérieur et invisibles pour les
+outils de sauvegarde opérant à l\'intérieur.
+.PP
+Sinon, si votre répertoire \`data\` configuré est lui\-même la racine du
+sous\-volume ou du volume, SnapRAID crée un répertoire \`.snapraid/\`
+directement à l\'intérieur (sur Btrfs, Bcachefs et NTFS). Bien que SnapRAID
+exclue automatiquement ce répertoire de ses propres analyses, les outils
+de sauvegarde externes ou les synchroniseurs de fichiers le rencontreront.
+S\'il n\'est pas exclu, ils peuvent traverser les instantanés ou les liens de
+répertoires et copier l\'ensemble de l\'arborescence figée, dupliquant les
+données et risquant d\'épuiser l\'espace de sauvegarde. Configurez toujours
+les outils de sauvegarde externes pour exclure le répertoire \`.snapraid/\`.
+.PP
+Sur ZFS, les instantanés sont exposés via le répertoire virtuel standard
+\`.zfs/snapshot/\` plutôt que \`.snapraid/\`. Par défaut (\`snapdir=hidden\`), ZFS
+masque ce répertoire des listes de fichiers, de sorte que les outils de
+sauvegarde externes ne le parcourront pas. Si vous avez activé
+\`snapdir=visible\`, veillez à ce que vos outils de sauvegarde excluent le
+répertoire \`.zfs/\`.
 .SH MOTIF (PATTERN) 
 Les motifs offrent un moyen flexible de filtrer les fichiers à inclure ou
 à exclure. En utilisant des caractères de \[dq]globbing\[dq], vous pouvez définir des règles qui
