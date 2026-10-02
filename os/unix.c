@@ -2217,17 +2217,18 @@ void os_privileges_release(void)
 
 uint64_t os_tick(void)
 {
-#if HAVE_MACH_ABSOLUTE_TIME
-	/* for Mac OS X */
-	return mach_absolute_time();
-#elif HAVE_CLOCK_GETTIME && (defined(CLOCK_MONOTONIC) || defined(CLOCK_MONOTONIC_RAW))
-	/* for Linux */
+#if HAVE_CLOCK_GETTIME && (defined(CLOCK_UPTIME_RAW) || defined(CLOCK_MONOTONIC_RAW) || defined(CLOCK_MONOTONIC))
 	struct timespec tv;
 
 	/* nanosecond precision with clock_gettime() */
-#if defined(CLOCK_MONOTONIC_RAW)
+#if defined(CLOCK_UPTIME_RAW)
+	/* for macOS (without sleep and without NTP slewing) */
+	if (clock_gettime(CLOCK_UPTIME_RAW, &tv) != 0) {
+#elif defined(CLOCK_MONOTONIC_RAW)
+	/* for Linux (without sleep and without NTP slewing) */
 	if (clock_gettime(CLOCK_MONOTONIC_RAW, &tv) != 0) {
 #else
+	/* for other POSIX */
 	if (clock_gettime(CLOCK_MONOTONIC, &tv) != 0) {
 #endif
 		/* LCOV_EXCL_START */
@@ -2247,7 +2248,7 @@ uint64_t os_tick(void)
 		/* LCOV_EXCL_STOP */
 	}
 
-	return tv.tv_sec * 1000000ULL + tv.tv_usec;
+	return tv.tv_sec * 1000000000ULL + tv.tv_usec * 1000ULL;
 #endif
 }
 
@@ -2274,6 +2275,16 @@ uint64_t os_tick_ms(void)
 
 	return tv.tv_sec * 1000ULL + tv.tv_usec / 1000;
 #endif
+}
+
+uint64_t os_tick_us(void)
+{
+	return os_tick() / 1000;
+}
+
+uint64_t os_tick_ns(void)
+{
+	return os_tick();
 }
 
 uint64_t os_tick_sec(void)
@@ -2326,8 +2337,6 @@ int os_usleep(uint64_t usec)
 
 	return 0;
 }
-
-
 
 int os_randomize(void* ptr, size_t size)
 {

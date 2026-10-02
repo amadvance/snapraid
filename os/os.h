@@ -398,6 +398,18 @@ uint64_t os_tick(void);
 uint64_t os_tick_ms(void);
 
 /**
+ * Get the os_tick counter value in microsecond.
+ * \return Monotonic clock value in microseconds.
+ */
+uint64_t os_tick_us(void);
+
+/**
+ * Get the os_tick counter value in nanosecond.
+ * \return Monotonic clock value in nanoseconds.
+ */
+uint64_t os_tick_ns(void);
+
+/**
  * Get the os_tick counter value in seconds.
  * \return Monotonic clock value in seconds.
  */

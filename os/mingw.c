@@ -64,6 +64,7 @@ static windows_key_t last_error;
  */
 static windows_mutex_t tick_lock;
 static uint64_t tick_last;
+static uint64_t tick_frequency;
 
 /**
  * Mutex for process reference publication, termination, and unpublication.
@@ -4498,6 +4499,24 @@ uint64_t os_tick_ms(void)
 	return GetTickCount64();
 }
 
+uint64_t os_tick_us(void)
+{
+	uint64_t ticks = os_tick();
+	uint64_t sec = ticks / tick_frequency;
+	uint64_t rem = ticks % tick_frequency;
+
+	return sec * 1000000ULL + (rem * 1000000ULL) / tick_frequency;
+}
+
+uint64_t os_tick_ns(void)
+{
+	uint64_t ticks = os_tick();
+	uint64_t sec = ticks / tick_frequency;
+	uint64_t rem = ticks % tick_frequency;
+
+	return sec * 1000000000ULL + (rem * 1000000000ULL) / tick_frequency;
+}
+
 int os_usleep(uint64_t usec)
 {
 	while (usec > 0) {
@@ -4609,6 +4628,13 @@ void os_init(unsigned opt)
 		os_exit();
 	}
 
+	LARGE_INTEGER freq;
+	if (!QueryPerformanceFrequency(&freq) || freq.QuadPart <= 0) {
+		os_syslog(OS_LVL_CRITICAL, "error calling QueryPerformanceFrequency()");
+		os_exit();
+	}
+	tick_frequency = freq.QuadPart;
+
 	if (windows_mutex_init(&exec_mutex, 0) != 0) {
 		os_syslog(OS_LVL_CRITICAL, "error calling windows_mutex_init()");
 		os_exit();
@@ -4684,6 +4710,7 @@ void os_done(void)
 
 	windows_mutex_destroy(&exec_mutex);
 	windows_mutex_destroy(&tick_lock);
+	tick_frequency = 0;
 
 	/* restore the normal execution level */
 	SetThreadExecutionState(WIN32_ES_CONTINUOUS);
