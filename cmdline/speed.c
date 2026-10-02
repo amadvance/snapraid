@@ -11,18 +11,11 @@
 #include "raid/memory.h"
 #include "state.h"
 
-/**
- * Differential us of two timeval.
- */
-static int64_t diffgettimeofday(struct timeval* start, struct timeval* stop)
-{
-	int64_t d;
-
-	d = 1000000LL * (stop->tv_sec - start->tv_sec);
-	d += stop->tv_usec - start->tv_usec;
-
-	return d;
-}
+#if HAVE_ASSEMBLY
+#define SPEED_BARRIER() __asm__ __volatile__ ("" : : : "memory")
+#else
+#define SPEED_BARRIER() do { } while (0)
+#endif
 
 #define SPEED_START \
 	{ \
@@ -30,15 +23,17 @@ static int64_t diffgettimeofday(struct timeval* start, struct timeval* stop)
 		int64_t elapsed_ = 0; \
 		int64_t best_dt_ = INT64_MAX; \
 		do { \
-			struct timeval start; \
-			struct timeval stop; \
-			gettimeofday(&start, 0); \
+			SPEED_BARRIER(); \
+			uint64_t start_ = os_tick_ns(); \
+			SPEED_BARRIER(); \
 			for (int i_ = 0; i_ < speed_delta_; ++i_)
 
 #define SPEED_STOP \
-	gettimeofday(&stop, 0); \
-	dt = diffgettimeofday(&start, &stop); \
-	if (dt < 1000 && speed_delta_ <= INT_MAX / 2) { \
+	SPEED_BARRIER(); \
+	uint64_t stop_ = os_tick_ns(); \
+	SPEED_BARRIER(); \
+	dt = stop_ > start_ ? stop_ - start_ : 0; \
+	if (dt < 1000000 && speed_delta_ <= INT_MAX / 2) { \
 		speed_delta_ *= 2; \
 		elapsed_ = 0; \
 		best_dt_ = INT64_MAX; \
@@ -47,8 +42,8 @@ static int64_t diffgettimeofday(struct timeval* start, struct timeval* stop)
 	elapsed_ += dt; \
 	if (dt < best_dt_) \
 	best_dt_ = dt; \
-	} while (elapsed_ < period * 1000LL); \
-	ds = size * (int64_t)speed_delta_ * nd; \
+	} while (elapsed_ < period * 1000000LL); \
+	ds = size * (int64_t)speed_delta_ * nd * 1000LL; \
 	dt = best_dt_; \
 	}
 

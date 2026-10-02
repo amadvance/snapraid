@@ -36,19 +36,19 @@ static int64_t diffgettimeofday(struct timeval *start, struct timeval *stop)
 	d = 1000000LL * (stop->tv_sec - start->tv_sec);
 	d += stop->tv_usec - start->tv_usec;
 
-	return d;
+	return d > 0 ? d : 0;
 }
 
 #define SPEED_START \
 	{ \
-	int speed_delta_ = delta; \
-	int64_t elapsed_ = 0; \
-	int64_t best_dt_ = INT64_MAX; \
-	do { \
-	struct timeval start; \
-	struct timeval stop; \
-	gettimeofday(&start, 0); \
-	for (int i_ = 0; i_ < speed_delta_; ++i_)
+		int speed_delta_ = delta; \
+		int64_t elapsed_ = 0; \
+		int64_t best_dt_ = INT64_MAX; \
+		do { \
+			struct timeval start; \
+			struct timeval stop; \
+			gettimeofday(&start, 0); \
+			for (int i_ = 0; i_ < speed_delta_; ++i_)
 
 #define SPEED_STOP \
 	gettimeofday(&stop, 0); \
