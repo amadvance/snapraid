@@ -2826,6 +2826,16 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					info_set_run(&state->infoarr, v_pos, v_count, info);
 					v_pos += v_count;
 				} else {
+					/*
+					 * This branch is entered only when a parity position below blockmax
+					 * has no info, which means that all data disks simultaneously have a
+					 * hole (no file block) at this exact parity position.
+					 * Since blockmax is the highest allocated block across all disks and
+					 * file allocation on disks is typically contiguous from block 0, such
+					 * global parity holes are extremely rare in practice. Even though the
+					 * block-by-block fs_info_is_required() validation is inefficient, it is
+					 * practically never executed, or only for very short gaps.
+					 */
 					while (v_count) {
 						/* ensure that an info is present only for used positions */
 						if (fs_info_is_required(state, v_pos)) {
