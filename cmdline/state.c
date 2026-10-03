@@ -2596,6 +2596,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
+			size_t sub_len;
+
 			ret = sgetbs(f, sub, sizeof(sub));
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
@@ -2604,6 +2606,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
+			sub_len = ret;
+
 			if (!path_is_sub(sub)) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
@@ -2616,12 +2620,12 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			 * Allocate without initializing blocks. The runs below cover the whole
 			 * file and set every state and hash before exposing the loaded state.
 			 */
-			file = file_alloc(state->block_size, sub, v_size, v_mtime_sec, v_mtime_nsec, v_inode);
+			file = file_alloc_len(state->block_size, sub, sub_len, v_size, v_mtime_sec, v_mtime_nsec, v_inode);
 
 			/* insert the file in the file containers */
 			if (file->inode != INODE_INVALID)
 				tommy_hashdyn_insert(&disk->inodeset, &file->nodeset, file, file_inode_hash(file->inode));
-			tommy_hashdyn_insert(&disk->pathset, &file->pathset, file, file_path_hash(file->sub));
+			tommy_hashdyn_insert(&disk->pathset, &file->pathset, file, file_path_hash_len(file->sub, sub_len));
 			tommy_hashdyn_insert(&disk->stampset, &file->stampset, file, file_stamp_hash(file->size, file->mtime_sec, file->mtime_nsec));
 			tommy_list_insert_tail(&disk->filelist, &file->nodelist, file);
 
@@ -3015,6 +3019,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				uint64_t v_mtime_sec;
 				uint32_t v_mtime_nsec;
 
+				size_t sub_len;
+
 				ret = sgetbs(f, sub, sizeof(sub));
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
@@ -3023,6 +3029,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
+				sub_len = ret;
+
 				if (!path_is_sub(sub)) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
@@ -3079,7 +3087,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					--v_mtime_nsec;
 
 				/* allocate the file */
-				struct snapraid_dealloc* dealloc = dealloc_alloc(state->block_size, sub, v_size, v_mtime_sec, v_mtime_nsec);
+				struct snapraid_dealloc* dealloc = dealloc_alloc_len(state->block_size, sub, sub_len, v_size, v_mtime_sec, v_mtime_nsec);
 
 				log_tag("content_info:dealloc_entry:%s:%s:%" PRIu64 ":%" PRIu64 ":%u\n", disk->name, esc_tag(dealloc->sub), dealloc->size, dealloc->mtime_sec, dealloc->mtime_nsec);
 
@@ -3124,6 +3132,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			/* symlink */
 			char sub[PATH_MAX];
 			char linkto[PATH_MAX];
+			size_t sub_len;
+			size_t linkto_len;
 			struct snapraid_link* slink;
 			struct snapraid_disk* disk;
 			uint32_t mapping;
@@ -3146,6 +3156,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
+			sub_len = ret;
 
 			if (!path_is_sub(sub)) {
 				/* LCOV_EXCL_START */
@@ -3163,12 +3174,13 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
+			linkto_len = ret;
 
 			/* allocate the link as symbolic link */
-			slink = link_alloc(sub, linkto, FILE_IS_SYMLINK);
+			slink = link_alloc_len(sub, sub_len, linkto, linkto_len, FILE_IS_SYMLINK);
 
 			/* insert the link in the link containers */
-			tommy_hashdyn_insert(&disk->linkset, &slink->nodeset, slink, link_name_hash(slink->sub));
+			tommy_hashdyn_insert(&disk->linkset, &slink->nodeset, slink, link_name_hash_len(slink->sub, sub_len));
 			tommy_list_insert_tail(&disk->linklist, &slink->nodelist, slink);
 
 			/* stat */
@@ -3177,6 +3189,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			/* hardlink */
 			char sub[PATH_MAX];
 			char linkto[PATH_MAX];
+			size_t sub_len;
+			size_t linkto_len;
 			struct snapraid_link* slink;
 			struct snapraid_disk* disk;
 			uint32_t mapping;
@@ -3199,6 +3213,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
+			sub_len = ret;
 
 			if (!path_is_sub(sub)) {
 				/* LCOV_EXCL_START */
@@ -3216,6 +3231,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
+			linkto_len = ret;
 
 			if (!path_is_sub(linkto)) {
 				/* LCOV_EXCL_START */
@@ -3226,10 +3242,10 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			}
 
 			/* allocate the link as hard link */
-			slink = link_alloc(sub, linkto, FILE_IS_HARDLINK);
+			slink = link_alloc_len(sub, sub_len, linkto, linkto_len, FILE_IS_HARDLINK);
 
 			/* insert the link in the link containers */
-			tommy_hashdyn_insert(&disk->linkset, &slink->nodeset, slink, link_name_hash(slink->sub));
+			tommy_hashdyn_insert(&disk->linkset, &slink->nodeset, slink, link_name_hash_len(slink->sub, sub_len));
 			tommy_list_insert_tail(&disk->linklist, &slink->nodelist, slink);
 
 			/* stat */
@@ -3237,6 +3253,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 		} else if (c == 'r') {
 			/* dir */
 			char sub[PATH_MAX];
+			size_t sub_len;
 			struct snapraid_dir* dir;
 			struct snapraid_disk* disk;
 			uint32_t mapping;
@@ -3259,6 +3276,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
+			sub_len = ret;
 
 			if (!path_is_sub(sub)) {
 				/* LCOV_EXCL_START */
@@ -3269,10 +3287,10 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			}
 
 			/* allocate the dir */
-			dir = dir_alloc(sub);
+			dir = dir_alloc_len(sub, sub_len);
 
 			/* insert the dir in the dir containers */
-			tommy_hashdyn_insert(&disk->dirset, &dir->nodeset, dir, dir_name_hash(dir->sub));
+			tommy_hashdyn_insert(&disk->dirset, &dir->nodeset, dir, dir_name_hash_len(dir->sub, sub_len));
 			tommy_list_insert_tail(&disk->dirlist, &dir->nodelist, dir);
 
 			/* stat */

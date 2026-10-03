@@ -37,6 +37,12 @@ void* calloc_nofail(size_t count, size_t size);
 char* strdup_nofail(const char* str);
 
 /**
+ * Safe strndup with known length.
+ * If no memory is available, it aborts.
+ */
+char* strndup_nofail(const char* str, size_t size);
+
+/**
  * Helper for printing an error about a failed allocation.
  */
 void malloc_fail(size_t size);

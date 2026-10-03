@@ -908,7 +908,11 @@ static inline void file_flag_clear(struct snapraid_file* file, unsigned mask)
 /**
  * Allocate a file without initializing its blocks.
  */
-struct snapraid_file* file_alloc(unsigned block_size, const char* sub, data_off_t size, uint64_t mtime_sec, int mtime_nsec, uint64_t inode);
+struct snapraid_file* file_alloc_len(unsigned block_size, const char* sub, size_t sub_len, data_off_t size, uint64_t mtime_sec, int mtime_nsec, uint64_t inode);
+static inline struct snapraid_file* file_alloc(unsigned block_size, const char* sub, data_off_t size, uint64_t mtime_sec, int mtime_nsec, uint64_t inode)
+{
+	return file_alloc_len(block_size, sub, strlen(sub), size, mtime_sec, mtime_nsec, inode);
+}
 
 /**
  * Duplicate a file.
@@ -995,11 +999,19 @@ int file_namestamp_compare(const void* void_a, const void* void_b);
 int file_pathstamp_compare(const void* void_a, const void* void_b);
 
 /**
+ * Compute the hash of a file path with known length.
+ */
+static inline tommy_uint32_t file_path_hash_len(const char* sub, size_t len)
+{
+	return tommy_hash_u32(0, sub, len);
+}
+
+/**
  * Compute the hash of a file path.
  */
 static inline tommy_uint32_t file_path_hash(const char* sub)
 {
-	return tommy_hash_u32(0, sub, strlen(sub));
+	return file_path_hash_len(sub, strlen(sub));
 }
 
 /**
@@ -1059,7 +1071,11 @@ static inline unsigned link_flag_get(struct snapraid_link* slink, unsigned mask)
 /**
  * Allocate a link.
  */
-struct snapraid_link* link_alloc(const char* name, const char* slink, unsigned link_flag);
+struct snapraid_link* link_alloc_len(const char* name, size_t name_len, const char* slink, size_t slink_len, unsigned link_flag);
+static inline struct snapraid_link* link_alloc(const char* name, const char* slink, unsigned link_flag)
+{
+	return link_alloc_len(name, strlen(name), slink, strlen(slink), link_flag);
+}
 
 /**
  * Deallocate a link.
@@ -1077,11 +1093,19 @@ int link_name_compare_to_arg(const void* void_arg, const void* void_data);
 int link_alpha_compare(const void* void_a, const void* void_b);
 
 /**
+ * Compute the hash of a link name with known length.
+ */
+static inline tommy_uint32_t link_name_hash_len(const char* name, size_t len)
+{
+	return tommy_hash_u32(0, name, len);
+}
+
+/**
  * Compute the hash of a link name.
  */
 static inline tommy_uint32_t link_name_hash(const char* name)
 {
-	return tommy_hash_u32(0, name, strlen(name));
+	return link_name_hash_len(name, strlen(name));
 }
 
 static inline int dir_flag_has(const struct snapraid_dir* dir, unsigned mask)
@@ -1102,7 +1126,11 @@ static inline void dir_flag_clear(struct snapraid_dir* dir, unsigned mask)
 /**
  * Allocate a dir.
  */
-struct snapraid_dir* dir_alloc(const char* name);
+struct snapraid_dir* dir_alloc_len(const char* name, size_t name_len);
+static inline struct snapraid_dir* dir_alloc(const char* name)
+{
+	return dir_alloc_len(name, strlen(name));
+}
 
 /**
  * Deallocate a dir.
@@ -1115,17 +1143,29 @@ void dir_free(void* void_dir);
 int dir_name_compare(const void* void_arg, const void* void_data);
 
 /**
+ * Compute the hash of a dir name with known length.
+ */
+static inline tommy_uint32_t dir_name_hash_len(const char* name, size_t len)
+{
+	return tommy_hash_u32(0, name, len);
+}
+
+/**
  * Compute the hash of a dir name.
  */
 static inline tommy_uint32_t dir_name_hash(const char* name)
 {
-	return tommy_hash_u32(0, name, strlen(name));
+	return dir_name_hash_len(name, strlen(name));
 }
 
 /**
  * Allocate a dealloc.
  */
-struct snapraid_dealloc* dealloc_alloc(unsigned block_size, const char* sub, data_off_t size, int64_t mtime_sec, int32_t mtime_nsec);
+struct snapraid_dealloc* dealloc_alloc_len(unsigned block_size, const char* sub, size_t sub_len, data_off_t size, int64_t mtime_sec, int32_t mtime_nsec);
+static inline struct snapraid_dealloc* dealloc_alloc(unsigned block_size, const char* sub, data_off_t size, int64_t mtime_sec, int32_t mtime_nsec)
+{
+	return dealloc_alloc_len(block_size, sub, strlen(sub), size, mtime_sec, mtime_nsec);
+}
 
 /**
  * Deallocate a dealloc.

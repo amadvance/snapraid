@@ -157,3 +157,13 @@ char* strdup_nofail(const char* str)
 	return ptr;
 }
 
+char* strndup_nofail(const char* str, size_t size)
+{
+	char* ptr = malloc_nofail(size + 1);
+
+	memcpy(ptr, str, size);
+	ptr[size] = 0;
+
+	return ptr;
+}
+

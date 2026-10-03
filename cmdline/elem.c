@@ -470,7 +470,7 @@ int filter_snapshot(int enable, const char* sub, const char* name)
 	return 0;
 }
 
-struct snapraid_file* file_alloc(unsigned block_size, const char* sub, data_off_t size, uint64_t mtime_sec, int mtime_nsec, uint64_t inode)
+struct snapraid_file* file_alloc_len(unsigned block_size, const char* sub, size_t sub_len, data_off_t size, uint64_t mtime_sec, int mtime_nsec, uint64_t inode)
 {
 	struct snapraid_file* file;
 	block_off_t blockmax;
@@ -489,7 +489,7 @@ struct snapraid_file* file_alloc(unsigned block_size, const char* sub, data_off_
 	}
 
 	file = malloc_nofail(sizeof(struct snapraid_file));
-	file->sub = strdup_nofail(sub);
+	file->sub = strndup_nofail(sub, sub_len);
 	file->size = size;
 	file->blockmax = blockmax;
 	file->mtime_sec = mtime_sec;
@@ -794,13 +794,13 @@ int extent_file_compare(const void* void_a, const void* void_b)
 	return 0;
 }
 
-struct snapraid_link* link_alloc(const char* sub, const char* linkto, unsigned link_flag)
+struct snapraid_link* link_alloc_len(const char* sub, size_t sub_len, const char* linkto, size_t linkto_len, unsigned link_flag)
 {
 	struct snapraid_link* slink;
 
 	slink = malloc_nofail(sizeof(struct snapraid_link));
-	slink->sub = strdup_nofail(sub);
-	slink->linkto = strdup_nofail(linkto);
+	slink->sub = strndup_nofail(sub, sub_len);
+	slink->linkto = strndup_nofail(linkto, linkto_len);
 	slink->flag = link_flag;
 
 	return slink;
@@ -831,12 +831,12 @@ int link_alpha_compare(const void* void_a, const void* void_b)
 	return strcmp(slink_a->sub, slink_b->sub);
 }
 
-struct snapraid_dir* dir_alloc(const char* sub)
+struct snapraid_dir* dir_alloc_len(const char* sub, size_t sub_len)
 {
 	struct snapraid_dir* dir;
 
 	dir = malloc_nofail(sizeof(struct snapraid_dir));
-	dir->sub = strdup_nofail(sub);
+	dir->sub = strndup_nofail(sub, sub_len);
 	dir->flag = 0;
 
 	return dir;
@@ -858,7 +858,7 @@ int dir_name_compare(const void* void_arg, const void* void_data)
 	return strcmp(arg, dir->sub);
 }
 
-struct snapraid_dealloc* dealloc_alloc(unsigned block_size, const char* sub, data_off_t size, int64_t mtime_sec, int32_t mtime_nsec)
+struct snapraid_dealloc* dealloc_alloc_len(unsigned block_size, const char* sub, size_t sub_len, data_off_t size, int64_t mtime_sec, int32_t mtime_nsec)
 {
 	struct snapraid_dealloc* dealloc;
 	block_off_t blockmax;
@@ -877,7 +877,7 @@ struct snapraid_dealloc* dealloc_alloc(unsigned block_size, const char* sub, dat
 	}
 
 	dealloc = malloc_nofail(sizeof(struct snapraid_dealloc) + blockmax * sizeof(struct snapraid_dealloc_block));
-	dealloc->sub = strdup_nofail(sub);
+	dealloc->sub = strndup_nofail(sub, sub_len);
 	dealloc->size = size;
 	dealloc->mtime_sec = mtime_sec;
 	dealloc->mtime_nsec = mtime_nsec;
