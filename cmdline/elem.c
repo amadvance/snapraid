@@ -488,8 +488,10 @@ struct snapraid_file* file_alloc_len(unsigned block_size, const char* sub, size_
 		exit(EXIT_FAILURE);
 	}
 
-	file = malloc_nofail(sizeof(struct snapraid_file));
-	file->sub = strndup_nofail(sub, sub_len);
+	file = malloc_nofail(sizeof(struct snapraid_file) + sub_len + 1);
+	file->sub = file->sub_inline;
+	memcpy(file->sub, sub, sub_len);
+	file->sub[sub_len] = 0;
 	file->size = size;
 	file->blockmax = blockmax;
 	file->mtime_sec = mtime_sec;
@@ -505,6 +507,7 @@ struct snapraid_file* file_dup(struct snapraid_file* copy)
 {
 	struct snapraid_file* file;
 	block_off_t i;
+	size_t sub_len;
 
 	if (copy->blockmax > BLOCK_MAX) {
 #if SIZE_MAX == UINT32_MAX
@@ -515,8 +518,11 @@ struct snapraid_file* file_dup(struct snapraid_file* copy)
 		exit(EXIT_FAILURE);
 	}
 
-	file = malloc_nofail(sizeof(struct snapraid_file));
-	file->sub = strdup_nofail(copy->sub);
+	sub_len = strlen(copy->sub);
+	file = malloc_nofail(sizeof(struct snapraid_file) + sub_len + 1);
+	file->sub = file->sub_inline;
+	memcpy(file->sub, copy->sub, sub_len);
+	file->sub[sub_len] = 0;
 	file->size = copy->size;
 	file->blockmax = copy->blockmax;
 	file->mtime_sec = copy->mtime_sec;
@@ -539,7 +545,8 @@ void file_free(void* void_file)
 {
 	struct snapraid_file* file = void_file;
 
-	free(file->sub);
+	if (file->sub != file->sub_inline)
+		free(file->sub);
 	file->sub = 0;
 	free(file->blockvec);
 	file->blockvec = 0;
@@ -548,7 +555,9 @@ void file_free(void* void_file)
 
 void file_rename(struct snapraid_file* file, const char* sub)
 {
-	free(file->sub);
+	if (file->sub != file->sub_inline)
+		free(file->sub);
+
 	file->sub = strdup_nofail(sub);
 }
 

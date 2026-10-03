@@ -341,6 +341,8 @@ struct snapraid_file {
 	tommy_hashdyn_node nodeset;
 	tommy_hashdyn_node pathset;
 	tommy_hashdyn_node stampset;
+
+	char sub_inline[]; /**< Inline storage for the initial sub path. */
 };
 
 /**
