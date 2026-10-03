@@ -241,6 +241,13 @@ void state_probe(struct snapraid_state* state);
 void state_read(struct snapraid_state* state);
 
 /**
+ * Count the number of unsynced parity positions using an event sweep across extents.
+ * Counts positions in [0, blockmax). The caller must ensure that the disk list,
+ * extent trees, and block states remain unchanged for the duration of the call.
+ */
+uint64_t fs_count_unsynced(struct snapraid_state* state, block_off_t blockmax);
+
+/**
  * Write the new state.
  */
 void state_write(struct snapraid_state* state);

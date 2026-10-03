@@ -2245,6 +2245,130 @@ static void test_extent_run(void)
 	file_free(file);
 }
 
+static void test_unsynced_sweep(void)
+{
+	struct snapraid_state state;
+	struct snapraid_disk* disk1;
+	struct snapraid_disk* disk2;
+	struct snapraid_file* file1;
+	struct snapraid_file* file2;
+	struct snapraid_file* file3;
+	struct snapraid_file* file4;
+	struct snapraid_file* del;
+	block_off_t i;
+	static const struct {
+		block_off_t blockmax;
+		uint64_t unsynced;
+	} bounds[] = {
+		{ 0, 0 }, { 10, 0 }, { 15, 0 }, { 16, 1 }, { 19, 4 },
+		{ 20, 5 }, { 21, 5 }, { 22, 6 }, { 23, 7 }, { 29, 7 },
+		{ 30, 7 }, { 31, 8 }, { 32, 9 }, { 33, 10 }, { 34, 11 },
+		{ 100, 11 }
+	};
+
+	memset(&state, 0, sizeof(state));
+	state.block_size = 4096;
+	tommy_list_init(&state.disklist);
+
+	if (fs_count_unsynced(&state, 100) != 0) {
+		log_fatal(EINTERNAL, "test_unsynced_sweep: no disks failed\n");
+		exit(EXIT_FAILURE);
+	}
+
+	disk1 = disk_alloc("d1", "", 0, "", 0);
+	disk2 = disk_alloc("d2", "", 0, "", 0);
+	tommy_list_insert_tail(&state.disklist, &disk1->node, disk1);
+	tommy_list_insert_tail(&state.disklist, &disk2->node, disk2);
+
+	/* initially both disks are empty */
+	if (fs_count_unsynced(&state, 100) != 0) {
+		log_fatal(EINTERNAL, "test_unsynced_sweep: empty disks failed\n");
+		exit(EXIT_FAILURE);
+	}
+
+	/* file1 on disk1: 10 blocks at parity 10..19 (first 5 BLK, next 5 CHG) */
+	file1 = file_alloc(4096, "f1", 10 * 4096, 0, 0, 0);
+	for (i = 0; i < 5; ++i)
+		block_state_set(file_block(file1, i), BLOCK_STATE_BLK);
+	for (i = 5; i < 10; ++i)
+		block_state_set(file_block(file1, i), BLOCK_STATE_CHG);
+	fs_allocate(disk1, 10, file1, 0, 10);
+
+	/* file2 on disk2: 20 blocks at parity 0..19 (all BLK) */
+	file2 = file_alloc(4096, "f2", 20 * 4096, 0, 0, 0);
+	for (i = 0; i < 20; ++i)
+		block_state_set(file_block(file2, i), BLOCK_STATE_BLK);
+	fs_allocate(disk2, 0, file2, 0, 20);
+
+	/* parity 0..14 has only BLK or EMPTY; parity 15..19 has CHG on disk1 and BLK on disk2 -> 5 unsynced */
+	if (fs_count_unsynced(&state, 20) != 5) {
+		log_fatal(EINTERNAL, "test_unsynced_sweep: mixed block run failed\n");
+		exit(EXIT_FAILURE);
+	}
+
+	/* deleted run on disk1: 3 blocks at parity 20..22 */
+	del = file_alloc(4096, "<deleted>", 3 * 4096, 0, 0, 0);
+	for (i = 0; i < 3; ++i)
+		block_state_set(file_block(del, i), BLOCK_STATE_DELETED);
+	fs_allocate(disk1, 20, del, 0, 3);
+
+	/* disk2 is empty at 20..22 -> DELETED alone does not count as unsynced */
+	if (fs_count_unsynced(&state, 23) != 5) {
+		log_fatal(EINTERNAL, "test_unsynced_sweep: deleted without other file failed\n");
+		exit(EXIT_FAILURE);
+	}
+
+	/* file3 on disk2: first 2 blocks at parity 21..22 (BLK) */
+	file3 = file_alloc(4096, "f3", 6 * 4096, 0, 0, 0);
+	for (i = 0; i < 2; ++i)
+		block_state_set(file_block(file3, i), BLOCK_STATE_BLK);
+	block_state_set(file_block(file3, 2), BLOCK_STATE_REP);
+	block_state_set(file_block(file3, 3), BLOCK_STATE_REP);
+	block_state_set(file_block(file3, 4), BLOCK_STATE_BLK);
+	block_state_set(file_block(file3, 5), BLOCK_STATE_REBUILD);
+	fs_allocate(disk2, 21, file3, 0, 2);
+
+	/* parity 20: DELETED on d1, empty on d2 -> not unsynced;
+	 * parity 21..22: DELETED on d1, BLK on d2 -> unsynced (2 blocks). Total 5 + 2 = 7 */
+	if (fs_count_unsynced(&state, 23) != 7) {
+		log_fatal(EINTERNAL, "test_unsynced_sweep: deleted with file failed\n");
+		exit(EXIT_FAILURE);
+	}
+
+	/* the second extent of file3 starts at a nonzero file offset after a gap */
+	fs_allocate(disk2, 30, file3, 2, 4);
+
+	/* file4 shares extent boundaries with file3 and changes flags at 32 and 33 */
+	file4 = file_alloc(4096, "f4", 4 * 4096, 0, 0, 0);
+	for (i = 0; i < 4; ++i)
+		block_state_set(file_block(file4, i), BLOCK_STATE_BLK);
+	block_state_set(file_block(file4, 2), BLOCK_STATE_CHG);
+	fs_allocate(disk1, 30, file4, 0, 4);
+
+	/**
+	 * Positions 30..33 are all unsynced: REP, REP, CHG, REBUILD respectively.
+	 * At 32 and 33 the invalid block changes disks at the same event boundary;
+	 * count each position once using the refreshed flags from both disks.
+	 * Check limits in gaps, within extents and runs, and at their boundaries.
+	 */
+	for (i = 0; i < sizeof(bounds) / sizeof(bounds[0]); ++i) {
+		uint64_t count = fs_count_unsynced(&state, bounds[i].blockmax);
+		if (count != bounds[i].unsynced) {
+			log_fatal(EINTERNAL, "test_unsynced_sweep: limit %" PRIu64 " expected %" PRIu64 ", got %" PRIu64 "\n",
+				bounds[i].blockmax, bounds[i].unsynced, count);
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	file_free(file1);
+	file_free(file2);
+	file_free(file3);
+	file_free(file4);
+	file_free(del);
+	disk_free(disk1);
+	disk_free(disk2);
+}
+
 static void test_raid(void)
 {
 	/* vandermonde raid parity generation with 32 data disks */
@@ -2964,6 +3088,9 @@ void test(int argc, char* argv[])
 
 	/* extent-aware file-to-parity run lookup */
 	test_extent_run();
+
+	/* extent sweep for unsynced parity blocks */
+	test_unsynced_sweep();
 
 	/* wildcard and path pattern matching */
 	test_wnmatch();
