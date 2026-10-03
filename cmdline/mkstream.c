@@ -144,7 +144,7 @@ void test(int advise_mode)
 			char copy[STR_MAX];
 			memset(str, ' ' + j, j - 1);
 			str[j - 1] = 0;
-			if (sgetbs(s, copy, sizeof(copy)) != 0 || strcmp(copy, str) != 0) {
+			if (sgetbs(s, copy, sizeof(copy)) != (ssize_t)(j - 1) || strcmp(copy, str) != 0) {
 				/* LCOV_EXCL_START */
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */

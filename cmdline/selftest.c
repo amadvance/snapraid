@@ -2183,6 +2183,30 @@ static void test_stream(void)
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
+
+	/* sgetbs test */
+	unsigned char buf_bs[] = { 0x85, 'h', 'e', 'l', 'l', 'o' };
+	char str_bs[16];
+	memset(&f, 0, sizeof(f));
+	f.pos = buf_bs;
+	f.end = buf_bs + sizeof(buf_bs);
+	if (sgetbs(&f, str_bs, sizeof(str_bs)) != 5 || strcmp(str_bs, "hello") != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "test_stream: sgetbs valid string failed\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* sgetbs buffer too small test */
+	memset(&f, 0, sizeof(f));
+	f.pos = buf_bs;
+	f.end = buf_bs + sizeof(buf_bs);
+	if (sgetbs(&f, str_bs, 5) >= 0) {
+		/* LCOV_EXCL_START */
+		log_fatal(EINTERNAL, "test_stream: sgetbs small buffer accepted\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
 }
 
 static void test_extent_run(void)

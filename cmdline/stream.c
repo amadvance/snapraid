@@ -691,7 +691,7 @@ int sgetble32(STREAM* f, uint32_t* value)
 	return 0;
 }
 
-int sgetbs(STREAM* f, char* str, size_t size)
+ssize_t sgetbs(STREAM* f, char* str, size_t size)
 {
 	uint64_t len;
 
@@ -709,7 +709,13 @@ int sgetbs(STREAM* f, char* str, size_t size)
 
 	str[len] = 0;
 
-	return sread(f, str, len);
+	if (sread(f, str, len) != 0) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	return len;
 }
 
 int swrite_uncached(const void* void_data, size_t size, STREAM* f)

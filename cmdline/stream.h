@@ -329,7 +329,7 @@ int sgetble32(STREAM* f, uint32_t* value);
  * Read a binary string.
  * Return -1 on error or if the buffer is too small, or the number of chars read.
  */
-int sgetbs(STREAM* f, char* str, size_t size);
+ssize_t sgetbs(STREAM* f, char* str, size_t size);
 
 /****************************************************************************/
 /* put */

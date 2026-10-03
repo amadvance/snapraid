@@ -2416,7 +2416,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	int has_info;
 	int has_invalid_parity;
 	char buffer[PATH_MAX];
-	int ret;
+	ssize_t ret;
 	tommy_array disk_mapping;
 	uint32_t mapping_max;
 	tommy_hashdyn bucket_hash;
