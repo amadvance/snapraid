@@ -52,7 +52,6 @@ char* esc_buf(void)
  */
 #if HAVE_THREAD
 static thread_mutex_t msg_lock;
-static thread_mutex_t memory_lock;
 static thread_mutex_t random_lock;
 #endif
 
@@ -67,20 +66,6 @@ void unlock_msg(void)
 {
 #if HAVE_THREAD
 	thread_mutex_unlock(&msg_lock);
-#endif
-}
-
-void lock_memory(void)
-{
-#if HAVE_THREAD
-	thread_mutex_lock(&memory_lock);
-#endif
-}
-
-void unlock_memory(void)
-{
-#if HAVE_THREAD
-	thread_mutex_unlock(&memory_lock);
 #endif
 }
 
@@ -103,7 +88,6 @@ void lock_init(void)
 #if HAVE_THREAD
 	/* initialize the locks as first operation as log_fatal depends on them */
 	thread_mutex_init(&msg_lock);
-	thread_mutex_init(&memory_lock);
 	thread_mutex_init(&random_lock);
 	thread_key_create(&esc_key, esc_pool_free);
 #endif
@@ -119,7 +103,6 @@ void lock_done(void)
 	}
 	thread_key_delete(esc_key);
 	thread_mutex_destroy(&msg_lock);
-	thread_mutex_destroy(&memory_lock);
 	thread_mutex_destroy(&random_lock);
 #endif
 }

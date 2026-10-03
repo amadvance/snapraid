@@ -13,6 +13,11 @@
 size_t malloc_counter_get(void);
 
 /**
+ * Enable or disable single-thread mode for memory counters.
+ */
+void memory_single_thread(int single_thread);
+
+/**
  * Safe malloc.
  * If no memory is available, it aborts.
  */

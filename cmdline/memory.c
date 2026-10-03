@@ -14,27 +14,44 @@
  */
 static size_t mcounter;
 
+#if HAVE_THREAD
+static int memory_is_single_thread;
+
+void memory_single_thread(int single_thread)
+{
+	memory_is_single_thread = single_thread;
+}
+
+static inline void malloc_counter_inc(size_t inc)
+{
+	if (tommy_likely(memory_is_single_thread))
+		mcounter += inc;
+	else
+		__atomic_fetch_add(&mcounter, inc, __ATOMIC_RELAXED);
+}
+
 size_t malloc_counter_get(void)
 {
-	size_t ret;
-
-	lock_memory();
-
-	ret = mcounter;
-
-	unlock_memory();
-
-	return ret;
+	if (tommy_likely(memory_is_single_thread))
+		return mcounter;
+	return __atomic_load_n(&mcounter, __ATOMIC_RELAXED);
 }
-
-static void malloc_counter_inc(size_t inc)
+#else
+void memory_single_thread(int single_thread)
 {
-	lock_memory();
-
-	mcounter += inc;
-
-	unlock_memory();
+	(void)single_thread;
 }
+
+static inline void malloc_counter_inc(size_t inc)
+{
+	mcounter += inc;
+}
+
+size_t malloc_counter_get(void)
+{
+	return mcounter;
+}
+#endif
 
 /* LCOV_EXCL_START */
 static ssize_t malloc_print(int f, const char* str)

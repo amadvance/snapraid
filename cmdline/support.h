@@ -36,12 +36,6 @@ void lock_done(void);
 void lock_msg(void);
 void unlock_msg(void);
 
-/**
- * Lock used for memory counter.
- */
-void lock_memory(void);
-void unlock_memory(void);
-
 /****************************************************************************/
 /* random */
 

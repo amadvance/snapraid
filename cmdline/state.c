@@ -2477,6 +2477,8 @@ static int state_read_block_run(STREAM* f, struct snapraid_file* file, block_off
  */
 static void fs_single_thread(struct snapraid_state* state, int single_thread)
 {
+	memory_single_thread(single_thread);
+
 #if HAVE_THREAD
 	for (tommy_node* i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
@@ -2484,7 +2486,6 @@ static void fs_single_thread(struct snapraid_state* state, int single_thread)
 	}
 #else
 	(void)state;
-	(void)single_thread;
 #endif
 }
 
