@@ -2527,6 +2527,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	ssize_t ret;
 	tommy_array disk_mapping;
 	uint32_t mapping_max;
+	tommy_size_t disk_file_count[RAID_DATA_MAX];
 	tommy_hashdyn bucket_hash;
 
 	blockmax = 0;
@@ -2547,6 +2548,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	has_info = 0;
 	has_invalid_parity = 0;
 	mapping_max = 0;
+	memset(disk_file_count, 0, sizeof(disk_file_count));
 	tommy_array_init(&disk_mapping);
 	tommy_hashdyn_init(&bucket_hash);
 
@@ -2730,12 +2732,13 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			 */
 			file = file_alloc_len(state->block_size, sub, sub_len, v_size, v_mtime_sec, v_mtime_nsec, v_inode);
 
-			/* insert the file in the file containers */
-			if (file->inode != INODE_INVALID)
-				tommy_hashdyn_insert(&disk->inodeset, &file->nodeset, file, file_inode_hash(file->inode));
-			tommy_hashdyn_insert(&disk->pathset, &file->pathset, file, file_path_hash_len(file->sub, sub_len));
-			tommy_hashdyn_insert(&disk->stampset, &file->stampset, file, file_stamp_hash(file->size, file->mtime_sec, file->mtime_nsec));
+			/*
+			 * Append the file to the disk list. Hash table insertions into
+			 * inodeset, pathset, and stampset are deferred until all records
+			 * are parsed to avoid cache thrashing and allow pre-reserving buckets.
+			 */
 			tommy_list_insert_tail(&disk->filelist, &file->nodelist, file);
+			++disk_file_count[mapping];
 
 			/* read all the blocks */
 			v_idx = 0;
@@ -3920,6 +3923,36 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			log_fatal(ECONTENT, "Internal inconsistency: Invalid field command '%c'!\n", (char)c);
 			os_abort();
 			/* LCOV_EXCL_STOP */
+		}
+	}
+
+	/*
+	 * Reserve hash table bucket capacity upfront and populate containers for
+	 * all loaded files. Deferring this until after stream parsing avoids cache
+	 * thrashing during I/O and ensures zero dynamic resizes in tommy_hashdyn.
+	 */
+	for (uint32_t i = 0; i < mapping_max; ++i) {
+		struct snapraid_disk* disk = tommy_array_get(&disk_mapping, i);
+		tommy_size_t count = disk_file_count[i];
+		tommy_node* node;
+
+		if (count == 0)
+			continue;
+
+		tommy_hashdyn_reserve(&disk->pathset, count);
+		tommy_hashdyn_reserve(&disk->inodeset, count);
+		tommy_hashdyn_reserve(&disk->stampset, count);
+
+		node = tommy_list_head(&disk->filelist);
+		while (node) {
+			struct snapraid_file* file = node->data;
+
+			if (file->inode != INODE_INVALID)
+				tommy_hashdyn_insert(&disk->inodeset, &file->nodeset, file, file_inode_hash(file->inode));
+			tommy_hashdyn_insert(&disk->pathset, &file->pathset, file, file_path_hash(file->sub));
+			tommy_hashdyn_insert(&disk->stampset, &file->stampset, file, file_stamp_hash(file->size, file->mtime_sec, file->mtime_nsec));
+
+			node = node->next;
 		}
 	}
 
