@@ -156,6 +156,15 @@ TOMMY_API void tommy_hashdyn_init(tommy_hashdyn* hashdyn);
 TOMMY_API void tommy_hashdyn_done(tommy_hashdyn* hashdyn);
 
 /**
+ * Pre-allocates buckets for the specified number of elements.
+ *
+ * It ensures that the hashtable has enough buckets allocated to contain
+ * the specified number of elements without triggering a dynamic resize.
+ * \param count Number of elements to reserve space for.
+ */
+TOMMY_API void tommy_hashdyn_reserve(tommy_hashdyn* hashdyn, tommy_size_t count);
+
+/**
  * Inserts an element in the hashtable.
  */
 TOMMY_API void tommy_hashdyn_insert(tommy_hashdyn* hashdyn, tommy_hashdyn_node* node, void* data, tommy_hash_t hash);
@@ -308,3 +317,4 @@ TOMMY_API tommy_size_t tommy_hashdyn_memory_usage(tommy_hashdyn* hashdyn);
 TOMMY_API void tommy_hashdyn_to_list(tommy_hashdyn* hashdyn, tommy_list* list);
 
 #endif
+

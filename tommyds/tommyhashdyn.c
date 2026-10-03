@@ -28,36 +28,47 @@ TOMMY_API void tommy_hashdyn_done(tommy_hashdyn* hashdyn)
  */
 static void tommy_hashdyn_resize(tommy_hashdyn* hashdyn, tommy_uint_t new_bucket_bit)
 {
-	tommy_size_t bucket_bit;
-	tommy_size_t bucket_max;
-	tommy_size_t new_bucket_max;
-	tommy_size_t new_bucket_mask;
+	tommy_size_t bucket_bit = hashdyn->bucket_bit;
+	tommy_size_t bucket_max = hashdyn->bucket_max;
+	tommy_size_t new_bucket_max = (tommy_size_t)1 << new_bucket_bit;
+	tommy_size_t new_bucket_mask = new_bucket_max - 1;
 	tommy_hashdyn_node** new_bucket;
 
-	bucket_bit = hashdyn->bucket_bit;
-	bucket_max = hashdyn->bucket_max;
-
-	new_bucket_max = (tommy_size_t)1 << new_bucket_bit;
-	new_bucket_mask = new_bucket_max - 1;
-
-	/* allocate the new vector using malloc() and not calloc() */
-	/* because data is fully initialized in the update process */
-	new_bucket = tommy_cast(tommy_hashdyn_node**, tommy_malloc(new_bucket_max * sizeof(tommy_hashdyn_node*)));
-
-	/* reinsert all the elements */
-	if (new_bucket_bit > bucket_bit) {
+	if (!hashdyn->count) {
+		/* empty table: allocate zeroed memory with calloc without looping */
+		new_bucket = tommy_cast(tommy_hashdyn_node**, tommy_calloc(new_bucket_max, sizeof(tommy_hashdyn_node*)));
+	} else if (new_bucket_bit == bucket_bit + 1) {
 		tommy_size_t i;
 
-		/* grow */
+		/* grow by 1 bit: zero the two buckets inline in loop to preserve cache locality */
+		new_bucket = tommy_cast(tommy_hashdyn_node**, tommy_malloc(new_bucket_max * sizeof(tommy_hashdyn_node*)));
+
 		for (i = 0; i < bucket_max; ++i) {
 			tommy_hashdyn_node* j;
 
-			/* setup the new two buckets */
 			new_bucket[i] = 0;
 			new_bucket[i + bucket_max] = 0;
 
-			/* reinsert the bucket */
 			j = hashdyn->bucket[i];
+			while (j) {
+				tommy_hashdyn_node* j_next = j->next;
+				tommy_size_t pos = j->index & new_bucket_mask;
+				if (new_bucket[pos])
+					tommy_list_insert_tail_not_empty(new_bucket[pos], j);
+				else
+					tommy_list_insert_first(&new_bucket[pos], j);
+				j = j_next;
+			}
+		}
+	} else if (new_bucket_bit > bucket_bit) {
+		tommy_size_t i;
+
+		/* grow by multiple bits with elements: allocate zeroed memory and reinsert */
+		new_bucket = tommy_cast(tommy_hashdyn_node**, tommy_calloc(new_bucket_max, sizeof(tommy_hashdyn_node*)));
+
+		for (i = 0; i < bucket_max; ++i) {
+			tommy_hashdyn_node* j = hashdyn->bucket[i];
+
 			while (j) {
 				tommy_hashdyn_node* j_next = j->next;
 				tommy_size_t pos = j->index & new_bucket_mask;
@@ -71,12 +82,11 @@ static void tommy_hashdyn_resize(tommy_hashdyn* hashdyn, tommy_uint_t new_bucket
 	} else {
 		tommy_size_t i;
 
-		/* shrink */
-		for (i = 0; i < new_bucket_max; ++i) {
-			/* setup the new bucket with the lower bucket*/
-			new_bucket[i] = hashdyn->bucket[i];
+		/* shrink with elements: all buckets are overwritten, no pre-zeroing needed */
+		new_bucket = tommy_cast(tommy_hashdyn_node**, tommy_malloc(new_bucket_max * sizeof(tommy_hashdyn_node*)));
 
-			/* concat the upper bucket */
+		for (i = 0; i < new_bucket_max; ++i) {
+			new_bucket[i] = hashdyn->bucket[i];
 			tommy_list_concat(&new_bucket[i], &hashdyn->bucket[i + new_bucket_max]);
 		}
 	}
@@ -108,6 +118,19 @@ tommy_inline void hashdyn_shrink_step(tommy_hashdyn* hashdyn)
 	/* shrink if less than 12.5% full */
 	if (hashdyn->count <= hashdyn->bucket_max / 8 && hashdyn->bucket_bit > TOMMY_HASHDYN_BIT)
 		tommy_hashdyn_resize(hashdyn, hashdyn->bucket_bit - 1);
+}
+
+TOMMY_API void tommy_hashdyn_reserve(tommy_hashdyn* hashdyn, tommy_size_t count)
+{
+	tommy_uint_t bucket_bit = tommy_ilog2(count | 1) + 2;
+
+	if (bucket_bit < TOMMY_HASHDYN_BIT)
+		bucket_bit = TOMMY_HASHDYN_BIT;
+
+	if (bucket_bit <= hashdyn->bucket_bit)
+		return;
+
+	tommy_hashdyn_resize(hashdyn, bucket_bit);
 }
 
 TOMMY_API void tommy_hashdyn_insert(tommy_hashdyn* hashdyn, tommy_hashdyn_node* node, void* data, tommy_hash_t hash)
@@ -256,3 +279,4 @@ TOMMY_API void tommy_hashdyn_to_list(tommy_hashdyn* hashdyn, tommy_list* list)
 	memset(hashdyn->bucket, 0, hashdyn->bucket_max * sizeof(tommy_hashdyn_node*));
 	hashdyn->count = 0;
 }
+
