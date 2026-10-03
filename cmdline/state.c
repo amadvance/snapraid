@@ -2298,11 +2298,11 @@ __aligned_loops(64)
 static int state_read_block_run(STREAM* f, struct snapraid_file* file, block_off_t file_pos, block_off_t count, unsigned state, int discard_hash)
 {
 	unsigned char* block_ptr = (unsigned char*)file_block(file, file_pos);
-	size_t block_stride = block_sizeof();
+	size_t hash_size = BLOCK_HASH_SIZE;
 
 	while (count) {
 		size_t available = (size_t)(f->end - f->pos);
-		block_off_t cached_count = available / BLOCK_HASH_SIZE;
+		block_off_t cached_count = available / hash_size;
 		unsigned char* input;
 
 		if (cached_count > count)
@@ -2313,33 +2313,50 @@ static int state_read_block_run(STREAM* f, struct snapraid_file* file, block_off
 			int ret;
 
 			block_state_set(block, state);
-			ret = sread(f, block->hash, BLOCK_HASH_SIZE);
+			ret = sread(f, block->hash, hash_size);
 			if (ret < 0)
 				return -1;
 			if (discard_hash)
 				hash_invalid_set(block->hash);
 
-			block_ptr += block_stride;
+			block_ptr += 1 + hash_size;
 			--count;
 			continue;
 		}
 
+		count -= cached_count;
 		input = f->pos;
-		for (block_off_t i = 0; i < cached_count; ++i) {
-			struct snapraid_block* block = (struct snapraid_block*)block_ptr;
+		if (hash_size == HASH_MAX) {
+			while (cached_count != 0) {
+				struct snapraid_block* block = (struct snapraid_block*)block_ptr;
 
-			block_state_set(block, state);
-			if (discard_hash)
-				hash_invalid_set(block->hash);
-			else
-				hash_copy(block->hash, input);
+				block_state_set(block, state);
+				if (discard_hash)
+					memset(block->hash, 0, HASH_MAX);
+				else
+					memcpy(block->hash, input, HASH_MAX);
 
-			input += BLOCK_HASH_SIZE;
-			block_ptr += block_stride;
+				input += HASH_MAX;
+				block_ptr += 1 + HASH_MAX;
+				--cached_count;
+			}
+		} else {
+			while (cached_count != 0) {
+				struct snapraid_block* block = (struct snapraid_block*)block_ptr;
+
+				block_state_set(block, state);
+				if (discard_hash)
+					hash_invalid_set(block->hash);
+				else
+					hash_copy(block->hash, input);
+
+				input += hash_size;
+				block_ptr += 1 + hash_size;
+				--cached_count;
+			}
 		}
 
 		f->pos = input;
-		count -= cached_count;
 	}
 
 	return 0;
@@ -3907,11 +3924,11 @@ __aligned_loops(64)
 static int state_write_block_run(STREAM* f, struct snapraid_file* file, block_off_t file_pos, block_off_t count)
 {
 	unsigned char* block_ptr = (unsigned char*)file_block(file, file_pos);
-	size_t block_stride = block_sizeof();
+	size_t hash_size = BLOCK_HASH_SIZE;
 
 	while (count) {
 		size_t available = (size_t)(f->end - f->pos);
-		block_off_t cached_count = available / BLOCK_HASH_SIZE;
+		block_off_t cached_count = available / hash_size;
 		unsigned char* output;
 
 		if (cached_count > count)
@@ -3920,26 +3937,39 @@ static int state_write_block_run(STREAM* f, struct snapraid_file* file, block_of
 		if (cached_count == 0) {
 			struct snapraid_block* block = (struct snapraid_block*)block_ptr;
 
-			if (swrite(block->hash, BLOCK_HASH_SIZE, f) != 0)
+			if (swrite(block->hash, hash_size, f) != 0)
 				return -1;
 
-			block_ptr += block_stride;
+			block_ptr += 1 + hash_size;
 			--count;
 			continue;
 		}
 
+		count -= cached_count;
 		output = f->pos;
-		for (block_off_t i = 0; i < cached_count; ++i) {
-			struct snapraid_block* block = (struct snapraid_block*)block_ptr;
+		if (hash_size == HASH_MAX) {
+			while (cached_count != 0) {
+				struct snapraid_block* block = (struct snapraid_block*)block_ptr;
 
-			hash_copy(output, block->hash);
+				memcpy(output, block->hash, HASH_MAX);
 
-			output += BLOCK_HASH_SIZE;
-			block_ptr += block_stride;
+				output += HASH_MAX;
+				block_ptr += 1 + HASH_MAX;
+				--cached_count;
+			}
+		} else {
+			while (cached_count != 0) {
+				struct snapraid_block* block = (struct snapraid_block*)block_ptr;
+
+				hash_copy(output, block->hash);
+
+				output += hash_size;
+				block_ptr += 1 + hash_size;
+				--cached_count;
+			}
 		}
 
 		f->pos = output;
-		count -= cached_count;
 	}
 
 	return 0;
