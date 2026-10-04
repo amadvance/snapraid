@@ -97,18 +97,6 @@ void* malloc_nofail(size_t size)
 		/* LCOV_EXCL_STOP */
 	}
 
-#ifndef CHECKER /* Don't preinitialize when running for valgrind */
-	/*
-	 * Here we preinitialize the memory to ensure that the OS is really allocating it
-	 * and not only reserving the addressable space.
-	 * Otherwise we are risking that the OOM (Out Of Memory) killer in Linux will kill the process.
-	 * Filling the memory doesn't ensure to disable OOM, but it increase a lot the chances to
-	 * get a real error from malloc() instead than a process killed.
-	 * Note that calloc() doesn't have the same effect.
-	 */
-	memset(ptr, 0xA5, size);
-#endif
-
 	malloc_counter_inc(size);
 
 	return ptr;
@@ -123,7 +111,6 @@ void* nalloc_nofail(size_t count, size_t size)
 
 	size *= count;
 
-	/* see the note in malloc_nofail() of why we don't use calloc() */
 	void* ptr = malloc(size ? size : 1);
 
 	if (!ptr) {
@@ -140,9 +127,21 @@ void* nalloc_nofail(size_t count, size_t size)
 
 void* calloc_nofail(size_t count, size_t size)
 {
-	void* ptr = nalloc_nofail(count, size);
+	if (size != 0 && count > SIZE_MAX / size) {
+		log_fatal(EINTERNAL, "Allocation size overflow\n");
+		os_abort();
+	}
 
-	memset(ptr, 0, count * size);
+	void* ptr = calloc(count ? count : 1, size ? size : 1);
+
+	if (!ptr) {
+		/* LCOV_EXCL_START */
+		malloc_fail(count * size);
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	malloc_counter_inc(count * size);
 
 	return ptr;
 }
