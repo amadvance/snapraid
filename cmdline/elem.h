@@ -1410,6 +1410,7 @@ static inline snapraid_info info_get(tommy_arrayblkof* array, block_off_t pos)
  * Grow the array once and process each internal block directly, avoiding the
  * per-position grow and lookup performed by info_set().
  */
+__aligned_loops(64)
 static inline void info_set_run(tommy_arrayblkof* array, block_off_t pos, block_off_t count, snapraid_info info)
 {
 	tommy_arrayblkof_grow(array, pos + count);

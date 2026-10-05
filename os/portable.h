@@ -70,6 +70,22 @@
 #define __noreturn __attribute__((noreturn))
 #endif
 
+#ifndef __aligned
+#if defined(__GNUC__) || defined(__clang__)
+#define __aligned(n) __attribute__((aligned(n)))
+#else
+#define __aligned(n)
+#endif
+#endif
+
+#ifndef __aligned_loops
+#if defined(__GNUC__) && !defined(__clang__)
+#define __aligned_loops(n) __attribute__((optimize("align-loops=" #n)))
+#else
+#define __aligned_loops(n)
+#endif
+#endif
+
 /**
  * Architecture for inline assembly.
  */

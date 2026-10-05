@@ -758,6 +758,7 @@ void extent_free(void* void_extent)
 	free(extent);
 }
 
+__aligned(32)
 int extent_parity_compare(const void* void_a, const void* void_b)
 {
 	const struct snapraid_extent* arg_a = void_a;
@@ -771,6 +772,7 @@ int extent_parity_compare(const void* void_a, const void* void_b)
 	return 0;
 }
 
+__aligned(32)
 int extent_file_compare(const void* void_a, const void* void_b)
 {
 	const struct snapraid_extent* arg_a = void_a;

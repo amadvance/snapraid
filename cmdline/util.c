@@ -453,6 +453,7 @@ uint32_t crc32c_gen(uint32_t crc, const unsigned char* ptr, size_t size)
 }
 
 #if CONFIG_X86
+__aligned_loops(64)
 uint32_t crc32c_x86(uint32_t crc, const unsigned char* ptr, size_t size)
 {
 	crc ^= CRC_IV;
@@ -466,6 +467,7 @@ uint32_t crc32c_x86(uint32_t crc, const unsigned char* ptr, size_t size)
 #endif
 
 #if CONFIG_ARM_CRC
+__aligned_loops(64)
 uint32_t crc32c_arm64(uint32_t crc, const unsigned char* ptr, size_t size)
 {
 	crc ^= CRC_IV;

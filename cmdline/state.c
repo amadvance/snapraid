@@ -2294,6 +2294,7 @@ static void decoding_error(const char* path, STREAM* f)
  * pointer directly over cached hashes therefore preserves the same integrity
  * check performed by sread().
  */
+__aligned_loops(64)
 static int state_read_block_run(STREAM* f, struct snapraid_file* file, block_off_t file_pos, block_off_t count, unsigned state, int discard_hash)
 {
 	unsigned char* block_ptr = (unsigned char*)file_block(file, file_pos);
@@ -3902,6 +3903,7 @@ struct state_write_context {
  * copied with a single memcpy(). Keep the stream pointer local while filling
  * each buffered group to avoid the per-block stream call and field updates.
  */
+__aligned_loops(64)
 static int state_write_block_run(STREAM* f, struct snapraid_file* file, block_off_t file_pos, block_off_t count)
 {
 	unsigned char* block_ptr = (unsigned char*)file_block(file, file_pos);

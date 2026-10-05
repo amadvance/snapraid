@@ -148,6 +148,7 @@ static __always_inline uint32_t crc32c_x86_64_skip(uint32_t crc, const uint32_t 
 	       ^ table[7][crc >> 28];
 }
 
+__aligned_loops(64)
 static __always_inline uint32_t crc32c_x86_64_3lane(uint32_t crc, const unsigned char* ptr, size_t lane_size, const uint32_t table[8][16])
 {
 	const unsigned char* ptr0 = ptr;
@@ -180,6 +181,7 @@ static __always_inline uint32_t crc32c_x86_64_3lane(uint32_t crc, const unsigned
 }
 #endif
 
+__aligned_loops(64)
 static __always_inline uint32_t crc32c_x86_plain(uint32_t crc, const unsigned char* ptr, size_t size)
 {
 #ifdef CONFIG_X86_64
