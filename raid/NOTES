@@ -1055,6 +1055,12 @@ The implementation deliberately targets at most six parity levels.
 Short list of ideas already tried or rejected
 ---------------------------------------------
 
+* Loop alignment to 64 bytes:
+  improves scalar integer routines (raid/int.c) by +4% to +15% by avoiding fetch
+  and decode stalls on compact loops. Tried on vector SIMD routines (SSE, AVX,
+  NEON), with no improvement because wide unrolled loops are memory-bound and
+  cached in the uop cache. Kept only for integer routines.
+
 * AVX512 128-byte generation processing:
   tried, can be slower.
 

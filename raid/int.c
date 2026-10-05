@@ -9,6 +9,7 @@
  *
  * Uses 16-byte chunks across four 32-bit words.
  */
+__aligned_loops(64)
 void raid_gen1_int32(int nd, size_t size, void **vv, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
@@ -49,6 +50,7 @@ void raid_gen1_int32(int nd, size_t size, void **vv, int streaming)
  *
  * Uses 32-byte chunks across four 64-bit words.
  */
+__aligned_loops(64)
 void raid_gen1_int64(int nd, size_t size, void **vv, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
@@ -193,6 +195,7 @@ static __always_inline void raid_gen2_int64_gen(int nd, size_t size, void **vv, 
  *
  * Uses Horner's method with 8-byte chunks across two 32-bit words.
  */
+__aligned_loops(64)
 void raid_genz_int32_raid(int nd, size_t size, void **vv, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
@@ -250,6 +253,7 @@ void raid_genz_int32_raid(int nd, size_t size, void **vv, int streaming)
  *
  * Uses Horner's method with 16-byte chunks across two 64-bit words.
  */
+__aligned_loops(64)
 void raid_genz_int64_raid(int nd, size_t size, void **vv, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
@@ -307,6 +311,7 @@ void raid_genz_int64_raid(int nd, size_t size, void **vv, int streaming)
  *
  * Precomputes per-disk multiplication tables and processes 2-byte chunks.
  */
+__aligned_loops(64)
 void raid_gen2_int8(int nd, size_t size, void **vv, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
@@ -361,6 +366,7 @@ void raid_gen2_int8(int nd, size_t size, void **vv, int streaming)
  *
  * Precomputes per-disk multiplication tables and processes 2-byte chunks.
  */
+__aligned_loops(64)
 void raid_gen3_int8(int nd, size_t size, void **vv, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
@@ -425,6 +431,7 @@ void raid_gen3_int8(int nd, size_t size, void **vv, int streaming)
  *
  * Precomputes per-disk multiplication tables and processes 2-byte chunks.
  */
+__aligned_loops(64)
 void raid_gen4_int8(int nd, size_t size, void **vv, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
@@ -498,6 +505,7 @@ void raid_gen4_int8(int nd, size_t size, void **vv, int streaming)
  *
  * Precomputes per-disk multiplication tables and processes 2-byte chunks.
  */
+__aligned_loops(64)
 void raid_gen5_int8(int nd, size_t size, void **vv, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
@@ -580,6 +588,7 @@ void raid_gen5_int8(int nd, size_t size, void **vv, int streaming)
  *
  * Precomputes per-disk multiplication tables and processes 2-byte chunks.
  */
+__aligned_loops(64)
 void raid_gen6_int8(int nd, size_t size, void **vv, int streaming)
 {
 	uint8_t **v = (uint8_t **)vv;
@@ -1008,30 +1017,35 @@ static __always_inline void raid_recX_int8(int nr, int has_p, int *id, int *ip, 
 	}
 }
 
+__aligned_loops(64)
 void raid_gen2_int32_raid(int nd, size_t size, void **vv, int streaming)
 {
 	(void)streaming;
 	raid_gen2_int32_gen(nd, size, vv, 2);
 }
 
+__aligned_loops(64)
 void raid_gen2_int32_aes(int nd, size_t size, void **vv, int streaming)
 {
 	(void)streaming;
 	raid_gen2_int32_gen(nd, size, vv, 3);
 }
 
+__aligned_loops(64)
 void raid_gen2_int64_raid(int nd, size_t size, void **vv, int streaming)
 {
 	(void)streaming;
 	raid_gen2_int64_gen(nd, size, vv, 2);
 }
 
+__aligned_loops(64)
 void raid_gen2_int64_aes(int nd, size_t size, void **vv, int streaming)
 {
 	(void)streaming;
 	raid_gen2_int64_gen(nd, size, vv, 3);
 }
 
+__aligned_loops(64)
 void raid_rec1_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 1);
@@ -1042,6 +1056,7 @@ void raid_rec1_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 		raid_recX_int8(1, 0, id, ip, nd, size, vv);
 }
 
+__aligned_loops(64)
 void raid_rec2_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 2);
@@ -1052,6 +1067,7 @@ void raid_rec2_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 		raid_recX_int8(2, 0, id, ip, nd, size, vv);
 }
 
+__aligned_loops(64)
 void raid_rec3_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 3);
@@ -1061,6 +1077,7 @@ void raid_rec3_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 		raid_recX_int8(3, 0, id, ip, nd, size, vv);
 }
 
+__aligned_loops(64)
 void raid_rec4_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 4);
@@ -1070,6 +1087,7 @@ void raid_rec4_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 		raid_recX_int8(4, 0, id, ip, nd, size, vv);
 }
 
+__aligned_loops(64)
 void raid_rec5_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 5);
@@ -1079,6 +1097,7 @@ void raid_rec5_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 		raid_recX_int8(5, 0, id, ip, nd, size, vv);
 }
 
+__aligned_loops(64)
 void raid_rec6_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	BUG_ON(nr != 6);

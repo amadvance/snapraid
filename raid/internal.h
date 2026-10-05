@@ -61,7 +61,22 @@
  * Forced alignment.
  */
 #ifndef __aligned
+#if defined(__GNUC__) || defined(__clang__)
 #define __aligned(a) __attribute__((aligned(a)))
+#else
+#define __aligned(a)
+#endif
+#endif
+
+/*
+ * Forced loops alignment.
+ */
+#ifndef __aligned_loops
+#if defined(__GNUC__) && !defined(__clang__)
+#define __aligned_loops(n) __attribute__((optimize("align-loops=" #n)))
+#else
+#define __aligned_loops(n)
+#endif
 #endif
 
 /*
