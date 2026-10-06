@@ -2242,6 +2242,10 @@ static inline void disk_advance(
 		block_off_t run_rem = 1;
 		const unsigned char* ptr = (const unsigned char*)block;
 
+		/* stop inspecting block flags at the end of the requested window */
+		if (extent_rem > blockmax - pos)
+			extent_rem = blockmax - pos;
+
 		*has_file_ptr = has_file;
 		*has_invalid_ptr = has_invalid;
 
@@ -2264,14 +2268,16 @@ static inline void disk_advance(
  * block, and at least one disk has an invalid parity block (CHG, REP, REBUILD,
  * or DELETED).
  *
- * The sweep takes O(B + R * D) time, where B is the number of blocks inspected,
+ * Counts only positions in [blockmin, blockmax).
+ * The sweep takes O(D * log(E) + B + R * D) time, where E is the number of
+ * extents per disk, B is the number of blocks inspected within the window,
  * R is the number of event positions processed (including initialization), and
  * D is the number of disks. Cached event boundaries avoid rescanning block runs.
  *
  * The caller must ensure that the disk list, extent trees, and block states
- * remain unchanged during the count, as this function does not acquire locks.
+ * remain unchanged during the count, as no locks are held during the sweep.
  */
-uint64_t fs_count_unsynced(struct snapraid_state* state, block_off_t blockmax)
+uint64_t fs_count_unsynced(struct snapraid_state* state, block_off_t blockmin, block_off_t blockmax)
 {
 	tommy_tree_node* cursors[RAID_DATA_MAX];
 	block_off_t next_events[RAID_DATA_MAX];
@@ -2280,7 +2286,7 @@ uint64_t fs_count_unsynced(struct snapraid_state* state, block_off_t blockmax)
 	unsigned disk_count = 0;
 	tommy_node* node;
 	uint64_t total_unsynced = 0;
-	block_off_t pos = 0;
+	block_off_t pos = blockmin;
 	size_t stride = block_sizeof();
 	unsigned d;
 
@@ -2294,9 +2300,10 @@ uint64_t fs_count_unsynced(struct snapraid_state* state, block_off_t blockmax)
 
 	for (node = state->disklist; node != 0; node = node->next) {
 		struct snapraid_disk* disk = node->data;
-		cursors[disk_count] = tommy_tree_head(&disk->fs_parity);
+		struct snapraid_extent* ext = fs_par2extent_find_next(disk, blockmin);
+		cursors[disk_count] = ext ? &ext->parity_node : 0;
 		/* force an initial event so flags are set before their first use */
-		next_events[disk_count] = 0;
+		next_events[disk_count] = blockmin;
 		++disk_count;
 	}
 
@@ -2508,6 +2515,8 @@ struct state_read_context {
 static void state_read_content(struct snapraid_state* state, const char* path, STREAM* f, struct state_read_context* context)
 {
 	block_off_t blockmax;
+	block_off_t inv_min;
+	block_off_t inv_max;
 	uint64_t count_file;
 	uint64_t count_hardlink;
 	uint64_t count_symlink;
@@ -2523,7 +2532,6 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	int has_hash;
 	int has_prevhash;
 	int has_info;
-	int has_invalid_parity;
 	char buffer[PATH_MAX];
 	ssize_t ret;
 	tommy_array disk_mapping;
@@ -2532,6 +2540,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	tommy_hashdyn bucket_hash;
 
 	blockmax = 0;
+	inv_min = BLOCK_MAX;
+	inv_max = 0;
 	count_file = 0;
 	count_hardlink = 0;
 	count_symlink = 0;
@@ -2547,7 +2557,6 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	has_hash = 0;
 	has_prevhash = 0;
 	has_info = 0;
-	has_invalid_parity = 0;
 	mapping_max = 0;
 	memset(disk_file_count, 0, sizeof(disk_file_count));
 	tommy_array_init(&disk_mapping);
@@ -2819,8 +2828,12 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				}
 
 				/* all file block states except BLK require a parity update */
-				if (v_state != BLOCK_STATE_BLK)
-					has_invalid_parity = 1;
+				if (v_state != BLOCK_STATE_BLK) {
+					if (v_pos < inv_min)
+						inv_min = v_pos;
+					if (v_pos + v_count > inv_max)
+						inv_max = v_pos + v_count;
+				}
 
 				v_file_pos = v_idx;
 				ret = state_read_block_run(f, file, v_file_pos, v_count, v_state, discard_hash);
@@ -2989,14 +3002,6 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					}
 				}
 			}
-
-			/*
-			 * A synchronized content has no invalid block state, so its unsynced
-			 * count is certainly zero. Scan the extent maps only when needed.
-			 */
-			if (has_invalid_parity) {
-				count_unsynced = fs_count_unsynced(state, blockmax);
-			}
 		} else if (c == 'h') {
 			/* hole */
 			block_off_t v_pos;
@@ -3049,7 +3054,10 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				switch (c) {
 				case 'o' :
 					/* if it's a run of deleted blocks */
-					has_invalid_parity = 1;
+					if (v_pos < inv_min)
+						inv_min = v_pos;
+					if (v_pos + v_count > inv_max)
+						inv_max = v_pos + v_count;
 
 					/* ensure the converted byte size fits in signed data_off_t without overflow */
 					if (v_count > INT64_MAX / (uint64_t)state->block_size) {
@@ -4021,6 +4029,16 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			exit(EXIT_FAILURE);
 		}
 		/* LCOV_EXCL_STOP */
+	}
+
+	/*
+	 * Every invalid file or deleted run expands this window while parsing.
+	 * Outside it all parity is valid, so no position can be unsynced.
+	 * Count only after all records are loaded, independently of the info record.
+	 * A synchronized content leaves the window empty and needs no sweep.
+	 */
+	if (inv_min < inv_max) {
+		count_unsynced = fs_count_unsynced(state, inv_min, inv_max);
 	}
 
 	context->blockmax = blockmax;

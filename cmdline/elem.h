@@ -1244,6 +1244,13 @@ void fs_deallocate(struct snapraid_disk* disk, block_off_t pos);
 struct snapraid_block* fs_file2block_get(struct snapraid_file* file, block_off_t file_pos);
 
 /**
+ * Find the first extent ending after the specified parity position.
+ * Return 0 if no such extent exists. The caller must ensure that the extent
+ * trees remain unchanged while using the returned extent or its tree node.
+ */
+struct snapraid_extent* fs_par2extent_find_next(struct snapraid_disk* disk, block_off_t parity_pos);
+
+/**
  * Get the file position from the parity position.
  * Return 0 if no file is using it.
  */

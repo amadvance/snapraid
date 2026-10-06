@@ -1389,6 +1389,20 @@ static int extent_parity_inside_compare_unlock(const void* void_a, const void* v
 	return 0;
 }
 
+struct snapraid_extent* fs_par2extent_find_next(struct snapraid_disk* disk, block_off_t parity_pos)
+{
+	struct extent_parity_inside arg = { parity_pos };
+	struct snapraid_extent* extent;
+
+	fs_lock(disk);
+
+	/* non-overlapping extents let this search find the containing extent or the next one */
+	extent = tommy_tree_search_greater_equal_compare(&disk->fs_parity, extent_parity_inside_compare_unlock, &arg);
+
+	fs_unlock(disk);
+	return extent;
+}
+
 /**
  * Search the extent at the specified parity position.
  * The search is optimized for sequential accesses.

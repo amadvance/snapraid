@@ -2270,7 +2270,7 @@ static void test_unsynced_sweep(void)
 	state.block_size = 4096;
 	tommy_list_init(&state.disklist);
 
-	if (fs_count_unsynced(&state, 100) != 0) {
+	if (fs_count_unsynced(&state, 0, 100) != 0) {
 		log_fatal(EINTERNAL, "test_unsynced_sweep: no disks failed\n");
 		exit(EXIT_FAILURE);
 	}
@@ -2281,7 +2281,7 @@ static void test_unsynced_sweep(void)
 	tommy_list_insert_tail(&state.disklist, &disk2->node, disk2);
 
 	/* initially both disks are empty */
-	if (fs_count_unsynced(&state, 100) != 0) {
+	if (fs_count_unsynced(&state, 10, 100) != 0) {
 		log_fatal(EINTERNAL, "test_unsynced_sweep: empty disks failed\n");
 		exit(EXIT_FAILURE);
 	}
@@ -2301,7 +2301,7 @@ static void test_unsynced_sweep(void)
 	fs_allocate(disk2, 0, file2, 0, 20);
 
 	/* parity 0..14 has only BLK or EMPTY; parity 15..19 has CHG on disk1 and BLK on disk2 -> 5 unsynced */
-	if (fs_count_unsynced(&state, 20) != 5) {
+	if (fs_count_unsynced(&state, 15, 20) != 5) {
 		log_fatal(EINTERNAL, "test_unsynced_sweep: mixed block run failed\n");
 		exit(EXIT_FAILURE);
 	}
@@ -2313,7 +2313,7 @@ static void test_unsynced_sweep(void)
 	fs_allocate(disk1, 20, del, 0, 3);
 
 	/* disk2 is empty at 20..22 -> DELETED alone does not count as unsynced */
-	if (fs_count_unsynced(&state, 23) != 5) {
+	if (fs_count_unsynced(&state, 15, 23) != 5) {
 		log_fatal(EINTERNAL, "test_unsynced_sweep: deleted without other file failed\n");
 		exit(EXIT_FAILURE);
 	}
@@ -2330,7 +2330,7 @@ static void test_unsynced_sweep(void)
 
 	/* parity 20: DELETED on d1, empty on d2 -> not unsynced;
 	 * parity 21..22: DELETED on d1, BLK on d2 -> unsynced (2 blocks). Total 5 + 2 = 7 */
-	if (fs_count_unsynced(&state, 23) != 7) {
+	if (fs_count_unsynced(&state, 15, 23) != 7) {
 		log_fatal(EINTERNAL, "test_unsynced_sweep: deleted with file failed\n");
 		exit(EXIT_FAILURE);
 	}
@@ -2349,14 +2349,19 @@ static void test_unsynced_sweep(void)
 	 * Positions 30..33 are all unsynced: REP, REP, CHG, REBUILD respectively.
 	 * At 32 and 33 the invalid block changes disks at the same event boundary;
 	 * count each position once using the refreshed flags from both disks.
-	 * Check limits in gaps, within extents and runs, and at their boundaries.
+	 * Check every window between limits in gaps, within extents and runs,
+	 * and at their boundaries, including empty windows and nonzero starts.
 	 */
 	for (i = 0; i < sizeof(bounds) / sizeof(bounds[0]); ++i) {
-		uint64_t count = fs_count_unsynced(&state, bounds[i].blockmax);
-		if (count != bounds[i].unsynced) {
-			log_fatal(EINTERNAL, "test_unsynced_sweep: limit %" PRIu64 " expected %" PRIu64 ", got %" PRIu64 "\n",
-				bounds[i].blockmax, bounds[i].unsynced, count);
-			exit(EXIT_FAILURE);
+		block_off_t j;
+		for (j = 0; j <= i; ++j) {
+			uint64_t expected = bounds[i].unsynced - bounds[j].unsynced;
+			uint64_t count = fs_count_unsynced(&state, bounds[j].blockmax, bounds[i].blockmax);
+			if (count != expected) {
+				log_fatal(EINTERNAL, "test_unsynced_sweep: window [%" PRIu64 ", %" PRIu64 ") expected %" PRIu64 ", got %" PRIu64 "\n",
+					bounds[j].blockmax, bounds[i].blockmax, expected, count);
+				exit(EXIT_FAILURE);
+			}
 		}
 	}
 
