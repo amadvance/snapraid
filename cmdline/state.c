@@ -2737,7 +2737,10 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			 * Append the file to the disk list. Hash table insertions into
 			 * inodeset, pathset, and stampset are deferred until all records
 			 * are parsed to avoid cache thrashing and allow pre-reserving buckets.
+			 * Cache the path hash in pathset.index to avoid recomputing strlen
+			 * during insertion.
 			 */
+			file->pathset.index = file_path_hash_len(file->sub, sub_len);
 			tommy_list_insert_tail(&disk->filelist, &file->nodelist, file);
 			++disk_file_count[mapping];
 
@@ -3950,7 +3953,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 
 			if (file->inode != INODE_INVALID)
 				tommy_hashdyn_insert(&disk->inodeset, &file->nodeset, file, file_inode_hash(file->inode));
-			tommy_hashdyn_insert(&disk->pathset, &file->pathset, file, file_path_hash(file->sub));
+			tommy_hashdyn_insert(&disk->pathset, &file->pathset, file, file->pathset.index);
 			tommy_hashdyn_insert(&disk->stampset, &file->stampset, file, file_stamp_hash(file->size, file->mtime_sec, file->mtime_nsec));
 
 			node = node->next;
