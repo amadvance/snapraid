@@ -133,7 +133,7 @@ unsigned char random_u8(void)
 	return random_u64() & 0xFF;
 }
 
-/*
+/**
  * SplitMix64
  *
  * - Zero-safe: Any 64-bit seed is valid (even 0).
@@ -293,7 +293,7 @@ unsigned log_hardware_errors(void)
 	return count;
 }
 
-/*
+/**
  * Note that in the following functions we always flush both
  * stdout and stderr, because we want to ensure that they mixes
  * well when redirected to files
@@ -395,7 +395,7 @@ void vlog_fatal(int err, const char* format, va_list ap, const char* post)
 			log_failed = 1;
 	}
 
-	/* A failed tagged write must retain stderr as the only usable fatal diagnostic. */
+	/* a failed tagged write must retain stderr as the only usable fatal diagnostic. */
 	if (!stdlog || log_failed || msg_fatal_stderr) {
 		va_list ap_copy2;
 		va_copy(ap_copy2, ap);
@@ -1108,7 +1108,7 @@ void pathimport(char* dst, size_t size, const char* src)
 	pathcpy(dst, size, src);
 
 #ifdef _WIN32
-	/* Convert the Windows dir separator '\' to C '/' */
+	/* convert the Windows dir separator '\' to C '/' */
 	while (*dst) {
 		if (*dst == '\\')
 			*dst = '/';
@@ -1122,7 +1122,7 @@ void pathexport(char* dst, size_t size, const char* src)
 	pathcpy(dst, size, src);
 
 #ifdef _WIN32
-	/* Convert C '/' to Windows dir separator '\' */
+	/* convert C '/' to Windows dir separator '\' */
 	while (*dst) {
 		if (*dst == '/')
 			*dst = '\\';
@@ -1928,7 +1928,7 @@ int is_sep(char c)
 	       || c == (char)0xa0;  /* french */
 }
 
-/*
+/**
  * snumber()
  *
  * Matches a literal prefix (the second argument), then parses the following

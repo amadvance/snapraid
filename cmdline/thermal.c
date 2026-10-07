@@ -30,7 +30,7 @@ void thermal_free(void* void_thermal)
 	free(thermal);
 }
 
-/*
+/**
  * Fit exponential heating model to data using least squares
  */
 struct snapraid_thermal_params fit_thermal_model(const struct snapraid_thermal_point* points, int n_points, double t_ambient)

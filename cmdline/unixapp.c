@@ -3,7 +3,7 @@
 
 #include "os/portable.h"
 
-#ifndef __MINGW32__ /* Only for Unix */
+#ifndef __MINGW32__ /* only for Unix */
 
 #include "app.h"
 #include "support.h"
@@ -64,7 +64,7 @@ static inline unsigned statfs_type(const struct statfs* sfs)
 #if HAVE_LINUX_DEVICE
 static const char* const bcachefs_paths[] = {
 #ifdef BCACHEFS_PATH
-	/* Path configured at build time (e.g. on NixOS). */
+	/* path configured at build time (e.g. on NixOS). */
 	BCACHEFS_PATH,
 #else
 	"/usr/sbin/bcachefs",
@@ -96,7 +96,7 @@ static const char* find_bcachefs(void)
 #if HAVE_LINUX_DEVICE
 static const char* const zfs_paths[] = {
 #ifdef ZFS_PATH
-	/* Path configured at build time (e.g. on NixOS). */
+	/* path configured at build time (e.g. on NixOS). */
 	ZFS_PATH,
 #else
 	"/usr/sbin/zfs",
@@ -125,7 +125,7 @@ static const char* find_zfs(void)
 
 static const char* const zpool_paths[] = {
 #ifdef ZPOOL_PATH
-	/* Path configured at build time (e.g. on NixOS). */
+	/* path configured at build time (e.g. on NixOS). */
 	ZPOOL_PATH,
 #else
 	"/usr/sbin/zpool",
@@ -157,7 +157,7 @@ static const char* find_zpool(void)
 
 static const char* smartctl_paths[] = {
 #ifdef SMARTCTL_PATH
-	/* Path configured at build time (e.g. on NixOS). */
+	/* path configured at build time (e.g. on NixOS). */
 	SMARTCTL_PATH,
 #else
 	/* Linux & BSD */
@@ -228,7 +228,7 @@ static ssize_t sysread(const char* path, char* buf, size_t buf_size)
 #endif
 
 #if HAVE_LINUX_DEVICE
-/*
+/**
  * sysattr_vpd_pg80 — parse raw binary VPD page 0x80 (Unit Serial Number)
  * from a sysfs vpd_pg80 file.
  */
@@ -291,7 +291,7 @@ static int sysattr_vpd_pg80(const char* path, char* dst, size_t dst_size)
 }
 #endif
 
-/*
+/**
  * sysread_vpd_pg83 — parse raw binary VPD page 0x83 (Device Identification)
  * from a sysfs vpd_pg83 file and extract the first NAA (Network Address
  * Authority) designator for the Logical Unit (ASSOCIATION == 0x00).
@@ -418,7 +418,7 @@ static int sysattr_vpd_pg83(const char* path, char* dst, size_t dst_size)
 
 		switch (naa) {
 		case 0x1 : /* IEEE Extended */
-		case 0x2 : /* Locally Assigned */
+		case 0x2 : /* locally assigned */
 		case 0x3 : /* IEEE Registered */
 		case 0x5 : /* IEEE Registered */
 			expected = 8;
@@ -503,7 +503,7 @@ static long long syslong(const char* path)
 	return v;
 }
 
-/*
+/**
  * Parse Linux cpulist format (e.g. "0-3,5,8-11") into an array of CPU IDs.
  *
  * Returns the total number of CPUs in the list. Stores up to max_cpus entries.
@@ -553,7 +553,7 @@ static unsigned parse_cpulist(const char* str, unsigned* cpus, unsigned max_cpus
 	return count;
 }
 
-/*
+/**
  * Read online CPU IDs from /sys/devices/system/cpu/online.
  *
  * Falls back to consecutive 0..N-1 IDs if sysfs is unavailable.
@@ -584,7 +584,7 @@ static unsigned read_online_cpus(unsigned* cpus, unsigned max_cpus)
 	return count;
 }
 
-/*
+/**
  * Returns 1 if the specified cpu is the lowest-numbered logical CPU in its
  * physical core's SMT sibling set.
  */
@@ -2737,7 +2737,7 @@ static int fssnapshot_stat_fs(const struct fssnapshot_struct* fss, const char* n
 }
 #endif
 
-/*
+/**
  * Native ZFS snapshots use a SnapRAID-specific prefix to avoid
  * deleting or renaming unrelated user snapshots with generic
  * names such as @scan, @pending, or @stable.
@@ -2772,7 +2772,7 @@ static int fssnapshot_stat_zfs(const struct fssnapshot_struct* fss, const char* 
 		return -1;
 	}
 
-	/**
+	/*
 	 * When verifying if a ZFS snapshot has been successfully deleted, a direct
 	 * path lookup (stat, access, open) is unreliable. A directory listing
 	 * (readdir) of the .zfs/snapshot directory must be used instead.
@@ -4530,7 +4530,7 @@ int devmap(void)
 
 #if HAVE_LINUX_DEVICE
 
-/* List of possible ambient temperature labels */
+/* list of possible ambient temperature labels */
 const char* AMBIENT_LABEL[] = {
 	"systin",
 	"auxtin",
@@ -4976,7 +4976,7 @@ void machineinfo(struct machineinfo_struct* info)
 		}
 	}
 
-	/* Fallback if sysfs cpufreq is unavailable (e.g. Cloud VM) */
+	/* fallback if sysfs cpufreq is unavailable (e.g. Cloud VM) */
 	if (info->cpu_clock[0] == 0) {
 #ifdef CONFIG_X86
 		raid_cpuid(0, 0, reg);

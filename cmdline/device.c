@@ -43,12 +43,12 @@ void device_name_set(devinfo_t* dev, const char* name, int index)
  */
 #define SMART_MEASURES 256
 
-/*
+/**
  * Divider for SMART attribute 5
  */
 static unsigned SMART_5_STEP = 1;
 
-/*
+/**
  * Failure rate for 30 days, for a disk
  * with SMART attribute 5 at a given value.
  */
@@ -107,12 +107,12 @@ static double SMART_5_R[SMART_MEASURES] = {
 	0.4249,
 };
 
-/*
+/**
  * Divider for SMART attribute 187
  */
 static unsigned SMART_187_STEP = 1;
 
-/*
+/**
  * Failure rate for 30 days, for a disk
  * with SMART attribute 187 at a given value.
  */
@@ -171,12 +171,12 @@ static double SMART_187_R[SMART_MEASURES] = {
 	3.4520,
 };
 
-/*
+/**
  * Divider for SMART attribute 188
  */
 static unsigned SMART_188_STEP = 1;
 
-/*
+/**
  * Failure rate for 30 days, for a disk
  * with SMART attribute 188 at a given value.
  */
@@ -235,12 +235,12 @@ static double SMART_188_R[SMART_MEASURES] = {
 	1.3731,
 };
 
-/*
+/**
  * Divider for SMART attribute 197
  */
 static unsigned SMART_197_STEP = 1;
 
-/*
+/**
  * Failure rate for 30 days, for a disk
  * with SMART attribute 197 at a given value.
  */
@@ -299,12 +299,12 @@ static double SMART_197_R[SMART_MEASURES] = {
 	4.1131,
 };
 
-/*
+/**
  * Divider for SMART attribute 198
  */
 static unsigned SMART_198_STEP = 1;
 
-/*
+/**
  * Failure rate for 30 days, for a disk
  * with SMART attribute 198 at a given value.
  */
@@ -423,7 +423,7 @@ static double smart_afr(devinfo_t* devinfo)
 	}
 
 	if (
-		/**
+		/*
 		 * Don't check Command_Timeout (188) for Seagate disks.
 		 *
 		 * It's reported by users that for Archive SMR (Shingled Magnetic Recording)

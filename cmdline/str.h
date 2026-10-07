@@ -97,7 +97,7 @@ char* strtrim(char* s);
  */
 char* strlwr(char* s);
 
-/*
+/**
  * Find the first occurrence of 'needle' in 'haystack' only if it
  * appears as a separate word (space, number or string boundaries).
  *
@@ -127,7 +127,7 @@ unsigned long long strtonll(const char* nptr, char** endptr, int base);
 /****************************************************************************/
 /* match */
 
-/*
+/**
  * Wild match function.
  *
  * If match_sub is !=0, it matches sub directory. Specifically it matches if the

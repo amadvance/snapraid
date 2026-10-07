@@ -4,7 +4,7 @@
 #ifndef __PORTABLE_MINGW_H
 #define __PORTABLE_MINGW_H
 
-#ifdef __MINGW32__ /* Only for MingW */
+#ifdef __MINGW32__ /* only for MingW */
 
 #include <wchar.h>
 
@@ -98,7 +98,7 @@ wchar_t* u8tou16_mayfail(wchar_t* conv_buf, size_t number_of_wchar, const char* 
 #undef PATH_MAX
 #define PATH_MAX 1024
 
-/* Remap functions and types */
+/* remap functions and types */
 #undef fopen
 #define fopen windows_fopen
 #define FOPEN_TEXT "t"
@@ -167,11 +167,11 @@ wchar_t* u8tou16_mayfail(wchar_t* conv_buf, size_t number_of_wchar, const char* 
 #undef sleep
 #define sleep windows_sleep
 /* 4==DIR, 5,6,7=free, 8==REG */
-#define S_IFLNK 0x5000 /* Symbolic link to file */
+#define S_IFLNK 0x5000 /* symbolic link to file */
 #define S_ISLNK(m) (((m) & _S_IFMT) == S_IFLNK)
-#define S_IFLNKDIR 0x6000 /* Symbolic link to directory */
+#define S_IFLNKDIR 0x6000 /* symbolic link to directory */
 #define S_ISLNKDIR(m) (((m) & _S_IFMT) == S_IFLNKDIR)
-#define S_IFJUN 0x7000 /* Junction */
+#define S_IFJUN 0x7000 /* junction */
 #define S_ISJUN(m) (((m) & _S_IFMT) == S_IFJUN)
 #undef readlink
 #define readlink windows_readlink
@@ -210,7 +210,7 @@ wchar_t* u8tou16_mayfail(wchar_t* conv_buf, size_t number_of_wchar, const char* 
  */
 #define STAT_NSEC_INVALID -1
 
-/* We have nano second support */
+/* we have nano second support */
 #define STAT_NSEC(st) ((int)(st)->st_mtimensec)
 
 static inline int WEXITSTATUS(DWORD status)

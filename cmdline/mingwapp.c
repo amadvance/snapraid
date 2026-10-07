@@ -3,7 +3,7 @@
 
 #include "os/portable.h"
 
-#ifdef __MINGW32__ /* Only for MingW */
+#ifdef __MINGW32__ /* only for MingW */
 
 #include "support.h"
 #include "raid/cpu.h"
@@ -82,7 +82,7 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 		if ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0) {
 			char* slash = strrchr(dir, '/');
 
-			/**
+			/*
 			 * Cut the file name, but leave the last slash.
 			 *
 			 * This is done because a MSDN comment about using of UNC paths.
@@ -135,7 +135,7 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 		if (has_persistent_inode) {
 			*has_persistent_inode = 0;
 
-			/**
+			/*
 			 * Reuse stored file IDs across scans only for filesystems known to
 			 * provide stable and unique IDs. An unknown or unavailable filesystem
 			 * must be treated as volatile: a false negative only loses inode-based
@@ -250,7 +250,7 @@ static int base64_encode(const unsigned char* in, size_t in_len, char* out, size
 	return 0;
 }
 
-/*
+/**
  * PowerShell helper
  *
  * Runs a PowerShell one-liner via os_spawn() and captures the first line
@@ -2411,7 +2411,7 @@ void machineinfo(struct machineinfo_struct* info)
 	info->memory_page_size = si.dwPageSize;
 	info->cpu_cores_logical = GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
 
-	/* Query processor topology and cache hierarchy via GetLogicalProcessorInformationEx */
+	/* query processor topology and cache hierarchy via GetLogicalProcessorInformationEx */
 	DWORD len = 0;
 	GetLogicalProcessorInformationEx(RelationAll, 0, &len);
 	if (GetLastError() == ERROR_INSUFFICIENT_BUFFER && len > 0) {

@@ -20,7 +20,7 @@
  * of this license, visit: https://creativecommons.org/publicdomain/zero/1.0/
  */
 
-/*
+/**
  * Analysis of the BFast variant and blinding multiplication
  *
  * Many fast non-cryptographic hashes (wyhash, rapidhash) use "folding

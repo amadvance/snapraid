@@ -493,7 +493,7 @@ static inline int is_wild_escape(char c)
 #endif
 }
 
-/*
+/**
  * Match with the previous pattern character provided in prev.
  *
  * An initial '**' needs to know if it was preceded by '/' to distinguish

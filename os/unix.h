@@ -67,7 +67,7 @@ static inline int close_range_impl(unsigned int first, unsigned int last, unsign
  */
 #define STAT_NSEC_INVALID -1
 
-/* Check if we have nanoseconds support */
+/* check if we have nanoseconds support */
 #if HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC
 #define STAT_NSEC(st) ((int)(st)->st_mtim.tv_nsec) /* Linux */
 #elif HAVE_STRUCT_STAT_ST_MTIMENSEC

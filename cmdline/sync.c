@@ -11,7 +11,7 @@
 #include "io.h"
 #include "raid/raid.h"
 
-/*
+/**
  * SnapRAID sync model
  *
  * Sync brings the stored parity and content metadata in line with the data
@@ -1921,7 +1921,7 @@ bail_abort:
 	return 0;
 }
 
-/*
+/**
  * Make a forced full parity rebuild persistent.
  *
  * REBUILD means that the current data and hash are known, but physical parity
@@ -1959,7 +1959,7 @@ static void state_sync_mark_rebuild(struct snapraid_state* state)
 		state->need_write = 1;
 }
 
-/*
+/**
  * Initialize persistent parity split sizes resolved while opening parity.
  *
  * parity_create() resolves PARITY_SIZE_INVALID in the parity handles using
@@ -2208,7 +2208,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		/* after resizing parity files, refresh again the free info */
 		state_refresh(state);
 
-		/**
+		/*
 		 * Save the new state before the sync but after the hashing phase
 		 *
 		 * This allows to recover after an aborted sync, and at the same time

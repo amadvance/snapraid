@@ -220,7 +220,7 @@ int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_p
 			/* LCOV_EXCL_STOP */
 		}
 
-		/**
+		/*
 		 * If the parity size is not yet set, set it now.
 		 * This happens when adding a new parity level or split that has
 		 * no persisted size yet.
@@ -884,7 +884,7 @@ int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_par
 			/* LCOV_EXCL_STOP */
 		}
 
-		/**
+		/*
 		 * If the parity size is not yet set, set it now.
 		 * This happens when adding a new parity level or split that has
 		 * no persisted size yet.

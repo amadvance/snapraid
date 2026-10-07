@@ -14,7 +14,7 @@
 // MurmurHash3 was written by Austin Appleby, and is placed in the public
 // domain. The author hereby disclaims copyright to this source code.
 
-/* Finalization mix - force all bits of a hash block to avalanche */
+/* finalization mix - force all bits of a hash block to avalanche */
 static inline uint32_t fmix32(uint32_t h)
 {
 	h ^= h >> 16;
@@ -25,7 +25,7 @@ static inline uint32_t fmix32(uint32_t h)
 	return h;
 }
 
-/*
+/**
  * Non-static variables are intentionally used instead of static const
  * because keeping these constants in CPU registers yields measurably
  * higher throughput than using 32-bit immediate constants in imul.

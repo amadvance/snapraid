@@ -63,7 +63,7 @@ static int needs_quote(const WCHAR* arg)
 		cmd[pos++] = (c); \
 	} while (0)
 
-/*
+/**
  * Append one argument using the Microsoft C runtime command-line
  * quoting rules. Use this when building a normal CreateProcessW()
  * command line that the target process will parse back into argv[].
@@ -146,10 +146,10 @@ static char* argutf8(const WCHAR* arg)
 	return utf8_arg;
 }
 
-/* Global variable to store child process handle */
+/* global variable to store child process handle */
 static void* volatile child_process = NULL;
 
-/*
+/**
  * Safe atomic access helpers for child_process.
  *
  * The console_handler runs concurrently on an OS-managed thread created by
@@ -169,7 +169,7 @@ static void child_process_write(HANDLE handle)
 	InterlockedExchangePointer(&child_process, handle);
 }
 
-/* Console control handler - forwards Ctrl+C, Ctrl+Break to child */
+/* console control handler - forwards Ctrl+C, Ctrl+Break to child */
 static BOOL WINAPI console_handler(DWORD ctrl_type)
 {
 	/* if no child, default behavior */

@@ -311,152 +311,152 @@ static struct option long_options[] = {
 	{ "gui-threshold-removes", 1, 0, OPT_GUI_THRESHOLD_REMOVES }, /* undocumented GUI, abort sync if too many removed files */
 	{ "gui-threshold-updates", 1, 0, OPT_GUI_THRESHOLD_UPDATES }, /* undocumented GUI, abort sync if too many updated files */
 
-	/* The following are test specific options, DO NOT USE! */
+	/* the following are test specific options, DO NOT USE! */
 
-	/* After syncing, do not write the new content file */
+	/* after syncing, do not write the new content file */
 	{ "test-kill-after-sync", 0, 0, OPT_TEST_KILL_AFTER_SYNC },
 
-	/* Do not execute syncing after resizing parity files, before the normal post-resize content write */
+	/* do not execute syncing after resizing parity files, before the normal post-resize content write */
 	{ "test-kill-after-resize", 0, 0, OPT_TEST_KILL_AFTER_RESIZE },
 
-	/* Do not execute syncing after writing the new initial content file */
+	/* do not execute syncing after writing the new initial content file */
 	{ "test-kill-before-sync", 0, 0, OPT_TEST_KILL_BEFORE_SYNC },
 
-	/* Exit with failure if after check/fix there ARE NOT unrecoverable errors. */
+	/* exit with failure if after check/fix there ARE NOT unrecoverable errors. */
 	{ "test-expect-unrecoverable", 0, 0, OPT_TEST_EXPECT_UNRECOVERABLE },
 
-	/* Exit with failure if after check/fix there ARE NOT recoverable errors. */
+	/* exit with failure if after check/fix there ARE NOT recoverable errors. */
 	{ "test-expect-recoverable", 0, 0, OPT_TEST_EXPECT_RECOVERABLE },
 
-	/* Skip the initial self test */
+	/* skip the initial self test */
 	{ "test-skip-self", 0, 0, OPT_TEST_SKIP_SELF },
 
-	/* Skip the initial sign check when reading the content file */
+	/* skip the initial sign check when reading the content file */
 	{ "test-skip-sign", 0, 0, OPT_TEST_SKIP_SIGN },
 
-	/* Skip the fallocate() when growing the parity files */
+	/* skip the fallocate() when growing the parity files */
 	{ "test-skip-fallocate", 0, 0, OPT_TEST_SKIP_FALLOCATE },
 
-	/* Skip the device check */
+	/* skip the device check */
 	{ "test-skip-device", 0, 0, OPT_TEST_SKIP_DEVICE },
 
-	/* Force Murmur3 hash */
+	/* force Murmur3 hash */
 	{ "test-force-murmur3", 0, 0, OPT_TEST_FORCE_MURMUR3 },
 
-	/* Force Spooky2 hash */
+	/* force Spooky2 hash */
 	{ "test-force-spooky2", 0, 0, OPT_TEST_FORCE_SPOOKY2 },
 
-	/* Skip the use of lock file */
+	/* skip the use of lock file */
 	{ "test-skip-lock", 0, 0, OPT_TEST_SKIP_LOCK },
 
-	/* Force a sort order for files */
+	/* force a sort order for files */
 	{ "test-force-order-inode", 0, 0, OPT_TEST_FORCE_ORDER_INODE },
 	{ "test-force-order-alpha", 0, 0, OPT_TEST_FORCE_ORDER_ALPHA },
 	{ "test-force-order-dir", 0, 0, OPT_TEST_FORCE_ORDER_DIR },
 
-	/* Force scrub of the specified number of blocks */
+	/* force scrub of the specified number of blocks */
 	{ "test-force-scrub-at", 1, 0, OPT_TEST_FORCE_SCRUB_AT },
 
-	/* Force scrub of all the even blocks. This is really for testing, don't try it */
+	/* force scrub of all the even blocks. This is really for testing, don't try it */
 	{ "test-force-scrub-even", 0, 0, OPT_TEST_FORCE_SCRUB_EVEN },
 
-	/* Force write of the content file even if no modification is done */
+	/* force write of the content file even if no modification is done */
 	{ "test-force-content-write", 0, 0, OPT_TEST_FORCE_CONTENT_WRITE },
 
-	/* Relax the checks done at the content file */
+	/* relax the checks done at the content file */
 	{ "test-skip-content-check", 0, 0, OPT_TEST_SKIP_CONTENT_CHECK },
 
-	/* Skip the parity access */
+	/* skip the parity access */
 	{ "test-skip-parity-access", 0, 0, OPT_TEST_SKIP_PARITY_ACCESS },
 
-	/* Exit generic failure */
+	/* exit generic failure */
 	{ "test-expect-failure", 0, 0, OPT_TEST_EXPECT_FAILURE },
 
-	/* Exit generic need sync */
+	/* exit generic need sync */
 	{ "test-expect-need-sync", 0, 0, OPT_TEST_EXPECT_NEED_SYNC },
 
 #if HAVE_CHECKER
-	/* Run some command after loading the state and before the command */
+	/* run some command after loading the state and before the command */
 	{ "test-run", 1, 0, OPT_TEST_RUN },
 #endif
 
-	/* Use the FindFirst/Next approach in Windows to list files */
+	/* use the FindFirst/Next approach in Windows to list files */
 	{ "test-force-scan-winfind", 0, 0, OPT_TEST_FORCE_SCAN_WINFIND },
 
-	/* Alternative import working by data */
+	/* alternative import working by data */
 	{ "test-import-content", 1, 0, OPT_TEST_IMPORT_CONTENT },
 
-	/* Force immediate progress state update */
+	/* force immediate progress state update */
 	{ "test-force-progress", 0, 0, OPT_TEST_FORCE_PROGRESS },
 
-	/* Skip the disk access */
+	/* skip the disk access */
 	{ "test-skip-disk-access", 0, 0, OPT_TEST_SKIP_DISK_ACCESS },
 
-	/* Force autosave at the specified block */
+	/* force autosave at the specified block */
 	{ "test-force-autosave-at", 1, 0, OPT_TEST_FORCE_AUTOSAVE_AT },
 
-	/* Fake device data */
+	/* fake device data */
 	{ "test-fake-device", 0, 0, OPT_TEST_FAKE_DEVICE },
 
-	/* Fake UUID */
+	/* fake UUID */
 	{ "test-fake-uuid", 0, 0, OPT_TEST_FAKE_UUID },
 
-	/* Match first UUID */
+	/* match first UUID */
 	{ "test-match-first-uuid", 0, 0, OPT_TEST_MATCH_FIRST_UUID },
 
-	/* Force parity update even if all the data hash is already matching */
+	/* force parity update even if all the data hash is already matching */
 	{ "test-force-parity-update", 0, 0, OPT_TEST_FORCE_PARITY_UPDATE },
 
-	/* Number of IO buffers */
+	/* number of IO buffers */
 	{ "test-io-cache", 1, 0, OPT_TEST_IO_CACHE },
 
-	/* Print IO stats */
+	/* print IO stats */
 	{ "test-io-stats", 0, 0, OPT_TEST_IO_STATS }, /* now replaced by -A, --stats */
 
-	/* Signal condition variable outside the mutex */
+	/* signal condition variable outside the mutex */
 	{ "test-cond-signal-outside", 0, 0, OPT_TEST_COND_SIGNAL_OUTSIDE },
 
-	/* Set the io advise to none */
+	/* set the io advise to none */
 	{ "test-io-advise-none", 0, 0, OPT_TEST_IO_ADVISE_NONE },
 
-	/* Set the io advise to sequential */
+	/* set the io advise to sequential */
 	{ "test-io-advise-sequential", 0, 0, OPT_TEST_IO_ADVISE_SEQUENTIAL },
 
-	/* Set the io advise to flush */
+	/* set the io advise to flush */
 	{ "test-io-advise-flush", 0, 0, OPT_TEST_IO_ADVISE_FLUSH },
 
-	/* Set the io advise to flush window */
+	/* set the io advise to flush window */
 	{ "test-io-advise-flush-window", 0, 0, OPT_TEST_IO_ADVISE_FLUSH_WINDOW },
 
-	/* Set the io advise to discard */
+	/* set the io advise to discard */
 	{ "test-io-advise-discard", 0, 0, OPT_TEST_IO_ADVISE_DISCARD },
 
-	/* Set the io advise to discard window */
+	/* set the io advise to discard window */
 	{ "test-io-advise-discard-window", 0, 0, OPT_TEST_IO_ADVISE_DISCARD_WINDOW },
 
-	/* Set the io advise to direct */
+	/* set the io advise to direct */
 	{ "test-io-advise-direct", 0, 0, OPT_TEST_IO_ADVISE_DIRECT },
 
-	/* Set an artificial parity limit */
+	/* set an artificial parity limit */
 	{ "test-parity-limit", 1, 0, OPT_TEST_PARITY_LIMIT },
 
-	/* Skip content write */
+	/* skip content write */
 	{ "test-skip-content-write", 0, 0, OPT_TEST_SKIP_CONTENT_WRITE },
 
-	/* Skip space holder file in parity disks */
+	/* skip space holder file in parity disks */
 	{ "test-skip-space-holder", 0, 0, OPT_TEST_SKIP_SPACE_HOLDER },
 
-	/* Set the output format */
+	/* set the output format */
 	{ "test-fmt", 1, 0, OPT_TEST_FORMAT },
 
-	/* Skip thread in disk scan */
+	/* skip thread in disk scan */
 	{ "test-skip-multi-scan", 0, 0, OPT_TEST_SKIP_MULTI_SCAN },
 
 	{ 0, 0, 0, 0 }
 };
 #endif
 
-/*
+/**
  * Free letters: gIjJkKMnPQruxXz
  *
  * The 's' letter is used in main.c

@@ -14,7 +14,7 @@
 #include "raid/raid.h"
 #include "raid/combo.h"
 
-/*
+/**
  * SnapRAID check/fix model
  *
  * Check verifies the data described by the content file against the files
@@ -841,11 +841,9 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 	 * distinction disappears.
 	 */
 
-	/************************************************************************/
-	/* First strategy: parity represents CURRENT data.                      */
-	/************************************************************************/
-
 	/*
+	 * First strategy: parity represents CURRENT data.
+	 *
 	 * Under the CURRENT hypothesis:
 	 *
 	 *   BLK       hash CURRENT, parity normally synchronized
@@ -1129,11 +1127,9 @@ static int repair(struct snapraid_state* state, int rehash, block_off_t pos, uns
 	else
 		log_tag("recover_sync:%" PRIu64 ":%u: Failed with %d attempts\n", pos, n, ret);
 
-	/************************************************************************/
-	/* Second strategy: parity still represents OLD data.                  */
-	/************************************************************************/
-
 	/*
+	 * Second strategy: parity still represents OLD data.
+	 *
 	 * The CURRENT attempt failed, so retry under the opposite history
 	 * hypothesis: physical parity still represents the state before the
 	 * interrupted sync.
@@ -1964,7 +1960,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 		 */
 		valid_parity = 1;
 
-		/* If the parity is used by at least one file */
+		/* if the parity is used by at least one file */
 		used_parity = 0;
 
 		/* keep track of the number of failed blocks */

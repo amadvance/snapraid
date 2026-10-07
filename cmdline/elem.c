@@ -291,7 +291,7 @@ static int filter_element(tommy_list* filterlist, struct snapraid_filter** reaso
 {
 	tommy_node* i;
 
-	/**
+	/*
 	 * The rule is that the latest filter defines the behaviour of paths
 	 * that doesn't match any filter.
 	 *

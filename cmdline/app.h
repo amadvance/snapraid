@@ -87,7 +87,7 @@ int fsinfo(const char* path, int* has_persistent_inode, int* has_syncronized_har
 #define SNAPSHOT_SCAN "scan"
 #define SNAPSHOT_RETIRING_SUFFIX ".retiring"
 
-/*
+/**
  * Snapshots context
  */
 struct fssnapshot_struct {
@@ -213,7 +213,7 @@ int fssnapshot_replace(struct fssnapshot_struct* fss, const char* old_name, cons
  */
 int fssnapshot_path(const struct fssnapshot_struct* fss, const char* name, char* path, size_t path_size);
 
-/*
+/**
  * Log file.
  *
  * This stream if fully buffered.
@@ -257,7 +257,7 @@ extern int exit_degraded;
  */
 #define SMART_FLAGS 256
 
-/*
+/**
  * Counts command, transport, or controller-level errors reported by the device.
  * These reflect failed I/O operations not directly caused by media defects
  * (for example interface, firmware, or power-related errors).
@@ -266,7 +266,7 @@ extern int exit_degraded;
  */
 #define SMART_ERROR_PROTOCOL 257
 
-/*
+/**
  * Counts media-level errors where data could not be reliably read or written.
  * These indicate actual storage surface or flash failures and may imply data loss.
  * This counter is cumulative and never resets to zero, even if the underlying
@@ -387,7 +387,7 @@ struct devinfo_struct {
 	char name[PATH_MAX]; /**< Name of the disk combined with the split index if any */
 	char mount[PATH_MAX]; /**< Mount point or other contained directory. */
 	char smartctl[SMARTCTL_MAX]; /**< Custom option for smartctl. Empty means auto. */
-	char smartctl_info[SMARTCTL_MAX]; /* Info options for smartctl. Empty means -a. */
+	char smartctl_info[SMARTCTL_MAX]; /**< Info options for smartctl. Empty means -a. */
 	struct smartignore_struct smartignore[SMART_IGNORE_MAX]; /**< Attributes to ignore */
 	char file[PATH_MAX]; /**< File device. */
 #ifdef _WIN32

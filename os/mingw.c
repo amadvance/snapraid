@@ -3,7 +3,7 @@
 
 #include "os/portable.h"
 
-#ifdef __MINGW32__ /* Only for MingW */
+#ifdef __MINGW32__ /* only for MingW */
 
 #include "os.h"
 
@@ -14,9 +14,9 @@
 /****************************************************************************/
 /* global */
 
-/* Add missing Windows declaration */
+/* add missing Windows declaration */
 
-/* For SetThreadExecutionState */
+/* for SetThreadExecutionState */
 #ifndef WIN32_ES_SYSTEM_REQUIRED
 #define WIN32_ES_SYSTEM_REQUIRED      0x00000001L
 #endif
@@ -33,7 +33,7 @@
 #define WIN32_ES_CONTINUOUS           0x80000000L
 #endif
 
-/* For SetSearchPathMode */
+/* for SetSearchPathMode */
 #ifndef BASE_SEARCH_PATH_ENABLE_SAFE_SEARCHMODE
 #define BASE_SEARCH_PATH_ENABLE_SAFE_SEARCHMODE 0x00000001
 #endif
@@ -41,7 +41,7 @@
 #define BASE_SEARCH_PATH_PERMANENT 0x00008000
 #endif
 
-/* File Index */
+/* file Index */
 #undef FILE_INVALID_FILE_ID
 #define FILE_INVALID_FILE_ID          ((ULONGLONG)-1LL)
 #undef FILE_UNSUPPORTED_FILE_ID
@@ -571,17 +571,17 @@ static BOOL GetReparseTagInfoByHandle(HANDLE hFile, FILE_ATTRIBUTE_TAG_INFO* lpF
  */
 static void windows_attr2stat(DWORD FileAttributes, DWORD ReparseTag, struct windows_stat* st)
 {
-	/* Convert special attributes */
+	/* convert special attributes */
 	if ((FileAttributes & FILE_ATTRIBUTE_DEVICE) != 0) {
 		st->st_mode = S_IFBLK;
 		st->st_desc = "device";
-	} else if ((FileAttributes & FILE_ATTRIBUTE_OFFLINE) != 0) { /* Offline */
+	} else if ((FileAttributes & FILE_ATTRIBUTE_OFFLINE) != 0) { /* offline */
 		st->st_mode = S_IFCHR;
 		st->st_desc = "offline";
-	} else if ((FileAttributes & FILE_ATTRIBUTE_TEMPORARY) != 0) { /* Temporary */
+	} else if ((FileAttributes & FILE_ATTRIBUTE_TEMPORARY) != 0) { /* temporary */
 		st->st_mode = S_IFCHR;
 		st->st_desc = "temporary";
-	} else if ((FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0) { /* Reparse point */
+	} else if ((FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0) { /* reparse point */
 		switch (ReparseTag) {
 		/* if we don't have the ReparseTag information */
 		case 0 :
@@ -622,7 +622,7 @@ static void windows_attr2stat(DWORD FileAttributes, DWORD ReparseTag, struct win
 			st->st_desc = "reparse-point";
 			break;
 		}
-	} else if ((FileAttributes & FILE_ATTRIBUTE_SYSTEM) != 0) { /* System */
+	} else if ((FileAttributes & FILE_ATTRIBUTE_SYSTEM) != 0) { /* system */
 		if ((FileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
 			st->st_mode = S_IFCHR;
 			st->st_desc = "system-directory";
@@ -696,7 +696,7 @@ static int windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE_
 	/* GetFileInformationByHandle() ensures to return synced information */
 	st->st_sync = 1;
 
-	/**
+	/*
 	 * In ReFS the IDs are 128 bit, and the 64 bit interface may fail.
 	 *
 	 * From Microsoft "Application Compatibility with ReFS"
@@ -799,13 +799,13 @@ static void windows_finddata2stat(const WIN32_FIND_DATAW* info, struct windows_s
 
 	windows_time2stat(mtime, st);
 
-	/* No inode information available */
+	/* no inode information available */
 	st->st_ino = INODE_INVALID;
 
-	/* No link information available */
+	/* no link information available */
 	st->st_nlink = 0;
 
-	/* No device information available */
+	/* no device information available */
 	st->st_dev = 0;
 
 	/* directory listing doesn't ensure to return synced information */
@@ -2079,7 +2079,7 @@ int windows_symlink_directory(const char* existing, const char* file)
 	return windows_symlink_flags(existing, file, SYMBOLIC_LINK_FLAG_DIRECTORY);
 }
 
-/* Adds missing definitions in MingW winnt.h */
+/* adds missing definitions in MingW winnt.h */
 #ifndef FSCTL_GET_REPARSE_POINT
 #define FSCTL_GET_REPARSE_POINT 0x000900a8
 #endif
@@ -2258,7 +2258,7 @@ ssize_t windows_read(int fd, void* buffer, size_t size)
 	if (!ReadFile(h, buffer, size, &count, 0)) {
 		DWORD error = GetLastError();
 
-		/* A closed Windows pipe has the same read semantics as a POSIX pipe at EOF. */
+		/* a closed Windows pipe has the same read semantics as a POSIX pipe at EOF. */
 		if (error == ERROR_BROKEN_PIPE)
 			return 0;
 
@@ -2982,7 +2982,7 @@ static int fixcat(WCHAR* cmd, int size, int pos, const WCHAR* arg)
 	return pos;
 }
 
-/*
+/**
  * Append one argument using the Microsoft C runtime command-line
  * quoting rules. Use this when building a normal CreateProcessW()
  * command line that the target process will parse back into argv[].
@@ -3043,7 +3043,7 @@ static int argcat(WCHAR* cmd, int size, int pos, const WCHAR* arg)
 	return pos;
 }
 
-/*
+/**
  * Append one argument for a batch script invoked through cmd.exe /c.
  * Unlike argcat(), this must preserve the argument boundary while
  * preventing cmd.exe command metacharacters from changing the command
@@ -3369,10 +3369,10 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 		if (!ret)
 			create_error = GetLastError();
 	} else {
-		/* Drop to restricted service account */
+		/* drop to restricted service account */
 		HANDLE h_token = NULL;
 
-		/* Validate that the requested user is actually a supported Service Account before attempting logon */
+		/* validate that the requested user is actually a supported Service Account before attempting logon */
 		if (_stricmp(run_as_user, "LocalService") != 0 && _stricmp(run_as_user, "NetworkService") != 0) {
 			os_syslog(OS_LVL_INFO, "only supported users are LocalService and NetworkService");
 			pid_unpublish(pid_slot, 0);
@@ -3407,7 +3407,7 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 			return -1;
 		}
 
-		/* Create an environment block to ensure PATH is loaded */
+		/* create an environment block to ensure PATH is loaded */
 		LPVOID env = NULL;
 		if (!CreateEnvironmentBlock(&env, h_token, FALSE)) {
 			windows_errno(GetLastError());
@@ -4385,7 +4385,7 @@ OS_FILE* os_popen(const char** argv)
 fail_child:
 	saved_errno = errno;
 	close(stdout_fd);
-	/* Terminate and reap the child immediately so no process or handle is leaked on stream creation failure. */
+	/* terminate and reap the child immediately so no process or handle is leaked on stream creation failure. */
 	pid_kill(pid);
 	status = 0;
 	os_wait(pid, &status, 0);
@@ -4409,15 +4409,15 @@ int os_pclose(OS_FILE* stream)
 	int close_ret;
 	pid_t wait_ret;
 
-	/* Keep the owned resources locally so the OS_FILE container can be released immediately. */
+	/* keep the owned resources locally so the OS_FILE container can be released immediately. */
 	free(stream);
 
-	/* Closing the stream also closes the CRT descriptor and the underlying stdout pipe handle. */
+	/* closing the stream also closes the CRT descriptor and the underlying stdout pipe handle. */
 	close_ret = fclose(fp);
 	if (close_ret != 0)
 		saved_errno = errno;
 
-	/* Always reap the child even if closing the stream failed. */
+	/* always reap the child even if closing the stream failed. */
 	wait_ret = os_wait(pid, &status, 0);
 	if (wait_ret < 0 && saved_errno == 0)
 		saved_errno = errno;

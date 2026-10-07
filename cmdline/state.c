@@ -32,7 +32,7 @@
 #define HAVE_MT_VERIFY 1
 #endif
 
-/*
+/**
  * Start content-file writeback in bounded windows to avoid dirty-page
  * throttling; the subsequent fsync() remains responsible for durability.
  *
@@ -4397,7 +4397,7 @@ static void* state_write_thread(void* arg)
 					if (v_state != block_state_get(block))
 						break;
 
-					/* Resolve the mapping only when crossing an extent boundary. */
+					/* resolve the mapping only when crossing an extent boundary. */
 					if (end == extent_end) {
 						block_off_t next_count;
 						block_off_t next_pos = fs_file2par_get_run(disk, file, end, &next_count);
@@ -5702,7 +5702,7 @@ static void state_rename_content(struct snapraid_state* state)
 #endif
 }
 
-/*
+/**
  * Check if a modification time nanosecond value can be represented in the
  * content format.
  *
@@ -5714,7 +5714,7 @@ static int state_write_mtime_nsec_valid(int mtime_nsec)
 	return mtime_nsec == STAT_NSEC_INVALID || (mtime_nsec >= 0 && mtime_nsec < 1000000000);
 }
 
-/*
+/**
  * Validate invariants required by the persistent content format.
  *
  * state_write() must never serialize a state that state_read() would reject.
@@ -5807,7 +5807,7 @@ static void state_write_check(struct snapraid_state* state)
 	}
 }
 
-/*
+/**
  * Emit structured mapping tags for data disks and parity splits after
  * content files have been durably published.
  */

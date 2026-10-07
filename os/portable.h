@@ -5,11 +5,11 @@
 #define __PORTABLE_H
 
 #if HAVE_CONFIG_H
-#include "config.h" /* Use " to include first in the same directory of this file */
+#include "config.h" /* use " to include first in the same directory of this file */
 #endif
 
 /***************************************************************************/
-/* Config */
+/* config */
 
 #ifdef __MINGW32__
 /**
@@ -163,7 +163,7 @@
  * Includes some standard headers.
  */
 #include <stdio.h>
-#include <stdlib.h> /* On many systems (e.g., Darwin), `stdio.h' is a prerequisite. */
+#include <stdlib.h> /* on many systems (e.g., Darwin), `stdio.h' is a prerequisite. */
 #include <stdarg.h>
 #include <string.h>
 #include <ctype.h>
@@ -299,7 +299,7 @@
 #include <linux/close_range.h>
 #endif
 
-/*
+/**
  * Flags for open()
  */
 #ifndef O_PATH

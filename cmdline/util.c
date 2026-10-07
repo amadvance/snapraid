@@ -433,7 +433,7 @@ static void crc32c_skip_init(uint32_t table[8][16], size_t size)
 	unsigned i;
 	unsigned j;
 
-	/* Collapse each fixed-size shift into eight nibble table lookups. */
+	/* collapse each fixed-size shift into eight nibble table lookups. */
 	for (i = 0; i < 8; ++i) {
 		for (j = 0; j < 16; ++j)
 			table[i][j] = crc32c_shift((uint32_t)j << (4 * i), size);
@@ -514,7 +514,7 @@ void crc32c_init(void)
 /****************************************************************************/
 /* byte operations */
 
-/*
+/**
  * Rotate left.
  * In x86/x64/ARM they are optimized with a single assembler instruction.
  */
@@ -528,7 +528,7 @@ static inline uint64_t util_rotl64(uint64_t x, unsigned r)
 	return (x << (r & 63)) | (x >> ((-r) & 63));
 }
 
-/*
+/**
  * Rotate right.
  * In x86/x64/ARM they are optimized with a single assembler instruction.
  */
@@ -610,7 +610,7 @@ static inline void util_write64(void* ptr, uint64_t v)
 	memcpy(ptr, &v, sizeof(v));
 }
 
-/*
+/**
  *  64*64 -> 128bit multiply function.
  *
  *  @param A  Address of 64-bit number.
@@ -622,7 +622,7 @@ static inline void util_write64(void* ptr, uint64_t v)
  *  Overwrites B contents with C's high 64 bits.
  */
 #if defined(__x86_64__) || defined(_M_X64)
-/*
+/**
  * This is intentionally placed before the __SIZEOF_INT128__ implementation.
  *
  * This implementation happens to generate more efficient code.
@@ -653,7 +653,7 @@ static inline void util_mum(uint64_t* A, uint64_t* B)
 	*B = (uint64_t)(product >> 64);
 }
 #elif defined(__aarch64__) || defined(_M_ARM64)
-/*
+/**
  * This is intentionally placed after the __SIZEOF_INT128__ implementation.
  *
  * Although the code looks correct, there is a report of this

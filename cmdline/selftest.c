@@ -1979,13 +1979,13 @@ static void test_smart_ignore(void)
 	memset(&state, 0, sizeof(state));
 	memset(&devinfo, 0, sizeof(devinfo));
 
-	/* Initialize devinfo attributes with mock data */
+	/* initialize devinfo attributes with mock data */
 	for (i = 0; i < SMART_COUNT; ++i) {
 		devinfo.smart[i].raw = 100;
 		devinfo.smart[i].norm = 100;
 		snprintf(devinfo.smart[i].name, sizeof(devinfo.smart[i].name), "Attr_%d", i);
 	}
-	/* Special name for test */
+	/* special name for test */
 	pathcpy(devinfo.smart[5].name, sizeof(devinfo.smart[5].name), "Reallocated_Sector_Ct");
 	pathcpy(devinfo.smart[197].name, sizeof(devinfo.smart[197].name), "Current_Pending_Sector");
 
@@ -2007,7 +2007,7 @@ static void test_smart_ignore(void)
 
 	state_smart_ignore(&state, &devinfo);
 
-	/* Check that ignored attributes are set to SMART_UNASSIGNED */
+	/* check that ignored attributes are set to SMART_UNASSIGNED */
 	if (devinfo.smart[5].raw != SMART_UNASSIGNED || devinfo.smart[5].norm != SMART_UNASSIGNED) {
 		log_fatal(EINTERNAL, "test_smart_ignore: numerical global ignore failed\n");
 		exit(EXIT_FAILURE);
@@ -2025,7 +2025,7 @@ static void test_smart_ignore(void)
 		exit(EXIT_FAILURE);
 	}
 
-	/* Check that non-ignored attributes are still present */
+	/* check that non-ignored attributes are still present */
 	if (devinfo.smart[6].raw != 100) {
 		log_fatal(EINTERNAL, "test_smart_ignore: unmodified attribute was cleared\n");
 		exit(EXIT_FAILURE);
@@ -2345,7 +2345,7 @@ static void test_unsynced_sweep(void)
 	block_state_set(file_block(file4, 2), BLOCK_STATE_CHG);
 	fs_allocate(disk1, 30, file4, 0, 4);
 
-	/**
+	/*
 	 * Positions 30..33 are all unsynced: REP, REP, CHG, REBUILD respectively.
 	 * At 32 and 33 the invalid block changes disks at the same event boundary;
 	 * count each position once using the refreshed flags from both disks.

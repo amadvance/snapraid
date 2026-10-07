@@ -3,7 +3,7 @@
 
 #include "os/portable.h"
 
-#ifndef __MINGW32__ /* Only for Unix */
+#ifndef __MINGW32__ /* only for Unix */
 
 #include "os.h"
 
@@ -353,7 +353,7 @@ int filephy(const char* path, uint64_t size, uint64_t* physical)
 /****************************************************************************/
 /* exec */
 
-/*
+/**
  * Scrubbed environment
  * Only provide the bare essentials.
  */
@@ -369,7 +369,7 @@ static char* const envp_scrubbed[] = {
 	NULL
 };
 
-/*
+/**
  * Enforce a strict 128-byte shebang limit to match the actual Linux kernel behavior
  * and prevent security risks from truncation.
  *
@@ -560,7 +560,7 @@ static int verify_shebang_interpreter(int fd, const char* script_path)
 	return 0;
 }
 
-/*
+/**
  * Securely verify and open an executable file.
  *
  * Performs a series of security checks on the file at @exec_path before
@@ -940,7 +940,7 @@ static int pid_kill(pid_t pid)
 		return -1;
 	}
 
-	/* Send SIGKILL signal to the negative PID to target the entire Process Group */
+	/* send SIGKILL signal to the negative PID to target the entire Process Group */
 	int ret = kill(-pid, SIGKILL);
 
 	/*
@@ -1219,7 +1219,7 @@ int os_script(char** argv, char** envp, const char* run_as_user, uint64_t timeou
 		os_user_drop_privileges(&user);
 
 #if defined(__linux__) && defined(PR_SET_PDEATHSIG)
-		/* Send SIGKILL to child if parent daemon dies unexpectedly */
+		/* send SIGKILL to child if parent daemon dies unexpectedly */
 		prctl(PR_SET_PDEATHSIG, SIGKILL);
 		/* exit if parent died before prctl to avoid becoming orphaned */
 		if (getppid() != ppid) {
@@ -1432,13 +1432,13 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 		setpgid(0, 0);
 
 		if (pipe_fds[1] != -1)
-			close(pipe_fds[1]); /* Close unused write end */
+			close(pipe_fds[1]); /* close unused write end */
 
 		/* drop privileges first (if configured) */
 		os_user_drop_privileges(&user);
 
 #if defined(__linux__) && defined(PR_SET_PDEATHSIG)
-		/* Send SIGKILL to child if parent daemon dies unexpectedly */
+		/* send SIGKILL to child if parent daemon dies unexpectedly */
 		prctl(PR_SET_PDEATHSIG, SIGKILL);
 		/* exit if parent died before prctl to avoid becoming orphaned */
 		if (getppid() != ppid) {
@@ -1461,7 +1461,7 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 				_exit(126);
 		}
 
-		/* Redirect STDOUT and STDERR to /dev/null */
+		/* redirect STDOUT and STDERR to /dev/null */
 		if (dup2(null_fd, STDOUT_FILENO) == -1
 			|| dup2(null_fd, STDERR_FILENO) == -1)
 			_exit(126);
@@ -1657,7 +1657,7 @@ pid_t os_spawn(char** argv, int* stdout_read_fd, int* stderr_read_fd, const char
 		os_user_drop_privileges(&user);
 
 #if defined(__linux__) && defined(PR_SET_PDEATHSIG)
-		/* Send SIGKILL to child if parent daemon dies unexpectedly */
+		/* send SIGKILL to child if parent daemon dies unexpectedly */
 		prctl(PR_SET_PDEATHSIG, SIGKILL);
 		/* exit if parent died before prctl to avoid becoming orphaned */
 		if (getppid() != ppid) {
@@ -2164,7 +2164,7 @@ void os_privileges_release(void)
 		}
 	}
 
-	/* Drop UID last. */
+	/* drop UID last. */
 	if (uid_dropped) {
 		if (syscall(SYS_setresuid, (uid_t)-1, (uid_t)unpriv_uid, (uid_t)-1) != 0) {
 			if (errno == EPERM) {
@@ -2198,7 +2198,7 @@ void os_privileges_release(void)
 		}
 	}
 
-	/* Drop UID last. */
+	/* drop UID last. */
 	if (uid_dropped) {
 		if (seteuid(unpriv_uid) != 0) {
 			if (errno == EPERM) {

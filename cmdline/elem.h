@@ -16,7 +16,7 @@
 /****************************************************************************/
 /* snapraid */
 
-/*
+/**
  * Maximum number of block positions in a data/parity disk span.
  *
  * With the default 256 KiB block size, this limits the maximum supported
@@ -415,7 +415,7 @@ struct snapraid_extra {
 	char name[PATH_MAX]; /**< Name of the disk. */
 	char dir[PATH_MAX]; /**< Mount point of the disk. It always terminates with /. */
 	char smartctl[SMARTCTL_MAX]; /**< Custom option for smartctl. Empty means auto. */
-	char smartctl_info[SMARTCTL_MAX]; /* Info options for smartctl. Empty means -a. */
+	char smartctl_info[SMARTCTL_MAX]; /**< Info options for smartctl. Empty means -a. */
 	struct smartignore_struct smartignore[SMART_IGNORE_MAX]; /**< Smart attributes to ignore for this device. */
 	char uuid[UUID_MAX]; /**< UUID of the disk. They are probed during the config reading. */
 	char fstype[FSINFO_MAX]; /**< Filesystem type */
@@ -454,7 +454,7 @@ struct snapraid_disk {
 	struct fssnapshot_struct fss;
 
 	char smartctl[SMARTCTL_MAX]; /**< Custom option for smartctl. Empty means auto. */
-	char smartctl_info[SMARTCTL_MAX]; /* Info options for smartctl. Empty means -a. */
+	char smartctl_info[SMARTCTL_MAX]; /**< Info options for smartctl. Empty means -a. */
 	struct smartignore_struct smartignore[SMART_IGNORE_MAX]; /**< Smart attributes to ignore for this device. */
 	char uuid[UUID_MAX]; /**< UUID of the disk. They are probed during the config reading. */
 	char fstype[FSINFO_MAX]; /**< Filesystem type */
@@ -597,7 +597,7 @@ struct snapraid_parity {
 	struct snapraid_split split_map[SPLIT_MAX]; /**< Parity splits. */
 	unsigned split_mac; /**< Number of parity splits. */
 	char smartctl[SMARTCTL_MAX]; /**< Custom option for smartctl. Empty means auto. */
-	char smartctl_info[SMARTCTL_MAX]; /* Info options for smartctl. Empty means -a. */
+	char smartctl_info[SMARTCTL_MAX]; /**< Info options for smartctl. Empty means -a. */
 	struct smartignore_struct smartignore[SMART_IGNORE_MAX]; /**< Smart attributes to ignore for this device. */
 	block_off_t total_blocks; /**< Number of total blocks. */
 	block_off_t free_blocks; /**< Number of free blocks at the last sync. */

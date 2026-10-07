@@ -167,7 +167,7 @@ struct snapraid_state {
 	tommy_list bucketlist; /**< Sorted list of info bucket. Derived from infoarr, but updated only state_read()/state_write() */
 	block_off_t bucketcount; /**< Sum of all the counts of the list */
 
-	/* Thermal */
+	/* thermal */
 	tommy_list thermallist; /**< List of all thermal state */
 	int thermal_stop_gathering; /**< If thermal data gathering is stopped */
 	int thermal_system_temperature; /**< System temperature. 0 if not available */

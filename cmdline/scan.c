@@ -1153,7 +1153,7 @@ static void scan_file_discover(struct snapraid_scan* scan, const char* sub, stru
 
 	disc = discovery_alloc(sub, st);
 
-	/* Hardlink collision detection */
+	/* hardlink collision detection */
 	if (disc->inode != INODE_INVALID) {
 		struct snapraid_discovery* rep = tommy_hashdyn_search(&scan->file_discovery_inodeset, discovery_inode_compare_to_arg, &disc->inode, file_inode_hash(disc->inode));
 		if (!rep) {
@@ -1161,7 +1161,7 @@ static void scan_file_discover(struct snapraid_scan* scan, const char* sub, stru
 			disc->flag |= DISCOVERY_IS_CANONICAL;
 			tommy_hashdyn_insert(&scan->file_discovery_inodeset, &disc->nodeset, disc, file_inode_hash(disc->inode));
 		} else {
-			/* Inode collision detected! */
+			/* inode collision detected! */
 #if HAVE_LSTAT_SYNC
 			if (disk->has_volatile_hardlinks && !(rep->flag & DISCOVERY_IS_SCAN_SYNCED)) {
 				char path_next[PATH_MAX];

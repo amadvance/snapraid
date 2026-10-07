@@ -11,7 +11,7 @@
 #include "io.h"
 #include "raid/raid.h"
 
-/*
+/**
  * SnapRAID scrub model
  *
  * Scrub periodically verifies data and parity without modifying either of
