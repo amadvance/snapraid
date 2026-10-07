@@ -22,7 +22,7 @@ static const char* es(int err)
 static void search_file(struct snapraid_state* state, const char* path, data_off_t size, int64_t mtime_sec, int mtime_nsec)
 {
 	struct snapraid_search_file* file;
-	tommy_uint32_t file_hash;
+	tommy_hash_t file_hash;
 
 	file = malloc_nofail(sizeof(struct snapraid_search_file));
 	file->path = strdup_nofail(path);
@@ -133,7 +133,7 @@ int search_file_compare(const void* void_arg, const void* void_data)
 int state_search_fetch(struct snapraid_state* state, int prevhash, struct snapraid_file* missing_file, block_off_t missing_file_pos, struct snapraid_block* missing_block, unsigned char* buffer)
 {
 	struct snapraid_search_file* file;
-	tommy_uint32_t file_hash;
+	tommy_hash_t file_hash;
 	struct search_file_compare_arg arg;
 
 	arg.state = state;

@@ -982,9 +982,9 @@ int file_path_compare(const void* void_a, const void* void_b);
 /**
  * Compute the hash of a file inode.
  */
-static inline tommy_uint32_t file_inode_hash(uint64_t inode)
+static inline tommy_hash_t file_inode_hash(uint64_t inode)
 {
-	return (tommy_uint32_t)tommy_inthash_u64(inode);
+	return tommy_inthash_u64(inode);
 }
 
 /**
@@ -1003,15 +1003,19 @@ int file_pathstamp_compare(const void* void_a, const void* void_b);
 /**
  * Compute the hash of a file path with known length.
  */
-static inline tommy_uint32_t file_path_hash_len(const char* sub, size_t len)
+static inline tommy_hash_t file_path_hash_len(const char* sub, size_t len)
 {
+#if TOMMY_SIZE_BIT == 64
+	return tommy_hash_u64(0, sub, len);
+#else
 	return tommy_hash_u32(0, sub, len);
+#endif
 }
 
 /**
  * Compute the hash of a file path.
  */
-static inline tommy_uint32_t file_path_hash(const char* sub)
+static inline tommy_hash_t file_path_hash(const char* sub)
 {
 	return file_path_hash_len(sub, strlen(sub));
 }
@@ -1019,9 +1023,13 @@ static inline tommy_uint32_t file_path_hash(const char* sub)
 /**
  * Compute the hash of a file stamp.
  */
-static inline tommy_uint32_t file_stamp_hash(data_off_t size, int64_t mtime_sec, int mtime_nsec)
+static inline tommy_hash_t file_stamp_hash(data_off_t size, int64_t mtime_sec, int mtime_nsec)
 {
+#if TOMMY_SIZE_BIT == 64
+	return tommy_inthash_u64((uint64_t)size ^ tommy_inthash_u64((uint64_t)mtime_sec ^ (uint64_t)(uint32_t)mtime_nsec));
+#else
 	return tommy_inthash_u32((tommy_uint32_t)size ^ tommy_inthash_u32((tommy_uint32_t)mtime_sec ^ tommy_inthash_u32(mtime_nsec)));
+#endif
 }
 
 /**
@@ -1097,15 +1105,19 @@ int link_alpha_compare(const void* void_a, const void* void_b);
 /**
  * Compute the hash of a link name with known length.
  */
-static inline tommy_uint32_t link_name_hash_len(const char* name, size_t len)
+static inline tommy_hash_t link_name_hash_len(const char* name, size_t len)
 {
+#if TOMMY_SIZE_BIT == 64
+	return tommy_hash_u64(0, name, len);
+#else
 	return tommy_hash_u32(0, name, len);
+#endif
 }
 
 /**
  * Compute the hash of a link name.
  */
-static inline tommy_uint32_t link_name_hash(const char* name)
+static inline tommy_hash_t link_name_hash(const char* name)
 {
 	return link_name_hash_len(name, strlen(name));
 }
@@ -1147,15 +1159,19 @@ int dir_name_compare(const void* void_arg, const void* void_data);
 /**
  * Compute the hash of a dir name with known length.
  */
-static inline tommy_uint32_t dir_name_hash_len(const char* name, size_t len)
+static inline tommy_hash_t dir_name_hash_len(const char* name, size_t len)
 {
+#if TOMMY_SIZE_BIT == 64
+	return tommy_hash_u64(0, name, len);
+#else
 	return tommy_hash_u32(0, name, len);
+#endif
 }
 
 /**
  * Compute the hash of a dir name.
  */
-static inline tommy_uint32_t dir_name_hash(const char* name)
+static inline tommy_hash_t dir_name_hash(const char* name)
 {
 	return dir_name_hash_len(name, strlen(name));
 }

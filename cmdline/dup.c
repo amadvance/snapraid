@@ -70,9 +70,13 @@ struct snapraid_hash* hash_alloc(struct snapraid_state* state, struct snapraid_d
 	return hash;
 }
 
-static inline tommy_uint32_t hash_hash(struct snapraid_hash* hash)
+static inline tommy_hash_t hash_hash(struct snapraid_hash* hash)
 {
+#if TOMMY_SIZE_BIT == 64
+	return tommy_hash_u64(0, hash->hash, HASH_MAX);
+#else
 	return tommy_hash_u32(0, hash->hash, HASH_MAX);
+#endif
 }
 
 static void hash_free(void* void_hash)
@@ -112,7 +116,7 @@ void state_dup(struct snapraid_state* state)
 		for (j = disk->filelist; j != 0; j = j->next) {
 			struct snapraid_file* file = j->data;
 			struct snapraid_hash* hash;
-			tommy_hash_t hash32;
+			tommy_hash_t hash_val;
 
 			/* if empty, skip it */
 			if (file->size == 0)
@@ -124,9 +128,9 @@ void state_dup(struct snapraid_state* state)
 			if (!hash)
 				continue;
 
-			hash32 = hash_hash(hash);
+			hash_val = hash_hash(hash);
 
-			struct snapraid_hash* found = tommy_hashdyn_search(&hashset, hash_compare, hash->hash, hash32);
+			struct snapraid_hash* found = tommy_hashdyn_search(&hashset, hash_compare, hash->hash, hash_val);
 			if (found) {
 				++count;
 				size += found->file->size;
@@ -134,7 +138,7 @@ void state_dup(struct snapraid_state* state)
 				printf("%12" PRIu64 " %s = %s\n", file->size, fmt_term(disk, file->sub), fmt_term(found->disk, found->file->sub));
 				hash_free(hash);
 			} else {
-				tommy_hashdyn_insert(&hashset, &hash->node, hash, hash32);
+				tommy_hashdyn_insert(&hashset, &hash->node, hash, hash_val);
 			}
 		}
 	}
