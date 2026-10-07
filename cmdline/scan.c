@@ -1021,7 +1021,7 @@ static void scan_file_apply(void* void_scan, void* void_disc)
 	 * in such case we have a "copy" over an "update"
 	 */
 	if (!state->opt.force_nocopy) {
-		tommy_uint32_t hash = file_stamp_hash(file->size, file->mtime_sec, file->mtime_nsec);
+		tommy_hash_t hash = file_stamp_hash(file->size, file->mtime_sec, file->mtime_nsec);
 
 		/* search for a file with the same name and stamp in all the disks */
 		for (i = state->disklist; i != 0; i = i->next) {

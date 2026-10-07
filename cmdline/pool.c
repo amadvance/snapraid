@@ -30,9 +30,13 @@ struct snapraid_pool* pool_alloc(const char* dir, const char* name, const char* 
 	return pool;
 }
 
-static inline tommy_uint32_t pool_hash(const char* file)
+static inline tommy_hash_t pool_hash(const char* file)
 {
+#if TOMMY_SIZE_BIT == 64
+	return tommy_hash_u64(0, file, strlen(file));
+#else
 	return tommy_hash_u32(0, file, strlen(file));
+#endif
 }
 
 static void pool_free(void* void_pool)
