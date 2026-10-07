@@ -200,6 +200,7 @@ typedef struct tommy_node_struct {
 	/**
 	 * Pointer to the object containing the node.
 	 * This field is initialized when inserting nodes into a data structure.
+	 * The object pointer passed to insertion functions must not be 0.
 	 */
 	void* data;
 
@@ -355,7 +356,7 @@ tommy_inline tommy_uint_t tommy_ilog2_u32(tommy_uint32_t value)
 	 */
 	return __builtin_clz(value) ^ 31;
 #else
-	/* Find the log base 2 of an N-bit integer in O(lg(N)) operations with multiply and lookup */
+	/* find the log base 2 of an N-bit integer in O(lg(N)) operations with multiply and lookup */
 	/* from http://graphics.stanford.edu/~seander/bithacks.html */
 	static unsigned char TOMMY_DE_BRUIJN_INDEX_ILOG2[32] = {
 		0, 9, 1, 10, 13, 21, 2, 29, 11, 14, 16, 18, 22, 25, 3, 30,
@@ -372,13 +373,12 @@ tommy_inline tommy_uint_t tommy_ilog2_u32(tommy_uint32_t value)
 #endif
 }
 
-#if TOMMY_SIZE_BIT == 64
 /**
  * Bit scan reverse or integer log2 for 64 bits.
  */
 tommy_inline tommy_uint_t tommy_ilog2_u64(tommy_uint64_t value)
 {
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && defined(_WIN64)
 	unsigned long count;
 	_BitScanReverse64(&count, value);
 	return count;
@@ -393,7 +393,6 @@ tommy_inline tommy_uint_t tommy_ilog2_u64(tommy_uint64_t value)
 		return tommy_ilog2_u32(l);
 #endif
 }
-#endif
 
 /**
  * Bit scan forward or trailing zero count.
@@ -412,24 +411,23 @@ tommy_inline tommy_uint_t tommy_ctz_u32(tommy_uint32_t value)
 #elif defined(__GNUC__)
 	return __builtin_ctz(value);
 #else
-	/* Count the consecutive zero bits (trailing) on the right with multiply and lookup */
+	/* count the consecutive zero bits (trailing) on the right with multiply and lookup */
 	/* from http://graphics.stanford.edu/~seander/bithacks.html */
 	static const unsigned char TOMMY_DE_BRUIJN_INDEX_CTZ[32] = {
 		0, 1, 28, 2, 29, 14, 24, 3, 30, 22, 20, 15, 25, 17, 4, 8,
 		31, 27, 13, 23, 21, 19, 16, 7, 26, 12, 18, 6, 11, 5, 10, 9
 	};
 
-	return TOMMY_DE_BRUIJN_INDEX_CTZ[(tommy_uint32_t)(((value & - value) * 0x077CB531U)) >> 27];
+	return TOMMY_DE_BRUIJN_INDEX_CTZ[(tommy_uint32_t)(((value & -value) * 0x077CB531U)) >> 27];
 #endif
 }
 
-#if TOMMY_SIZE_BIT == 64
 /**
  * Bit scan forward or trailing zero count for 64 bits.
  */
 tommy_inline tommy_uint_t tommy_ctz_u64(tommy_uint64_t value)
 {
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && defined(_WIN64)
 	unsigned long count;
 	_BitScanForward64(&count, value);
 	return count;
@@ -444,7 +442,6 @@ tommy_inline tommy_uint_t tommy_ctz_u64(tommy_uint64_t value)
 		return tommy_ctz_u32(h) + 32;
 #endif
 }
-#endif
 
 /**
  * Rounds up to the next power of 2.
@@ -453,7 +450,7 @@ tommy_inline tommy_uint_t tommy_ctz_u64(tommy_uint64_t value)
  */
 tommy_inline tommy_uint32_t tommy_roundup_pow2_u32(tommy_uint32_t value)
 {
-	/* Round up to the next highest power of 2 */
+	/* round up to the next highest power of 2 */
 	/* from http://graphics.stanford.edu/~seander/bithacks.html */
 
 	--value;
@@ -493,7 +490,16 @@ tommy_inline int tommy_haszero_u32(tommy_uint32_t value)
 	return ((value - 0x01010101) & ~value & 0x80808080) != 0;
 }
 
-/*
+/**
+ * Check if the specified 64-bit word has a byte at 0.
+ * \return 0 or 1.
+ */
+tommy_inline int tommy_haszero_u64(tommy_uint64_t value)
+{
+	return ((value - 0x0101010101010101ULL) & ~value & 0x8080808080808080ULL) != 0;
+}
+
+/**
  * Bit depth mapping.
  */
 #if TOMMY_SIZE_BIT == 64
@@ -507,3 +513,4 @@ tommy_inline int tommy_haszero_u32(tommy_uint32_t value)
 #endif
 
 #endif
+

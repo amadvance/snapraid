@@ -1604,8 +1604,8 @@ void fs_allocate(struct snapraid_disk* disk, block_off_t parity_pos, struct snap
 	extent = extent_alloc(parity_pos, file, file_pos, count);
 
 	/* insert the extent in the trees */
-	parity_extent = tommy_tree_insert(&disk->fs_parity, &extent->parity_node, extent);
-	file_extent = tommy_tree_insert(&disk->fs_file, &extent->file_node, extent);
+	parity_extent = tommy_tree_insert_unique(&disk->fs_parity, &extent->parity_node, extent);
+	file_extent = tommy_tree_insert_unique(&disk->fs_file, &extent->file_node, extent);
 
 	if (parity_extent != extent || file_extent != extent) {
 		/* LCOV_EXCL_START */
@@ -1689,8 +1689,8 @@ void fs_deallocate(struct snapraid_disk* disk, block_off_t parity_pos)
 	second_extent = extent_alloc(extent->parity_pos + first_count + 1, extent->file, extent->file_pos + first_count + 1, second_count);
 
 	/* insert the extent in the trees */
-	parity_extent = tommy_tree_insert(&disk->fs_parity, &second_extent->parity_node, second_extent);
-	file_extent = tommy_tree_insert(&disk->fs_file, &second_extent->file_node, second_extent);
+	parity_extent = tommy_tree_insert_unique(&disk->fs_parity, &second_extent->parity_node, second_extent);
+	file_extent = tommy_tree_insert_unique(&disk->fs_file, &second_extent->file_node, second_extent);
 
 	if (parity_extent != second_extent || file_extent != second_extent) {
 		/* LCOV_EXCL_START */

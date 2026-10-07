@@ -65,7 +65,8 @@ tommy_inline void tommy_chain_concat(tommy_node* first_tail, tommy_node* second_
 /**
  * Merges two chains.
  * \param first First chain (will contain the result).
- * \param second Second chain (will be empty after the merge).
+ * \param second Second chain (consumed by the merge; its descriptor is not cleared
+ * and must not be used as an independent chain afterward).
  * \param cmp Comparison function.
  */
 tommy_inline void tommy_chain_merge(tommy_chain* first, tommy_chain* second, tommy_compare_func* cmp)
@@ -101,7 +102,8 @@ tommy_inline void tommy_chain_merge(tommy_chain* first, tommy_chain* second, tom
  * Merges two chains managing special degenerated cases.
  * It's functionally equivalent to tommy_chain_merge() but faster with already ordered chains.
  * \param first First chain (will contain the result).
- * \param second Second chain (will be empty after the merge).
+ * \param second Second chain (consumed by the merge; its descriptor is not cleared
+ * and must not be used as an independent chain afterward).
  * \param cmp Comparison function.
  */
 tommy_inline void tommy_chain_merge_degenerated(tommy_chain* first, tommy_chain* second, tommy_compare_func* cmp)
@@ -149,30 +151,24 @@ tommy_inline void tommy_chain_mergesort(tommy_chain* chain, tommy_compare_func* 
 	 */
 	tommy_chain bit[TOMMY_SIZE_BIT + 1];
 
-	/**
+	/*
 	 * Value stored inside the bit bucket.
 	 * It's used to know which bucket is empty or full.
 	 */
-	tommy_size_t counter;
+	tommy_size_t counter = 0;
 	tommy_node* node = chain->head;
 	tommy_node* tail = chain->tail;
-	tommy_size_t mask;
-	tommy_size_t i;
 
-	counter = 0;
 	while (1) {
-		tommy_node* next;
-		tommy_chain* last;
-
 		/* carry bit to add */
-		last = &bit[TOMMY_SIZE_BIT];
+		tommy_chain* last = &bit[TOMMY_SIZE_BIT];
 		bit[TOMMY_SIZE_BIT].head = node;
 		bit[TOMMY_SIZE_BIT].tail = node;
-		next = node->next;
+		tommy_node* next = node->next;
 
 		/* add the bit, propagating the carry */
-		i = 0;
-		mask = counter;
+		tommy_size_t i = 0;
+		tommy_size_t mask = counter;
 		while ((mask & 1) != 0) {
 			tommy_chain_merge_degenerated(&bit[i], last, cmp);
 			mask >>= 1;
@@ -192,8 +188,8 @@ tommy_inline void tommy_chain_mergesort(tommy_chain* chain, tommy_compare_func* 
 	}
 
 	/* merge the buckets */
-	i = tommy_ctz(counter);
-	mask = counter >> i;
+	tommy_size_t i = tommy_ctz(counter);
+	tommy_size_t mask = counter >> i;
 	while (mask != 1) {
 		mask >>= 1;
 		if (mask & 1)
@@ -207,3 +203,4 @@ tommy_inline void tommy_chain_mergesort(tommy_chain* chain, tommy_compare_func* 
 }
 
 #endif
+

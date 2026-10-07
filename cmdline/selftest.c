@@ -51,25 +51,25 @@ struct hash_test_vector {
  * Test vectors for tommy_hash32
  */
 static struct hash32_test_vector TEST_HASH32[] = {
-	{ "", 0, 0x8614384c, 0xa766795d },
-	{ "a", 1, 0x12c16c36, 0xa766795d },
-	{ "abc", 3, 0xc58e8af5, 0xa766795d },
-	{ "message digest", 14, 0x006b32f1, 0xa766795d },
-	{ "abcdefghijklmnopqrstuvwxyz", 26, 0x7e6fcfe0, 0xa766795d },
-	{ "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", 62, 0x8604adf8, 0xa766795d },
-	{ "The quick brown fox jumps over the lazy dog", 43, 0xdeba3d3a, 0xa766795d },
-	{ "\x00", 1, 0x4a7d1c33, 0xa766795d },
-	{ "\x16\x27", 2, 0x8b50899b, 0xa766795d },
-	{ "\xe2\x56\xb4", 3, 0x60406493, 0xa766795d },
-	{ "\xc9\x4d\x9c\xda", 4, 0xa049144a, 0xa766795d },
-	{ "\x79\xf1\x29\x69\x5d", 5, 0x4da2c2f1, 0xa766795d },
-	{ "\x00\x7e\xdf\x1e\x31\x1c", 6, 0x59de30cf, 0xa766795d },
-	{ "\x2a\x4c\xe1\xff\x9e\x6f\x53", 7, 0x219e149c, 0xa766795d },
-	{ "\xba\x02\xab\x18\x30\xc5\x0e\x8a", 8, 0x25067520, 0xa766795d },
-	{ "\xec\x4e\x7a\x72\x1e\x71\x2a\xc9\x33", 9, 0xa1f368d8, 0xa766795d },
-	{ "\xfd\xe2\x9c\x0f\x72\xb7\x08\xea\xd0\x78", 10, 0x805fc63d, 0xa766795d },
-	{ "\x65\xc4\x8a\xb8\x80\x86\x9a\x79\x00\xb7\xae", 11, 0x7f75dd0f, 0xa766795d },
-	{ "\x77\xe9\xd7\x80\x0e\x3f\x5c\x43\xc8\xc2\x46\x39", 12, 0xb9154382, 0xa766795d },
+	{ "", 0, 0x3ba63d24, 0xa766795d },
+	{ "a", 1, 0xc27589e2, 0xa766795d },
+	{ "abc", 3, 0x4f0589dd, 0xa766795d },
+	{ "message digest", 14, 0x7bd2e191, 0xa766795d },
+	{ "abcdefghijklmnopqrstuvwxyz", 26, 0xa1eebba8, 0xa766795d },
+	{ "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", 62, 0xc84d4c51, 0xa766795d },
+	{ "The quick brown fox jumps over the lazy dog", 43, 0x294e8a7b, 0xa766795d },
+	{ "\x00", 1, 0x3e1fbed8, 0xa766795d },
+	{ "\x16\x27", 2, 0x00233fc6, 0xa766795d },
+	{ "\xe2\x56\xb4", 3, 0xd3f61ec1, 0xa766795d },
+	{ "\xc9\x4d\x9c\xda", 4, 0xfa10da80, 0xa766795d },
+	{ "\x79\xf1\x29\x69\x5d", 5, 0xcd5e7468, 0xa766795d },
+	{ "\x00\x7e\xdf\x1e\x31\x1c", 6, 0x8ba76f9b, 0xa766795d },
+	{ "\x2a\x4c\xe1\xff\x9e\x6f\x53", 7, 0xbf2129d0, 0xa766795d },
+	{ "\xba\x02\xab\x18\x30\xc5\x0e\x8a", 8, 0xc3d26370, 0xa766795d },
+	{ "\xec\x4e\x7a\x72\x1e\x71\x2a\xc9\x33", 9, 0xa6840538, 0xa766795d },
+	{ "\xfd\xe2\x9c\x0f\x72\xb7\x08\xea\xd0\x78", 10, 0x36115feb, 0xa766795d },
+	{ "\x65\xc4\x8a\xb8\x80\x86\x9a\x79\x00\xb7\xae", 11, 0x48a3b1fb, 0xa766795d },
+	{ "\x77\xe9\xd7\x80\x0e\x3f\x5c\x43\xc8\xc2\x46\x39", 12, 0x23412f54, 0xa766795d },
 	{ 0, 0, 0, 0 }
 };
 
@@ -77,29 +77,29 @@ static struct hash32_test_vector TEST_HASH32[] = {
  * Test vectors for tommy_strhash32
  */
 struct strhash32_test_vector TEST_STRHASH32[] = {
-	{ "", 0x0af1416d, 0xa766795d },
-	{ "a", 0x68fa0f3f, 0xa766795d },
-	{ "abc", 0xfc68ffc5, 0xa766795d },
-	{ "message digest", 0x08477b63, 0xa766795d },
-	{ "abcdefghijklmnopqrstuvwxyz", 0x5b9c25e5, 0xa766795d },
-	{ "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", 0x1e530ce7, 0xa766795d },
-	{ "The quick brown fox jumps over the lazy dog", 0xaf93eefe, 0xa766795d },
-	{ "\xff", 0xfc88801b, 0xa766795d },
-	{ "\x16\x27", 0xcd7216db, 0xa766795d },
-	{ "\xe2\x56\xb4", 0x05f98d02, 0xa766795d },
-	{ "\xc9\x4d\x9c\xda", 0xf65206f8, 0xa766795d },
-	{ "\x79\xf1\x29\x69\x5d", 0x72bd6bda, 0xa766795d },
-	{ "\xff\x7e\xdf\x1e\x31\x1c", 0x57dfb9b4, 0xa766795d },
-	{ "\x2a\x4c\xe1\xff\x9e\x6f\x53", 0x499ff634, 0xa766795d },
-	{ "\xba\x02\xab\x18\x30\xc5\x0e\x8a", 0xe896b7ce, 0xa766795d },
-	{ "\xec\x4e\x7a\x72\x1e\x71\x2a\xc9\x33", 0xfe3939f0, 0xa766795d },
-	{ "\xfd\xe2\x9c\x0f\x72\xb7\x08\xea\xd0\x78", 0x4351d482, 0xa766795d },
-	{ "\x65\xc4\x8a\xb8\x80\x86\x9a\x79\xff\xb7\xae", 0x88e92135, 0xa766795d },
-	{ "\x77\xe9\xd7\x80\x0e\x3f\x5c\x43\xc8\xc2\x46\x39", 0x01109c16, 0xa766795d },
-	{ "\x87\xd8\x61\x61\x4c\x89\x17\x4e\xa1\xa4\xef\x13\xa9", 0xbcb050dc, 0xa766795d },
-	{ "\xfe\xa6\x5b\xc2\xda\xe8\x95\xd4\x64\xab\x4c\x39\x58\x29", 0xbe5e1fd5, 0xa766795d },
-	{ "\x94\x49\xc0\x78\xa0\x80\xda\xc7\x71\x4e\x17\x37\xa9\x7c\x40", 0x70d8c97f, 0xa766795d },
-	{ "\x53\x7e\x36\xb4\x2e\xc9\xb9\xcc\x18\x3e\x9a\x5f\xfc\xb7\xb0\x61", 0x957440a9, 0xa766795d },
+	{ "", 0x3ba63d24, 0xa766795d },
+	{ "a", 0xc27589e2, 0xa766795d },
+	{ "abc", 0x4f0589dd, 0xa766795d },
+	{ "message digest", 0x7bd2e191, 0xa766795d },
+	{ "abcdefghijklmnopqrstuvwxyz", 0xa1eebba8, 0xa766795d },
+	{ "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", 0xc84d4c51, 0xa766795d },
+	{ "The quick brown fox jumps over the lazy dog", 0x294e8a7b, 0xa766795d },
+	{ "\xff", 0x6ae84401, 0xa766795d },
+	{ "\x16\x27", 0x00233fc6, 0xa766795d },
+	{ "\xe2\x56\xb4", 0xd3f61ec1, 0xa766795d },
+	{ "\xc9\x4d\x9c\xda", 0xfa10da80, 0xa766795d },
+	{ "\x79\xf1\x29\x69\x5d", 0xcd5e7468, 0xa766795d },
+	{ "\xff\x7e\xdf\x1e\x31\x1c", 0xe135b2e2, 0xa766795d },
+	{ "\x2a\x4c\xe1\xff\x9e\x6f\x53", 0xbf2129d0, 0xa766795d },
+	{ "\xba\x02\xab\x18\x30\xc5\x0e\x8a", 0xc3d26370, 0xa766795d },
+	{ "\xec\x4e\x7a\x72\x1e\x71\x2a\xc9\x33", 0xa6840538, 0xa766795d },
+	{ "\xfd\xe2\x9c\x0f\x72\xb7\x08\xea\xd0\x78", 0x36115feb, 0xa766795d },
+	{ "\x65\xc4\x8a\xb8\x80\x86\x9a\x79\xff\xb7\xae", 0xef961a79, 0xa766795d },
+	{ "\x77\xe9\xd7\x80\x0e\x3f\x5c\x43\xc8\xc2\x46\x39", 0x23412f54, 0xa766795d },
+	{ "\x87\xd8\x61\x61\x4c\x89\x17\x4e\xa1\xa4\xef\x13\xa9", 0x04332eac, 0xa766795d },
+	{ "\xfe\xa6\x5b\xc2\xda\xe8\x95\xd4\x64\xab\x4c\x39\x58\x29", 0xd3025b16, 0xa766795d },
+	{ "\x94\x49\xc0\x78\xa0\x80\xda\xc7\x71\x4e\x17\x37\xa9\x7c\x40", 0x4ce44257, 0xa766795d },
+	{ "\x53\x7e\x36\xb4\x2e\xc9\xb9\xcc\x18\x3e\x9a\x5f\xfc\xb7\xb0\x61", 0x47d86f33, 0xa766795d },
 	{ 0, 0, 0 }
 };
 
@@ -107,25 +107,25 @@ struct strhash32_test_vector TEST_STRHASH32[] = {
  * Test vectors for tommy_hash64
  */
 static struct hash64_test_vector TEST_HASH64[] = {
-	{ "", 0, 0x8614384cb5165fbfULL, 0x2f022773a766795dULL },
-	{ "a", 1, 0x1a2e0298a8e94a3dULL, 0x2f022773a766795dULL },
-	{ "abc", 3, 0x7555796b7a7d21ebULL, 0x2f022773a766795dULL },
-	{ "message digest", 14, 0x9411a57d04b92fb4ULL, 0x2f022773a766795dULL },
-	{ "abcdefghijklmnopqrstuvwxyz", 26, 0x3ca3f8d2b4e69832ULL, 0x2f022773a766795dULL },
-	{ "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", 62, 0x6dae542ba0015a4dULL, 0x2f022773a766795dULL },
-	{ "The quick brown fox jumps over the lazy dog", 43, 0xe06d8cbb3d2ea1a6ULL, 0x2f022773a766795dULL },
-	{ "\x00", 1, 0x201e664fb5f2c021ULL, 0x2f022773a766795dULL },
-	{ "\x16\x27", 2, 0xef42fa8032c4b775ULL, 0x2f022773a766795dULL },
-	{ "\xe2\x56\xb4", 3, 0x6e6c498a6688466cULL, 0x2f022773a766795dULL },
-	{ "\xc9\x4d\x9c\xda", 4, 0x5195005419905423ULL, 0x2f022773a766795dULL },
-	{ "\x79\xf1\x29\x69\x5d", 5, 0x221235b48afee7c1ULL, 0x2f022773a766795dULL },
-	{ "\x00\x7e\xdf\x1e\x31\x1c", 6, 0x1b1f18b9266f095bULL, 0x2f022773a766795dULL },
-	{ "\x2a\x4c\xe1\xff\x9e\x6f\x53", 7, 0x2cbafa8e741d49caULL, 0x2f022773a766795dULL },
-	{ "\xba\x02\xab\x18\x30\xc5\x0e\x8a", 8, 0x4677f04c06e0758dULL, 0x2f022773a766795dULL },
-	{ "\xec\x4e\x7a\x72\x1e\x71\x2a\xc9\x33", 9, 0x5afe09e8214e2163ULL, 0x2f022773a766795dULL },
-	{ "\xfd\xe2\x9c\x0f\x72\xb7\x08\xea\xd0\x78", 10, 0x115b6276d209fab6ULL, 0x2f022773a766795dULL },
-	{ "\x65\xc4\x8a\xb8\x80\x86\x9a\x79\x00\xb7\xae", 11, 0xd0636d2f01cf3a3eULL, 0x2f022773a766795dULL },
-	{ "\x77\xe9\xd7\x80\x0e\x3f\x5c\x43\xc8\xc2\x46\x39", 12, 0x6d259f5fef74f93eULL, 0x2f022773a766795dULL },
+	{ "", 0, 0xf1999eea212f89e6ULL, 0x2f022773a766795dULL },
+	{ "a", 1, 0x6af55c57ef3cc6e2ULL, 0x2f022773a766795dULL },
+	{ "abc", 3, 0x8a09859573f3ba72ULL, 0x2f022773a766795dULL },
+	{ "message digest", 14, 0x08a48193f341bef5ULL, 0x2f022773a766795dULL },
+	{ "abcdefghijklmnopqrstuvwxyz", 26, 0x8761b9f83f99b36dULL, 0x2f022773a766795dULL },
+	{ "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", 62, 0x6f9a23bb4217ad12ULL, 0x2f022773a766795dULL },
+	{ "The quick brown fox jumps over the lazy dog", 43, 0x33e3651d073f9942ULL, 0x2f022773a766795dULL },
+	{ "\x00", 1, 0x9360785dad01a14eULL, 0x2f022773a766795dULL },
+	{ "\x16\x27", 2, 0x9d411c7d088f8c1eULL, 0x2f022773a766795dULL },
+	{ "\xe2\x56\xb4", 3, 0xa20865547db581afULL, 0x2f022773a766795dULL },
+	{ "\xc9\x4d\x9c\xda", 4, 0xb4eb664b81e7058dULL, 0x2f022773a766795dULL },
+	{ "\x79\xf1\x29\x69\x5d", 5, 0xf0b386ad052571b4ULL, 0x2f022773a766795dULL },
+	{ "\x00\x7e\xdf\x1e\x31\x1c", 6, 0xdd3b8851d859c7d4ULL, 0x2f022773a766795dULL },
+	{ "\x2a\x4c\xe1\xff\x9e\x6f\x53", 7, 0xa8b94da524aabf49ULL, 0x2f022773a766795dULL },
+	{ "\xba\x02\xab\x18\x30\xc5\x0e\x8a", 8, 0xb913a803aea6d51dULL, 0x2f022773a766795dULL },
+	{ "\xec\x4e\x7a\x72\x1e\x71\x2a\xc9\x33", 9, 0xb6961500a25f63beULL, 0x2f022773a766795dULL },
+	{ "\xfd\xe2\x9c\x0f\x72\xb7\x08\xea\xd0\x78", 10, 0xfa6dccb9650a1d28ULL, 0x2f022773a766795dULL },
+	{ "\x65\xc4\x8a\xb8\x80\x86\x9a\x79\x00\xb7\xae", 11, 0xc95d0a87ec8c2a98ULL, 0x2f022773a766795dULL },
+	{ "\x77\xe9\xd7\x80\x0e\x3f\x5c\x43\xc8\xc2\x46\x39", 12, 0x15901950afd60cd2ULL, 0x2f022773a766795dULL },
 	{ 0, 0, 0, 0 }
 };
 
@@ -182,6 +182,13 @@ static void test_hash(void)
 		uint32_t digest;
 		memcpy(buffer_aligned, TEST_STRHASH32[i].data, strlen(TEST_STRHASH32[i].data) + 1);
 		digest = tommy_strhash_u32(TEST_STRHASH32[i].seed, buffer_aligned);
+		if (digest != TEST_STRHASH32[i].digest) {
+			/* LCOV_EXCL_START */
+			log_fatal(EINTERNAL, "Failed strhash32 test\n");
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+		digest = tommy_hash_u32(TEST_STRHASH32[i].seed, buffer_aligned, strlen(TEST_STRHASH32[i].data));
 		if (digest != TEST_STRHASH32[i].digest) {
 			/* LCOV_EXCL_START */
 			log_fatal(EINTERNAL, "Failed strhash32 test\n");
@@ -456,7 +463,7 @@ static void test_tommy(void)
 	tommy_arrayblkof_init(&arrayblkof, sizeof(unsigned));
 
 	for (i = 0; i < TOMMY_SIZE; ++i) {
-		tommy_array_insert(&array, &node[i]);
+		tommy_array_insert_tail(&array, &node[i]);
 		tommy_arrayblkof_grow(&arrayblkof, i + 1);
 		*(unsigned*)tommy_arrayblkof_ref(&arrayblkof, i) = i;
 	}
@@ -584,7 +591,11 @@ static void test_tommy(void)
 		tommy_tree_insert(&tree, &node[i], (void*)(uintptr_t)(i + 1));
 
 	/* try to insert a duplicate, count should not change */
-	tommy_tree_insert(&tree, &node[TOMMY_SIZE], (void*)(uintptr_t)1);
+	if (tommy_tree_insert_unique(&tree, &node[TOMMY_SIZE], (void*)(uintptr_t)1) != (void*)(uintptr_t)1) {
+		/* LCOV_EXCL_START */
+		goto bail;
+		/* LCOV_EXCL_STOP */
+	}
 
 	if (tommy_tree_count(&tree) != TOMMY_SIZE) {
 		/* LCOV_EXCL_START */

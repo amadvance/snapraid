@@ -4,6 +4,8 @@
 #include "tommyhashdyn.h"
 #include "tommylist.h"
 
+#include <string.h> /* for memset */
+
 /******************************************************************************/
 /* hashdyn */
 
@@ -23,6 +25,12 @@ TOMMY_API void tommy_hashdyn_done(tommy_hashdyn* hashdyn)
 	tommy_free(hashdyn->bucket);
 }
 
+TOMMY_API void tommy_hashdyn_clear(tommy_hashdyn* hashdyn)
+{
+	memset(hashdyn->bucket, 0, hashdyn->bucket_max * sizeof(tommy_hashdyn_node*));
+	hashdyn->count = 0;
+}
+
 /**
  * Resize the bucket vector.
  */
@@ -37,57 +45,62 @@ static void tommy_hashdyn_resize(tommy_hashdyn* hashdyn, tommy_uint_t new_bucket
 	if (!hashdyn->count) {
 		/* empty table: allocate zeroed memory with calloc without looping */
 		new_bucket = tommy_cast(tommy_hashdyn_node**, tommy_calloc(new_bucket_max, sizeof(tommy_hashdyn_node*)));
-	} else if (new_bucket_bit == bucket_bit + 1) {
-		tommy_size_t i;
-
-		/* grow by 1 bit: zero the two buckets inline in loop to preserve cache locality */
-		new_bucket = tommy_cast(tommy_hashdyn_node**, tommy_malloc(new_bucket_max * sizeof(tommy_hashdyn_node*)));
-
-		for (i = 0; i < bucket_max; ++i) {
-			tommy_hashdyn_node* j;
-
-			new_bucket[i] = 0;
-			new_bucket[i + bucket_max] = 0;
-
-			j = hashdyn->bucket[i];
-			while (j) {
-				tommy_hashdyn_node* j_next = j->next;
-				tommy_size_t pos = j->index & new_bucket_mask;
-				if (new_bucket[pos])
-					tommy_list_insert_tail_not_empty(new_bucket[pos], j);
-				else
-					tommy_list_insert_first(&new_bucket[pos], j);
-				j = j_next;
-			}
-		}
 	} else if (new_bucket_bit > bucket_bit) {
-		tommy_size_t i;
+		if (new_bucket_bit == bucket_bit + 1) {
+			/* grow by 1 bit: zero the two buckets inline in loop to preserve cache locality */
+			new_bucket = tommy_cast(tommy_hashdyn_node**, tommy_malloc(new_bucket_max * sizeof(tommy_hashdyn_node*)));
 
-		/* grow by multiple bits with elements: allocate zeroed memory and reinsert */
-		new_bucket = tommy_cast(tommy_hashdyn_node**, tommy_calloc(new_bucket_max, sizeof(tommy_hashdyn_node*)));
+			for (tommy_size_t i = 0; i < bucket_max; ++i) {
+				new_bucket[i] = 0;
+				new_bucket[i + bucket_max] = 0;
 
-		for (i = 0; i < bucket_max; ++i) {
-			tommy_hashdyn_node* j = hashdyn->bucket[i];
+				tommy_hashdyn_node* j = hashdyn->bucket[i];
+				while (j) {
+					tommy_hashdyn_node* j_next = j->next;
+					tommy_size_t pos = j->index & new_bucket_mask;
+					if (new_bucket[pos])
+						tommy_list_insert_tail_not_empty(new_bucket[pos], j);
+					else
+						tommy_list_insert_first(&new_bucket[pos], j);
+					j = j_next;
+				}
+			}
+		} else {
+			/* grow by multiple bits with elements: allocate zeroed memory and reinsert */
+			new_bucket = tommy_cast(tommy_hashdyn_node**, tommy_calloc(new_bucket_max, sizeof(tommy_hashdyn_node*)));
 
-			while (j) {
-				tommy_hashdyn_node* j_next = j->next;
-				tommy_size_t pos = j->index & new_bucket_mask;
-				if (new_bucket[pos])
-					tommy_list_insert_tail_not_empty(new_bucket[pos], j);
-				else
-					tommy_list_insert_first(&new_bucket[pos], j);
-				j = j_next;
+			for (tommy_size_t i = 0; i < bucket_max; ++i) {
+				tommy_hashdyn_node* j = hashdyn->bucket[i];
+
+				while (j) {
+					tommy_hashdyn_node* j_next = j->next;
+					tommy_size_t pos = j->index & new_bucket_mask;
+					if (new_bucket[pos])
+						tommy_list_insert_tail_not_empty(new_bucket[pos], j);
+					else
+						tommy_list_insert_first(&new_bucket[pos], j);
+					j = j_next;
+				}
 			}
 		}
 	} else {
-		tommy_size_t i;
-
-		/* shrink with elements: all buckets are overwritten, no pre-zeroing needed */
+		/* all buckets are overwritten, no pre-zeroing needed */
 		new_bucket = tommy_cast(tommy_hashdyn_node**, tommy_malloc(new_bucket_max * sizeof(tommy_hashdyn_node*)));
 
-		for (i = 0; i < new_bucket_max; ++i) {
-			new_bucket[i] = hashdyn->bucket[i];
-			tommy_list_concat(&new_bucket[i], &hashdyn->bucket[i + new_bucket_max]);
+		if (new_bucket_bit + 1 == bucket_bit) {
+			/* shrink by 1 bit: each new bucket joins exactly two old buckets */
+			for (tommy_size_t i = 0; i < new_bucket_max; ++i) {
+				new_bucket[i] = hashdyn->bucket[i];
+				tommy_list_concat(&new_bucket[i], &hashdyn->bucket[i + new_bucket_max]);
+			}
+		} else {
+			/* shrink by multiple bits */
+			for (tommy_size_t i = 0; i < new_bucket_max; ++i) {
+				/* all old buckets with the same new modulus must be concatenated. */
+				new_bucket[i] = hashdyn->bucket[i];
+				for (tommy_size_t j = i + new_bucket_max; j < bucket_max; j += new_bucket_max)
+					tommy_list_concat(&new_bucket[i], &hashdyn->bucket[j]);
+			}
 		}
 	}
 
@@ -133,6 +146,19 @@ TOMMY_API void tommy_hashdyn_reserve(tommy_hashdyn* hashdyn, tommy_size_t count)
 	tommy_hashdyn_resize(hashdyn, bucket_bit);
 }
 
+TOMMY_API void tommy_hashdyn_shrink(tommy_hashdyn* hashdyn)
+{
+	tommy_uint_t bucket_bit = tommy_ilog2(hashdyn->count | 1) + 2;
+
+	if (bucket_bit < TOMMY_HASHDYN_BIT)
+		bucket_bit = TOMMY_HASHDYN_BIT;
+
+	if (bucket_bit >= hashdyn->bucket_bit)
+		return;
+
+	tommy_hashdyn_resize(hashdyn, bucket_bit);
+}
+
 TOMMY_API void tommy_hashdyn_insert(tommy_hashdyn* hashdyn, tommy_hashdyn_node* node, void* data, tommy_hash_t hash)
 {
 	tommy_size_t pos = hash & hashdyn->bucket_mask;
@@ -144,6 +170,27 @@ TOMMY_API void tommy_hashdyn_insert(tommy_hashdyn* hashdyn, tommy_hashdyn_node* 
 	++hashdyn->count;
 
 	hashdyn_grow_step(hashdyn);
+}
+
+TOMMY_API void* tommy_hashdyn_insert_unique(tommy_hashdyn* hashdyn, tommy_hashdyn_node* node, void* data, tommy_search_func* cmp, const void* cmp_arg, tommy_hash_t hash)
+{
+	void* existing = tommy_hashdyn_search(hashdyn, cmp, cmp_arg, hash);
+	if (existing)
+		return existing;
+
+	tommy_hashdyn_insert(hashdyn, node, data, hash);
+	return data;
+}
+
+TOMMY_API void tommy_hashdyn_rehash_existing(tommy_hashdyn* hashdyn, tommy_hashdyn_node* node, tommy_hash_t hash)
+{
+	if (node->index == hash)
+		return;
+
+	/* unlink using the stored hash, without invoking the resize policy. */
+	tommy_list_remove_existing(&hashdyn->bucket[node->index & hashdyn->bucket_mask], node);
+	node->index = hash;
+	tommy_list_insert_tail(&hashdyn->bucket[hash & hashdyn->bucket_mask], node, node->data);
 }
 
 TOMMY_API void* tommy_hashdyn_remove_existing(tommy_hashdyn* hashdyn, tommy_hashdyn_node* node)
@@ -185,9 +232,8 @@ TOMMY_API void tommy_hashdyn_foreach(tommy_hashdyn* hashdyn, tommy_foreach_func*
 {
 	tommy_size_t bucket_max = hashdyn->bucket_max;
 	tommy_hashdyn_node** bucket = hashdyn->bucket;
-	tommy_size_t pos;
 
-	for (pos = 0; pos < bucket_max; ++pos) {
+	for (tommy_size_t pos = 0; pos < bucket_max; ++pos) {
 		tommy_hashdyn_node* node = bucket[pos];
 
 		while (node) {
@@ -202,9 +248,8 @@ TOMMY_API void tommy_hashdyn_foreach_arg(tommy_hashdyn* hashdyn, tommy_foreach_a
 {
 	tommy_size_t bucket_max = hashdyn->bucket_max;
 	tommy_hashdyn_node** bucket = hashdyn->bucket;
-	tommy_size_t pos;
 
-	for (pos = 0; pos < bucket_max; ++pos) {
+	for (tommy_size_t pos = 0; pos < bucket_max; ++pos) {
 		tommy_hashdyn_node* node = bucket[pos];
 
 		while (node) {
@@ -221,62 +266,13 @@ TOMMY_API tommy_size_t tommy_hashdyn_memory_usage(tommy_hashdyn* hashdyn)
 	       + tommy_hashdyn_count(hashdyn) * (tommy_size_t)sizeof(tommy_hashdyn_node);
 }
 
-/**
- * \brief Transfers all elements from the dynamic hashtable into a tommy_list.
- *
- * Removes every element from the \p hashdyn hashtable and inserts them
- * into the provided \p list (at the tail), preserving the per-bucket order
- * but not guaranteeing any particular global order.
- *
- * After the call:
- * - the hashtable is left completely empty (\c count = 0, all buckets = NULL)
- * - the target list contains all the elements that were previously in the hashtable
- *
- * This function is useful when you need to:
- * - extract all elements to process/sort them outside the hash table
- * - convert the hashtable into a list for sequential iteration
- * - prepare for a full clear + re-insertion with different hash/ordering
- * - move ownership of the nodes to a list-based container
- *
- * \note The operation is O(n) where n is the number of elements.
- * \note No memory allocation is performed.
- * \note The relative order of elements that were in the same bucket is preserved,
- *       but the order among different buckets is bucket-order dependent.
- *
- * Typical usage pattern:
- * \code
- * tommy_list all_elements;
- * tommy_list_init(&all_elements);
- *
- * // move everything out of the hashtable into the list
- * tommy_hashdyn_to_list(&hashdyn, &all_elements);
- *
- * // now you can sort, filter, process sequentially, etc.
- * tommy_list_sort(&all_elements, compare_by_value);
- * \endcode
- *
- * \param hashdyn The dynamic hashtable to drain
- * \param list    The list that will receive all the elements
- */
 TOMMY_API void tommy_hashdyn_to_list(tommy_hashdyn* hashdyn, tommy_list* list)
 {
-	tommy_size_t bucket_max = hashdyn->bucket_max;
-	tommy_hashdyn_node** bucket = hashdyn->bucket;
-	tommy_size_t pos;
-
 	/* move everything to the list */
-	for (pos = 0; pos < bucket_max; ++pos) {
-		tommy_hashdyn_node* node = bucket[pos];
-
-		while (node) {
-			tommy_node* node_next = node->next;
-			tommy_list_insert_tail(list, node, node->data);
-			node = node_next;
-		}
-	}
+	for (tommy_size_t pos = 0; pos < hashdyn->bucket_max; ++pos)
+		tommy_list_concat(list, &hashdyn->bucket[pos]);
 
 	/* clear all */
-	memset(hashdyn->bucket, 0, hashdyn->bucket_max * sizeof(tommy_hashdyn_node*));
-	hashdyn->count = 0;
+	tommy_hashdyn_clear(hashdyn);
 }
 

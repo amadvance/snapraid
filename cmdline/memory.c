@@ -119,6 +119,23 @@ void* malloc_nofail(size_t size)
 	return ptr;
 }
 
+void* realloc_nofail(void* ptr, size_t size)
+{
+	/* keep zero-size requests allocated, as in malloc_nofail() */
+	void* new_ptr = realloc(ptr, size ? size : 1);
+
+	if (!new_ptr) {
+		/* LCOV_EXCL_START */
+		malloc_fail(size);
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	malloc_counter_inc(size);
+
+	return new_ptr;
+}
+
 void* nalloc_nofail(size_t count, size_t size)
 {
 	if (size != 0 && count > SIZE_MAX / size) {
