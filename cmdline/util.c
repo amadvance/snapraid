@@ -7,6 +7,7 @@
 #include "util.h"
 #include "raid/cpu.h"
 #include "raid/memory.h"
+#include "tommyds/tommyhash.h"
 
 /****************************************************************************/
 /* memory */
@@ -610,112 +611,6 @@ static inline void util_write64(void* ptr, uint64_t v)
 	memcpy(ptr, &v, sizeof(v));
 }
 
-/**
- *  64*64 -> 128bit multiply function.
- *
- *  @param A  Address of 64-bit number.
- *  @param B  Address of 64-bit number.
- *
- *  Calculates 128-bit C = *A * *B.
- *
- *  Overwrites A contents with C's low 64 bits.
- *  Overwrites B contents with C's high 64 bits.
- */
-#if defined(__x86_64__) || defined(_M_X64)
-/**
- * This is intentionally placed before the __SIZEOF_INT128__ implementation.
- *
- * This implementation happens to generate more efficient code.
- * While this likely depends only on the compiler, as long as it remains faster,
- * we will keep it in this order.
- */
-static inline void util_mum(uint64_t* A, uint64_t* B)
-{
-	uint64_t a = *A;
-	uint64_t b = *B;
-	uint64_t low, high;
-
-	__asm__ (
-		"mulq %3"
-		: "=a" (low), "=d" (high)
-		: "a" (a), "rm" (b)
-		: "cc"
-	);
-
-	*A = low;
-	*B = high;
-}
-#elif defined(__SIZEOF_INT128__)
-static inline void util_mum(uint64_t* A, uint64_t* B)
-{
-	__uint128_t product = ((__uint128_t)*A) * ((__uint128_t)*B);
-	*A = (uint64_t)product;
-	*B = (uint64_t)(product >> 64);
-}
-#elif defined(__aarch64__) || defined(_M_ARM64)
-/**
- * This is intentionally placed after the __SIZEOF_INT128__ implementation.
- *
- * Although the code looks correct, there is a report of this
- * implementation failing the self-test on macOS (Darwin 25.4.0, arm64)
- * with Apple clang 21.0.0 (clang-2100.0.123.102).
- *
- * See: https://github.com/amadvance/snapraid/issues/43
- *
- * Note that the implementation is the same of OpenSSL:
- *
- * #elif defined(__aarch64__) && defined(SIXTY_FOUR_BIT_LONG)
- * #if defined(__GNUC__) && __GNUC__ >= 2
- * #define BN_UMULT_HIGH(a, b) ({     \
- *         register BN_ULONG ret;          \
- *         asm ("umulh     %0,%1,%2"       \
- *              : "=r"(ret)                \
- *              : "r"(a), "r"(b));         \
- *         ret; })
- * #endif
- * #endif
- *
- * See: https://github.com/openssl/openssl/blob/0463cbf185680e66a3a8960f10cd33001377d28e/crypto/bn/bn_local.h#L439
- */
-static inline void util_mum(uint64_t* A, uint64_t* B)
-{
-	uint64_t a = *A;
-	uint64_t b = *B;
-	uint64_t low = a * b;
-	uint64_t high;
-	__asm__ (
-		"umulh %0, %1, %2"
-		: "=r" (high)
-		: "r" (a), "r" (b)
-	);
-	*A = low;
-	*B = high;
-}
-#else
-static inline void util_mum(uint64_t* A, uint64_t* B)
-{
-	uint64_t a = *A;
-	uint64_t b = *B;
-
-	uint64_t a_lo = (uint32_t)a;
-	uint64_t a_hi = a >> 32;
-	uint64_t b_lo = (uint32_t)b;
-	uint64_t b_hi = b >> 32;
-
-	uint64_t p0 = a_lo * b_lo;
-	uint64_t p1 = a_lo * b_hi;
-	uint64_t p2 = a_hi * b_lo;
-	uint64_t p3 = a_hi * b_hi;
-
-	uint64_t middle = p1 + (p0 >> 32) + (uint32_t)p2;
-	uint64_t low = (middle << 32) | (uint32_t)p0;
-	uint64_t high = p3 + (middle >> 32) + (p2 >> 32);
-
-	*A = low;
-	*B = high;
-}
-#endif
-
 int util_selftest(void)
 {
 	/* rotate left 32-bit */
@@ -748,33 +643,33 @@ int util_selftest(void)
 	if (util_rotr64(0x123456789ABCDEF0ULL, 0) != 0x123456789ABCDEF0ULL) return -1;
 	if (util_rotr64(0x123456789ABCDEF0ULL, 64) != 0x123456789ABCDEF0ULL) return -1;
 
-	/* util_mum tests */
+	/* tommy_mum tests */
 	uint64_t a, b;
 
 	/* small values */
 	a = 3; b = 4;
-	util_mum(&a, &b);
+	tommy_mum(&a, &b);
 	if (a != 12 || b != 0) return -1;
 
 	/* 1 * anything */
 	a = 0xFFFFFFFFFFFFFFFFULL; b = 1;
-	util_mum(&a, &b);
+	tommy_mum(&a, &b);
 	if (a != 0xFFFFFFFFFFFFFFFFULL || b != 0) return -1;
 
 	/* (2^32) * (2^32) = 2^64 */
 	a = 1ULL << 32; b = 1ULL << 32;
-	util_mum(&a, &b);
+	tommy_mum(&a, &b);
 	if (a != 0 || b != 1) return -1;
 
 	/* max uint64 * max uint64 */
 	a = 0xFFFFFFFFFFFFFFFFULL; b = 0xFFFFFFFFFFFFFFFFULL;
-	util_mum(&a, &b);
+	tommy_mum(&a, &b);
 	if (a != 1 || b != 0xFFFFFFFFFFFFFFFEULL) return -1;
 
 	/* larger random-ish test */
 	a = 0x0123456789ABCDEFULL;
 	b = 0xFEDCBA9876543210ULL;
-	util_mum(&a, &b);
+	tommy_mum(&a, &b);
 	if (a != 0x2236D88FE5618CF0ULL || b != 0x121FA00AD77D742ULL) return -1;
 
 	return 0;

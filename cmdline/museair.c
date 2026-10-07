@@ -150,7 +150,7 @@ static const uint64_t MUSEAIR_CONSTANT[13] = {
 	do { \
 		l = a; \
 		h = b; \
-		util_mum(&l, &h); \
+		tommy_mum(&l, &h); \
 	} while (0)
 
 #define likely(a) tommy_likely(a)

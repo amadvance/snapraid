@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: BSD-2-Clause
+// SPDX-License-Identifier: BSD-2-Clause AND MIT
 // Copyright (C) 2010 Andrea Mazzoleni
 
 #include "tommyhash.h"
@@ -13,222 +13,178 @@
  * They are needed only if BigEndian.
  */
 #if defined(__GNUC__)
-#define tommy_swap32(x) __builtin_bswap32(x)
+#define tommy_imp_hash_swap32(x) __builtin_bswap32(x)
 #else
-tommy_inline tommy_uint32_t tommy_swap32(tommy_uint32_t v)
+tommy_inline tommy_uint32_t tommy_imp_hash_swap32(tommy_uint32_t v)
 {
 	return ((v & 0xFF000000) >> 24) |
-		((v & 0x00FF0000) >> 8)  |
-		((v & 0x0000FF00) << 8)  |
-		((v & 0x000000FF) << 24);
+	       ((v & 0x00FF0000) >> 8) |
+	       ((v & 0x0000FF00) << 8) |
+	       ((v & 0x000000FF) << 24);
 }
 #endif
 
-tommy_inline tommy_uint32_t tommy_le_uint32_read(const void* ptr)
+tommy_inline tommy_uint32_t tommy_imp_hash_le_uint32_read(const void* ptr)
 {
 	tommy_uint32_t v;
 	memcpy(&v, ptr, sizeof(v));
 #if defined(WORDS_BIGENDIAN) || defined(__BIG_ENDIAN__) || \
 	(defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
-	v = tommy_swap32(v);
+	v = tommy_imp_hash_swap32(v);
 #endif
 	return v;
 }
 
-#define tommy_rot(x, k) \
-	(((x) << (k)) | ((x) >> (32 - (k))))
+/******************************************************************************/
+/* a5hash */
 
-#define tommy_mix(a, b, c) \
-	do { \
-		a -= c;  a ^= tommy_rot(c, 4);  c += b; \
-		b -= a;  b ^= tommy_rot(a, 6);  a += c; \
-		c -= b;  c ^= tommy_rot(b, 8);  b += a; \
-		a -= c;  a ^= tommy_rot(c, 16);  c += b; \
-		b -= a;  b ^= tommy_rot(a, 19);  a += c; \
-		c -= b;  c ^= tommy_rot(b, 4);  b += a; \
-	} while (0)
+/**
+ * a5hash32 and a5hash (64-bit) by Aleksey Vaneev, from https://github.com/avaneev/a5hash.
+ * Adapted from version 5.25 with little-endian word reads.
+ * The 32-bit variant additionally mixes the expanded seed asymmetrically into
+ * h[2] and h[3] before processing the input and produces different hash values.
+ * Copyright (c) 2025 Aleksey Vaneev. Released under the MIT license, see LICENSES/MIT.
+ */
 
-#define tommy_final(a, b, c) \
-	do { \
-		c ^= b; c -= tommy_rot(b, 14); \
-		a ^= c; a -= tommy_rot(c, 11); \
-		b ^= a; b -= tommy_rot(a, 25); \
-		c ^= b; c -= tommy_rot(b, 16); \
-		a ^= c; a -= tommy_rot(c, 4);  \
-		b ^= a; b -= tommy_rot(a, 14); \
-		c ^= b; c -= tommy_rot(b, 24); \
-	} while (0)
+tommy_inline void tommy_mul(tommy_uint32_t* lo, tommy_uint32_t* hi)
+{
+	/* both operands are 32-bit; the full product supplies two state words */
+	tommy_uint64_t v = (tommy_uint64_t)*lo * *hi;
+	*lo = (tommy_uint32_t)v;
+	*hi = v >> 32;
+}
 
 TOMMY_API tommy_uint32_t tommy_hash_u32(tommy_uint32_t init_val, const void* void_key, tommy_size_t key_len)
 {
 	const unsigned char* key = tommy_cast(const unsigned char*, void_key);
-	tommy_uint32_t a, b, c;
+	tommy_uint32_t val01 = 0x55555555;
+	tommy_uint32_t val10 = 0xaaaaaaaa;
+	tommy_uint32_t h[4] = { 0x243f6a88, 0x85a308d3, 0xfb0bd3ea, 0x0f58fd47 };
+	tommy_uint32_t a, b;
+	tommy_size_t len = key_len;
 
-	a = b = c = 0xdeadbeef + ((tommy_uint32_t)key_len) + init_val;
+	h[0] ^= key_len;
+	h[1] ^= key_len;
+#if TOMMY_SIZE_BIT == 64
+	h[2] = (key_len >> 32) ^ 0x452821e6;
+	h[3] = (key_len >> 32) ^ 0x38d01377;
+	tommy_mul(&h[2], &h[3]);
+#endif
+	h[0] ^= init_val & val01;
+	h[1] ^= init_val & val10;
+	tommy_mul(&h[0], &h[1]);
 
-	while (key_len > 12) {
-		a += tommy_le_uint32_read(key + 0);
-		b += tommy_le_uint32_read(key + 4);
-		c += tommy_le_uint32_read(key + 8);
+	/*
+	 * Mix the expanded seed asymmetrically into h[2] and h[3] so that short keys
+	 * skipping the main loop still depend on the seed, and neither h[0] nor h[1]
+	 * cancels out when folding h[0] ^= h[2] and h[1] ^= h[3] at the end.
+	 */
+	h[2] ^= h[0] ^ h[1];
+	h[3] ^= h[0];
 
-		tommy_mix(a, b, c);
+	if (len <= 16) {
+		if (len >= 4) {
+			const unsigned char* tail = key + len - 4;
+			a = tommy_imp_hash_le_uint32_read(key);
+			b = tommy_imp_hash_le_uint32_read(tail);
+			if (len >= 9) {
+				tommy_size_t offset = (len / 8) * 4;
+				h[2] += tommy_imp_hash_le_uint32_read(key + offset);
+				h[3] += tommy_imp_hash_le_uint32_read(tail - offset);
+				tommy_mul(&h[2], &h[3]);
+			}
+		} else {
+			a = 0;
+			b = 0;
+			if (len != 0) {
+				a = key[0];
+				if (len >= 2)
+					a |= key[1] << 8;
+				if (len == 3)
+					a |= key[2] << 16;
+			}
+		}
+	} else {
+		val01 ^= h[0];
+		val10 ^= h[1];
+		do {
+			tommy_uint32_t s1 = h[0];
+			tommy_uint32_t s4 = h[3];
+			h[0] += tommy_imp_hash_le_uint32_read(key);
+			h[1] += tommy_imp_hash_le_uint32_read(key + 4);
+			tommy_mul(&h[0], &h[1]);
+			h[2] += tommy_imp_hash_le_uint32_read(key + 8);
+			h[3] += tommy_imp_hash_le_uint32_read(key + 12);
+			tommy_mul(&h[2], &h[3]);
+			h[0] += val01;
+			h[1] += s4;
+			h[2] += s1;
+			h[3] += val10;
+			key += 16;
+			len -= 16;
+		} while (len > 16);
 
-		key_len -= 12;
-		key += 12;
+		/* the last words may overlap the previous block, but stay within the input */
+		const unsigned char* tail = key + len;
+		a = tommy_imp_hash_le_uint32_read(tail - 8);
+		b = tommy_imp_hash_le_uint32_read(tail - 4);
+		if (len >= 9) {
+			h[2] += tommy_imp_hash_le_uint32_read(tail - 16);
+			h[3] += tommy_imp_hash_le_uint32_read(tail - 12);
+			tommy_mul(&h[2], &h[3]);
+		}
 	}
 
-	switch (key_len) {
-	case 0 :
-		return c; /* used only when called with a zero length */
-	case 12 :
-		c += tommy_le_uint32_read(key + 8);
-		b += tommy_le_uint32_read(key + 4);
-		a += tommy_le_uint32_read(key + 0);
-		break;
-	case 11 : c += ((tommy_uint32_t)key[10]) << 16; /* fallthrough */
-	case 10 : c += ((tommy_uint32_t)key[9]) << 8; /* fallthrough */
-	case 9 : c += key[8]; /* fallthrough */
-	case 8 :
-		b += tommy_le_uint32_read(key + 4);
-		a += tommy_le_uint32_read(key + 0);
-		break;
-	case 7 : b += ((tommy_uint32_t)key[6]) << 16; /* fallthrough */
-	case 6 : b += ((tommy_uint32_t)key[5]) << 8; /* fallthrough */
-	case 5 : b += key[4]; /* fallthrough */
-	case 4 :
-		a += tommy_le_uint32_read(key + 0);
-		break;
-	case 3 : a += ((tommy_uint32_t)key[2]) << 16; /* fallthrough */
-	case 2 : a += ((tommy_uint32_t)key[1]) << 8; /* fallthrough */
-	case 1 : a += key[0]; /* fallthrough */
-	}
-
-	tommy_final(a, b, c);
-
-	return c;
+	h[0] ^= h[2];
+	h[1] ^= h[3];
+	h[0] += a;
+	h[1] += b;
+	tommy_mul(&h[0], &h[1]);
+	h[0] ^= val01;
+	tommy_mul(&h[0], &h[1]);
+	return h[0] ^ h[1];
 }
 
 TOMMY_API tommy_uint64_t tommy_hash_u64(tommy_uint64_t init_val, const void* void_key, tommy_size_t key_len)
 {
 	const unsigned char* key = tommy_cast(const unsigned char*, void_key);
-	tommy_uint32_t a, b, c;
+	tommy_uint64_t val01 = 0x5555555555555555ULL;
+	tommy_uint64_t val10 = 0xaaaaaaaaaaaaaaaaULL;
+	tommy_uint64_t h[2] = { (0x452821e638d01377ULL ^ key_len) ^ (init_val & val10), (0x243f6a8885a308d3ULL ^ key_len) ^ (init_val & val01) };
+	tommy_size_t len = key_len;
 
-	a = b = c = 0xdeadbeef + ((tommy_uint32_t)key_len) + (init_val & 0xffffffff);
-	c += init_val >> 32;
-
-	while (key_len > 12) {
-		a += tommy_le_uint32_read(key + 0);
-		b += tommy_le_uint32_read(key + 4);
-		c += tommy_le_uint32_read(key + 8);
-
-		tommy_mix(a, b, c);
-
-		key_len -= 12;
-		key += 12;
+	tommy_mum(&h[0], &h[1]);
+	if (len > 16) {
+		val01 ^= h[0];
+		val10 ^= h[1];
+		do {
+			/* each 64-bit operand puts the first little-endian word in its high half */
+			h[0] ^= (tommy_uint64_t)tommy_imp_hash_le_uint32_read(key) << 32 ^ tommy_imp_hash_le_uint32_read(key + 4);
+			h[1] ^= (tommy_uint64_t)tommy_imp_hash_le_uint32_read(key + 8) << 32 ^ tommy_imp_hash_le_uint32_read(key + 12);
+			tommy_mum(&h[0], &h[1]);
+			h[0] += val01;
+			h[1] += val10;
+			key += 16;
+			len -= 16;
+		} while (len > 16);
 	}
 
-	switch (key_len) {
-	case 0 :
-		return c + ((tommy_uint64_t)b << 32); /* used only when called with a zero length */
-	case 12 :
-		c += tommy_le_uint32_read(key + 8);
-		b += tommy_le_uint32_read(key + 4);
-		a += tommy_le_uint32_read(key + 0);
-		break;
-	case 11 : c += ((tommy_uint32_t)key[10]) << 16; /* fallthrough */
-	case 10 : c += ((tommy_uint32_t)key[9]) << 8; /* fallthrough */
-	case 9 : c += key[8]; /* fallthrough */
-	case 8 :
-		b += tommy_le_uint32_read(key + 4);
-		a += tommy_le_uint32_read(key + 0);
-		break;
-	case 7 : b += ((tommy_uint32_t)key[6]) << 16; /* fallthrough */
-	case 6 : b += ((tommy_uint32_t)key[5]) << 8; /* fallthrough */
-	case 5 : b += key[4]; /* fallthrough */
-	case 4 :
-		a += tommy_le_uint32_read(key + 0);
-		break;
-	case 3 : a += ((tommy_uint32_t)key[2]) << 16; /* fallthrough */
-	case 2 : a += ((tommy_uint32_t)key[1]) << 8; /* fallthrough */
-	case 1 : a += key[0]; /* fallthrough */
+	if (len >= 4) {
+		const unsigned char* tail = key + len - 4;
+		tommy_size_t offset = (len / 8) * 4;
+		h[0] ^= (tommy_uint64_t)tommy_imp_hash_le_uint32_read(key) << 32 | tommy_imp_hash_le_uint32_read(tail);
+		h[1] ^= (tommy_uint64_t)tommy_imp_hash_le_uint32_read(key + offset) << 32 | tommy_imp_hash_le_uint32_read(tail - offset);
+	} else if (len != 0) {
+		h[0] ^= key[0];
+		if (len >= 2)
+			h[0] ^= key[1] << 8;
+		if (len == 3)
+			h[0] ^= key[2] << 16;
 	}
 
-	tommy_final(a, b, c);
-
-	return c + ((tommy_uint64_t)b << 32);
-}
-
-TOMMY_API tommy_uint32_t tommy_strhash_u32(tommy_uint32_t init_val, const void* void_key)
-{
-	const unsigned char* key = tommy_cast(const unsigned char*, void_key);
-	tommy_uint32_t a, b, c;
-	tommy_uint32_t m[3] = { 0xff, 0xff00, 0xff0000 };
-
-	a = b = c = 0xdeadbeef + init_val;
-	/* this is different than original lookup3 and the result won't match */
-
-	while (1) {
-		tommy_uint32_t v = tommy_le_uint32_read(key);
-
-		if (tommy_haszero_u32(v)) {
-			if (v & m[0]) {
-				a += v & m[0];
-				if (v & m[1]) {
-					a += v & m[1];
-					if (v & m[2])
-						a += v & m[2];
-				}
-			}
-
-			break;
-		}
-
-		a += v;
-
-		v = tommy_le_uint32_read(key + 4);
-
-		if (tommy_haszero_u32(v)) {
-			if (v & m[0]) {
-				b += v & m[0];
-				if (v & m[1]) {
-					b += v & m[1];
-					if (v & m[2])
-						b += v & m[2];
-				}
-			}
-
-			break;
-		}
-
-		b += v;
-
-		v = tommy_le_uint32_read(key + 8);
-
-		if (tommy_haszero_u32(v)) {
-			if (v & m[0]) {
-				c += v & m[0];
-				if (v & m[1]) {
-					c += v & m[1];
-					if (v & m[2])
-						c += v & m[2];
-				}
-			}
-
-			break;
-		}
-
-		c += v;
-
-		tommy_mix(a, b, c);
-
-		key += 12;
-	}
-
-	/* for lengths that are multipliers of 12 we already have called mix */
-	/* this is different than the original lookup3 and the result won't match */
-
-	tommy_final(a, b, c);
-
-	return c;
+	tommy_mum(&h[0], &h[1]);
+	h[0] ^= val01;
+	tommy_mum(&h[0], &h[1]);
+	return h[0] ^ h[1];
 }
 

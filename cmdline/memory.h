@@ -24,6 +24,12 @@ void memory_single_thread(int single_thread);
 void* malloc_nofail(size_t size);
 
 /**
+ * Safe realloc.
+ * If no memory is available, it aborts.
+ */
+void* realloc_nofail(void* ptr, size_t size);
+
+/**
  * Safe malloc with calloc calling arguments.
  * If no memory is available, it aborts.
  */
