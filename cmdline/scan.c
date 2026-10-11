@@ -20,8 +20,8 @@ static const char* es(int err)
  * If the file metadata (size and timestamp) is known to be synchronized with disk.
  *
  * Always set on POSIX where stat()/lstat() returns coherent metadata. On Windows NTFS,
- * directory enumeration may return stale size/mtime for hardlinks until synchronized
- * via lstat_sync() (GetFileInformationByHandle).
+ * directory enumeration may return stale size/mtime for open/modified files and hardlinks
+ * until synchronized via lstat_sync() (GetFileInformationByHandle).
  */
 #define DISCOVERY_IS_SCAN_SYNCED 0x1
 
@@ -1655,13 +1655,24 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 				if (!st)
 					st = DSTAT(path_next, dd, &st_buf);
 
+				existing = tommy_hashdyn_search(&disk->pathset, file_path_compare_to_arg, sub_next, file_path_hash(sub_next));
+				if (existing)
+					file_flag_set(existing, FILE_IS_DISCOVERED);
+
 #if HAVE_LSTAT_SYNC
 				/*
 				 * In Windows fast directory enumeration, st_ino may be missing (0).
-				 * Only st_ino is required for file identity and hardlink tracking;
-				 * we call lstat_sync() only when st_ino is missing to avoid expensive file opens.
+				 * In addition, directory enumeration may report stale size and mtime
+				 * for files currently open or being written to.
+				 * Refresh via lstat_sync() if st_ino is missing, or if the metadata
+				 * is not synchronized and the file is new or modified.
 				 */
-				if (st->st_ino == INODE_INVALID) {
+				if (st->st_ino == INODE_INVALID
+					|| (st->st_sync == 0
+					&& (!existing
+					|| existing->size != st->st_size
+					|| existing->mtime_sec != st->st_mtime
+					|| existing->mtime_nsec != STAT_NSEC(st)))) {
 					if (lstat_sync(path_next, st, 0) != 0) {
 						/* LCOV_EXCL_START */
 						log_tag("%s:%u:%s:%s: Stat error. %s.\n", es(errno), 0, disk->name, esc_tag(path_next), strerror(errno));
@@ -1671,10 +1682,6 @@ static int scan_sub(struct snapraid_scan* scan, int level, int is_diff, char* pa
 					}
 				}
 #endif
-
-				existing = tommy_hashdyn_search(&disk->pathset, file_path_compare_to_arg, sub_next, file_path_hash(sub_next));
-				if (existing)
-					file_flag_set(existing, FILE_IS_DISCOVERED);
 
 				scan_file_discover(scan, sub_next, st);
 				processed = 1;
@@ -1937,8 +1944,8 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 	 * - Each disk is read only by its scan thread, enumerating files and populating
 	 *   file_discovery_list without observable SnapRAID classification side effects.
 	 * - No old file, link, directory, or parity allocation is removed.
-	 * - Inode collisions on volatile-hardlink filesystems trigger selective lstat_sync()
-	 *   to normalize authoritative metadata across hardlink groups before Apply.
+	 * - New/modified files and inode collisions on volatile filesystems trigger selective
+	 *   lstat_sync() to obtain authoritative metadata before Apply.
 	 */
 	for (i = scanlist; i != 0; i = i->next) {
 		struct snapraid_scan* scan = i->data;
