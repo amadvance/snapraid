@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2013 Andrea Mazzoleni
 
-#ifndef __IMPORT_H
-#define __IMPORT_H
+#ifndef IMPORT_H
+#define IMPORT_H
 
 #include "elem.h"
 #include "state.h"

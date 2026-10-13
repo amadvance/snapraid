@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Andrea Mazzoleni
 
-#ifndef __APP_H
-#define __APP_H
+#ifndef APP_H
+#define APP_H
 
 #include "os/os.h"
 

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2013 Andrea Mazzoleni
 
-#ifndef __RAID_GF_H
-#define __RAID_GF_H
+#ifndef RAID_GF_H
+#define RAID_GF_H
 
 /*
  * Galois field operations.

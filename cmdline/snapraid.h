@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2011 Andrea Mazzoleni
 
-#ifndef __SNAPRAID_H
-#define __SNAPRAID_H
+#ifndef SNAPRAID_H
+#define SNAPRAID_H
 
 /****************************************************************************/
 /* snapraid */

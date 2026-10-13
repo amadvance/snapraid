@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2013 Andrea Mazzoleni
 
-#ifndef __RAID_TEST_H
-#define __RAID_TEST_H
+#ifndef RAID_TEST_H
+#define RAID_TEST_H
 
 /**
  * Tests insertion function.

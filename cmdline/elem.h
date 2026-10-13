@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2011 Andrea Mazzoleni
 
-#ifndef __ELEM_H
-#define __ELEM_H
+#ifndef ELEM_H
+#define ELEM_H
 
 #include "util.h"
 #include "support.h"

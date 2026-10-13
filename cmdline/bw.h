@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2016 Andrea Mazzoleni
 
-#ifndef __BW_H
-#define __BW_H
+#ifndef BW_H
+#define BW_H
 
 #include "state.h"
 #include "support.h"

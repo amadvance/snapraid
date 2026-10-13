@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2011 Andrea Mazzoleni
 
-#ifndef __STREAM_H
-#define __STREAM_H
+#ifndef STREAM_H
+#define STREAM_H
 
 #include "support.h"
 #include "util.h"

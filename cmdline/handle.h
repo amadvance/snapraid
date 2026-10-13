@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2011 Andrea Mazzoleni
 
-#ifndef __HANDLE_H
-#define __HANDLE_H
+#ifndef HANDLE_H
+#define HANDLE_H
 
 #include "state.h"
 #include "support.h"

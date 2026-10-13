@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2013 Andrea Mazzoleni
 
-#ifndef __RAID_INTERNAL_H
-#define __RAID_INTERNAL_H
+#ifndef RAID_INTERNAL_H
+#define RAID_INTERNAL_H
 
 #if HAVE_CONFIG_H
 /* Includes the project configuration for HAVE_* defines */

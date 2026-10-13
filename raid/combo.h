@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2013 Andrea Mazzoleni
 
-#ifndef __RAID_COMBO_H
-#define __RAID_COMBO_H
+#ifndef RAID_COMBO_H
+#define RAID_COMBO_H
 
 #include <assert.h>
 

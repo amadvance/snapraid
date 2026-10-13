@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (C) 2013 Andrea Mazzoleni
 
-#ifndef __RAID_MEMORY_H
-#define __RAID_MEMORY_H
+#ifndef RAID_MEMORY_H
+#define RAID_MEMORY_H
 
 /**
  * Memory allocation and benchmark layout helpers.

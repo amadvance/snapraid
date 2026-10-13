@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2025 Andrea Mazzoleni
 
-#ifndef __THERMAL_H
-#define __THERMAL_H
+#ifndef THERMAL_H
+#define THERMAL_H
 
 #include "elem.h"
 

@@ -107,7 +107,7 @@ SnapRAID is designed to recover from an interruption, including `SIGKILL`, at an
 - **Indentation**: Tabs for indentation, no alignment (existing codebase style)
 - **Comments**: Use `/** ... */` for multiline top comments preceding declarations and `/* ... */` for multiline comments within code. Use `/* first letter lowercase */` for single-line inline notes.
 - **Critical Comments**: Always add a comment at non-obvious critical points, especially around data-integrity invariants, crash recovery, fallback behavior, concurrency, and fatal versus best-effort error handling. Explain why the logic is required, not merely what the code does.
-- **Headers**: All `.h` files have include guards (`#ifndef __NAME_H`)
+- **Headers**: All `.h` files have include guards (`#ifndef NAME_H`)
 - **Preferences**: Use 0 instead of NULL and '\0'
 - **Preferences**: Use prefix ++variable and --variable instead of postfix variable++ and variable-- where both are equivalent
 - **Safety Checks**: Avoid adding safety checks for conditions that never happen

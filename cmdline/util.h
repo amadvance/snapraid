@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2011 Andrea Mazzoleni
 
-#ifndef __UTIL_H
-#define __UTIL_H
+#ifndef UTIL_H
+#define UTIL_H
 
 #include "tommyds/tommytypes.h"
 

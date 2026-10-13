@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2014 Andrea Mazzoleni
 
-#ifndef __SEARCH_H
-#define __SEARCH_H
+#ifndef SEARCH_H
+#define SEARCH_H
 
 #include "elem.h"
 #include "state.h"

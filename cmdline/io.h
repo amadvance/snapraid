@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2016 Andrea Mazzoleni
 
-#ifndef __IO_H
-#define __IO_H
+#ifndef IO_H
+#define IO_H
 
 #include "state.h"
 #include "support.h"
