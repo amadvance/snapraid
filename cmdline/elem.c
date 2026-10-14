@@ -1773,7 +1773,7 @@ void bucket_free(void* void_bucket)
 
 void bucket_insert(tommy_hashdyn* bucket_hash, time_t time_at, block_off_t count, int justsynced)
 {
-	tommy_hash_t hash = tommy_inthash_u64(time_at);
+	tommy_hash_t hash = bucket_time_hash(time_at);
 	tommy_node* i = tommy_hashdyn_bucket(bucket_hash, hash);
 	while (i) {
 		struct snapraid_bucket* entry = i->data;

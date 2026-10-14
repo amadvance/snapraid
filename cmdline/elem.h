@@ -984,7 +984,12 @@ int file_path_compare(const void* void_a, const void* void_b);
  */
 static inline tommy_hash_t file_inode_hash(uint64_t inode)
 {
+#if TOMMY_SIZE_BIT == 64
+	return tommy_mulhash_u64(inode);
+#else
+	/* avoid expensive 64-bit multiplications on 32-bit architectures */
 	return tommy_inthash_u64(inode);
+#endif
 }
 
 /**
@@ -1025,10 +1030,20 @@ static inline tommy_hash_t file_path_hash(const char* sub)
  */
 static inline tommy_hash_t file_stamp_hash(data_off_t size, int64_t mtime_sec, int mtime_nsec)
 {
+	tommy_uint32_t nsec = mtime_nsec;
+
 #if TOMMY_SIZE_BIT == 64
-	return tommy_inthash_u64((uint64_t)size ^ tommy_inthash_u64((uint64_t)mtime_sec ^ (uint64_t)(uint32_t)mtime_nsec));
+	tommy_uint64_t size_key = size;
+	tommy_uint64_t sec_key = mtime_sec;
+	tommy_uint64_t nsec_key = nsec;
+
+	/* valid nanoseconds use 30 bits above contemporary seconds; -1 stays distinct */
+	return tommy_mulhash_u64(size_key ^ tommy_mulhash_u64(sec_key ^ (nsec_key << 34)));
 #else
-	return tommy_inthash_u32((tommy_uint32_t)size ^ tommy_inthash_u32((tommy_uint32_t)mtime_sec ^ tommy_inthash_u32(mtime_nsec)));
+	tommy_uint32_t size_key = size;
+	tommy_uint32_t sec_key = mtime_sec;
+
+	return tommy_mulhash_u32(size_key ^ tommy_mulhash_u32(sec_key) ^ tommy_mulhash_u32(nsec));
 #endif
 }
 
@@ -1555,6 +1570,19 @@ struct snapraid_bucket {
 };
 
 void bucket_free(void* void_bucket);
+
+/**
+ * Compute the hash of a bucket time.
+ */
+static inline tommy_hash_t bucket_time_hash(time_t time_at)
+{
+#if TOMMY_SIZE_BIT == 64
+	return tommy_mulhash_u64(time_at);
+#else
+	/* avoid expensive 64-bit multiplications on 32-bit architectures */
+	return tommy_inthash_u64(time_at);
+#endif
+}
 
 /**
  * Insert an bucket record into the hashtable
