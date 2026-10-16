@@ -164,12 +164,13 @@ How is it different from ZFS/Btrfs snapshots and NTFS Shadow Copy?
 </h3>
 <div class="faq-answer">
 <p>
-SnapRAID creates a file-system snapshot conceptually similar to other snapshot solutions.
-However, its primary purpose is to recover a disk to its saved state after a complete disk failure.
+SnapRAID provides array-level parity protection across multiple independent disks, whereas filesystem snapshots only protect against accidental modifications or deletions within a single filesystem, without protecting against physical disk failure.
 </p>
 <p>
-SnapRAID is more akin to the RAID-Z/RAID functionality of ZFS/Btrfs.
-Compared to them, SnapRAID offers the following advantages:
+Rather than being mutually exclusive, SnapRAID can directly integrate with them: with the <em>snapshot</em> option enabled, SnapRAID automatically creates and manages snapshots on Btrfs, ZFS, Bcachefs, and NTFS. This combines the point-in-time consistency and modification protection of local filesystem snapshots with SnapRAID's multi-disk parity recovery.
+</p>
+<p>
+Compared to the RAID capabilities of ZFS (RAID-Z) and Btrfs (RAID-5/6), SnapRAID offers several distinct advantages:
 </p>
 <ul>
 <li>
@@ -179,7 +180,7 @@ If too many disks fail to allow recovery, you lose data only on the failed disks
 You can start with already filled disks.
 </li>
 <li>
-You can add disks at any time (not possible with ZFS, but possible with Btrfs).
+You can easily add disks of arbitrary sizes at any time.
 </li>
 <li>
 It does not lock in your data. You can stop using SnapRAID at any time without needing to reformat or move data.
@@ -192,8 +193,7 @@ You can have up to six parity levels, compared to three for ZFS RAID-Z and two f
 </li>
 </ul>
 <p>
-ZFS and Btrfs have advantages, such as being real-time solutions.
-The best choice depends on your specific use case.
+ZFS and Btrfs have advantages as well, such as real-time parity updates. The best choice depends on your specific use case.
 </p>
 </div>
 </div>
@@ -271,14 +271,13 @@ Does SnapRAID have a GUI?
 <div class="faq-answer">
 <p>
 Yes, SnapRAID Daemon includes a web GUI.
-There is also an external GUI called
-<a href="https://elucidate.codeplex.com/">
-Elucidate
-</a>
-,
-and a plugin for
+There are also plugins for
 <a href="https://www.openmediavault.org/">
 OpenMediaVault
+</a>
+and
+<a href="https://github.com/CuratedCoding/cockpit-snapraid">
+Cockpit
 </a>
 .
 </p>
@@ -429,7 +428,7 @@ Wikipedia: Comparison of file verification software
 .
 </p>
 <p>
-For a setup example in Ubuntu 14.04, see
+For a setup example in Ubuntu, see
 <a href="https://zackreed.me/setting-up-snapraid-on-ubuntu/">
 Zack's SnapRAID tutorial
 </a>
@@ -565,20 +564,26 @@ Result
 </tr>
 <tr>
 <td>
-Any
+ext4, XFS
 </td>
 <td>
-You can generally use any file system you prefer, with some exceptions noted below. If in doubt, ext4 and XFS (and NTFS on Windows) are always good choices.
+OK. Recommended in Linux.
 </td>
 </tr>
 <tr>
 <td>
-Btrfs
+NTFS, ReFS
 </td>
 <td>
-OK. Ensure SnapRAID is built with the libblkid library for UUID support.
-You will be warned at each run if this is not the case.
-Note that multiple Btrfs snapshots are not supported.
+OK. Recommended in Windows.
+</td>
+</tr>
+<tr>
+<td>
+Btrfs, Bcachefs
+</td>
+<td>
+OK. Allows the use of snapshots for additional recovery safety.
 </td>
 </tr>
 <tr>
@@ -586,9 +591,8 @@ Note that multiple Btrfs snapshots are not supported.
 ZFS
 </td>
 <td>
-Partial. UUID support is unavailable, but core SnapRAID functionalities remain usable.
-Note that multiple ZFS snapshots are not supported. 
-ZFS is <a href ="https://www.reddit.com/r/unRAID/comments/1sktag4/xfs_vs_zfs_vs_btrfs_in_array_benchmark/">not very performant</a> with single-disk filesystems, so it's not a good match for SnapRAID.
+OK. Allows the use of snapshots for additional recovery safety.
+Note that ZFS is <a href ="https://www.reddit.com/r/unRAID/comments/1sktag4/xfs_vs_zfs_vs_btrfs_in_array_benchmark/">not very performant</a> with single-disk filesystems, so it's not a good match for SnapRAID.
 </td>
 </tr>
 <tr>
@@ -605,15 +609,10 @@ of duplicate inode cases. NTFS is significantly faster and recommended instead.
 </tr>
 <tr>
 <td>
-ReFS
+Others
 </td>
 <td>
-No. ReFS uses
-<a href="https://learn.microsoft.com/en-us/windows/win32/api/fileapi/ns-fileapi-by_handle_file_information">
- 128-bit inodes
-</a>
-,
-which SnapRAID does not yet support.
+You can generally use any other file system you prefer, with the exceptions noted above.
 </td>
 </tr>
 </table>
@@ -647,12 +646,10 @@ OK.
 </tr>
 <tr>
 <td>
-Btrfs
+Btrfs, ZFS, Bcachefs
 </td>
 <td>
-OK. Ensure SnapRAID is built with the libblkid library for UUID support.
-You will be warned at each run if this is not the case.
-Anyway, keep in mind that the advanced functionalities of Btrfs are not really needed for a parity disk. ext4 or XFS are likely better choices.
+OK. Keep in mind that they do not add extra safety for a parity disk. ext4 or XFS are likely better choices.
 </td>
 </tr>
 <tr>
@@ -718,34 +715,73 @@ On an 8 TB disk, this can save about 400 GB. It is also expected to be as fast a
 </div>
 </div>
 <div class="faq-item">
+<h3 class="faq-question" id="snapshot">
+How to enable snapshots?
+</h3>
+<div class="faq-answer">
+<p>
+To enable filesystem snapshots, add the
+<em>
+snapshot
+</em>
+option to your
+<em>
+snapraid.conf
+</em>
+configuration file:
+</p>
+<p><pre>
+snapshot
+</pre></p>
+<p>
+This option applies to data disks formatted with Btrfs, Bcachefs, or ZFS in Linux, and NTFS in Windows.
+</p>
+<p>
+The use of snapshots is completely automatic and transparent to both the user and the SnapRAID daemon.
+No changes are required to your workflow, commands, or file management. SnapRAID automatically creates, uses, and cleans up snapshots in the background during operations (such as sync, scrub, check, and fix).
+</p>
+<p>
+The only visible effect is informational progress messages displayed during operations, such as:
+</p>
+<p><pre>
+Creating disk d1 scan snapshot...
+Committing disk d1 stable snapshot...
+Using disk d1 stable snapshot...
+</pre></p>
+<p>
+Note that snapshot creation and deletion require administrative privileges. Ensure SnapRAID is run with the necessary permissions (e.g., sudo on Linux or as Administrator on Windows).
+</p>
+</div>
+</div>
+<div class="faq-item">
 <h3 class="faq-question" id="hardware">
 Which hardware configuration is recommended?
 </h3>
 <div class="faq-answer">
 <p>
-For optimal performance, connect all disks via SATA, not USB.
+For optimal performance, connect all disks via SATA, SAS, or NVMe, and avoid USB disks when possible.
+</p>
+<p>
+Both traditional mechanical hard drives (HDDs) and solid-state drives (SATA or NVMe SSDs) are supported.
+SnapRAID automatically detects non-rotational devices on both Linux and Windows, skipping unnecessary spin-up and spin-down operations.
 </p>
 <p>
 See
 <a href="https://forums.serverbuilds.net/t/nas-killer-4-0-build-guide-125-400/667">ServerBuilds NAS Killer 4.0 Build Guide</a>,
 <a href="https://www.reddit.com/r/DataHoarder/">Reddit DataHoarder</a> and
-<a href="https://www.reddit.com/r/HomeServer/">Reddit HomeServer</a>.
+<a href="https://www.reddit.com/r/HomeServer/">Reddit HomeServer</a>
 for examples of hardware setups.
 </p>
 </div>
 </div>
 <div class="faq-item">
 <h3 class="faq-question" id="cpu">
-Is a multi-core CPU recommended?
+How fast does the CPU need to be?
 </h3>
 <div class="faq-answer">
 <p>
-No. SnapRAID is typically not CPU-bound; the limiting factor is disk read performance.
-A single-core CPU is usually sufficient.
-</p>
-<p>
-For example, in my system, I achieve a combined read speed of 600 MiB/s,
-but SnapRAID can hash at 12,000 MiB/s on a single core.
+SnapRAID is typically not CPU-bound; the limiting factor is disk read and write performance.
+Even an entry-level modern CPU is usually sufficient, as SnapRAID's hashing and parity computation algorithms are highly optimized and can process data much faster than mechanical disks can deliver it.
 </p>
 </div>
 </div>
@@ -940,7 +976,7 @@ How can I use more disks than available drive letters in Windows?
 <div class="faq-answer">
 <p>
 Use
-<a href="https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-2000-server/cc938435(v=technet.10)">
+<a href="https://learn.microsoft.com/en-us/windows/win32/fileio/volume-mount-points">
 Volume Mount Points
 </a>
 to mount a disk in a directory without
@@ -1089,14 +1125,14 @@ Faulty RAM is the most common cause of data loss with SnapRAID.
 Run the "sync" command frequently, from once a day to once a week.
 </li>
 <li>
-Run the "scrub" command weekly.
+Run the "scrub" command daily or weekly, selecting an appropriate percentage to achieve a full scrub every three months (for example, 1% daily or 8% weekly).
 </li>
 <li>
-Use
+Use the SnapRAID daemon or
 <a href="https://en.wikipedia.org/wiki/Smartmontools">
 smartmontools
 </a>
-or a similar utility
+(or a similar utility)
 to monitor SMART attributes.
 Replace a disk at the first sign of
 <b>
@@ -1308,7 +1344,11 @@ How can I safely move files from one disk to another?
 </h3>
 <div class="faq-answer">
 <p>
-To safely move files between data disks in the array, follow these steps:
+If the <em>snapshot</em> option is enabled in <em>snapraid.conf</em>, you can move files directly from one disk to another and run <em>sync</em> whenever convenient.
+Because the original files remain preserved in the filesystem snapshot, parity protection is not compromised during the process.
+</p>
+<p>
+If filesystem snapshots are not enabled, follow these steps to move files safely between data disks:
 </p>
 <ul>
 <li>
@@ -1349,11 +1389,18 @@ How can I make SnapRAID less resource-intensive for other processes?
 </h3>
 <div class="faq-answer">
 <p>
-In Linux, use the
+You can limit SnapRAID's disk I/O throughput on any platform using the built-in <em>-w, --bw-limit RATE</em> option.
+This sets a global bandwidth limit across all disks (e.g. 100M for 100 MB/s):
+</p>
+<pre>
+snapraid -w 100M sync
+</pre>
+<p>
+Additionally, in Linux, you can use the
 <a href="https://linux.die.net/man/1/ionice">
 ionice
 </a>
-command with idle priority, like:
+command with idle priority:
 </p>
 <pre>
 ionice -c 3 snapraid sync
@@ -1426,7 +1473,11 @@ What happens if I delete files and a disk fails before updating parity with "syn
 </h3>
 <div class="faq-answer">
 <p>
-In the worst case, files deleted or modified on non-failed disks may prevent recovery of an equivalent amount of data on the failed disk.
+If the <em>snapshot</em> option is enabled in <em>snapraid.conf</em>, this risk is completely eliminated.
+Because deleted or modified files are preserved in filesystem snapshots, SnapRAID can access the original data blocks and recover the failed disk without any data loss.
+</p>
+<p>
+If filesystem snapshots are not enabled, in the worst case, files deleted or modified on non-failed disks may prevent recovery of an equivalent amount of data on the failed disk.
 For example, deleting 10 GB of data may prevent recovery of 10 GB from the failed disk.
 The exact data loss depends on how much the deleted and failed data overlap in the parity.
 </p>
@@ -1434,7 +1485,7 @@ The exact data loss depends on how much the deleted and failed data overlap in t
 Using two parity disks significantly improves recovery chances.
 </p>
 <p>
-To ensure safety, avoid deleting files directly. Instead, move them to another directory on the same disk,
+Without snapshots, to ensure safety, avoid deleting files directly. Instead, move them to another directory on the same disk,
 outside the SnapRAID-checked directory tree. Run the "sync" command, then delete the files.
 If a disk fails during the "sync", run the "fix" command, specifying the location of the deleted files:
 </p>
@@ -1451,7 +1502,13 @@ What happens if a disk fails during a "sync"?
 <p>
 You can still recover data. In the worst case, you can recover as much data as if the disk failed before the "sync".
 If the "sync" process has progressed, SnapRAID uses the partially synced data to recover more.
-Using the "autosave" configuration option saves intermediate content files during the sync process, improving recovery.
+</p>
+<p>
+SnapRAID preserves hash data in the content file across interruptions to ensure reliable recovery, and the <em>--import</em> option remains functional even after an incomplete sync.
+Enabling the <em>snapshot</em> option further improves recovery by maintaining access to both the previous stable snapshot and the current progress.
+</p>
+<p>
+Using the "autosave" configuration option also saves intermediate content files during long syncs, further improving recovery.
 </p>
 </div>
 </div>
@@ -1631,7 +1688,13 @@ For each block to recover, it first assumes the parity was correctly computed, a
 If this fails, it assumes the parity was not yet updated, ignoring any new files added to the array.
 </p>
 <p>
-Using double parity improves recovery when there are overlapping changes in the array.
+This is possible because SnapRAID stores the expected hash of each data block: after reconstructing a block from parity, it verifies it against the stored hash to ensure that the recovered data is correct.
+</p>
+<p>
+When the <em>snapshot</em> option is enabled, SnapRAID can read automatically from both the previous <em>stable</em> snapshot and the <em>pending</em> snapshot. This maximizes the probability of a full recovery by providing access to the exact data blocks required to solve the parity equations, even if those blocks were modified or deleted between syncs.
+</p>
+<p>
+Using double parity also improves recovery when there are overlapping changes in the array.
 </p>
 </div>
 </div>
@@ -1644,11 +1707,10 @@ Can I access data disks during a 'sync'?
 Yes, you can safely read from data disks during a 'sync'.
 </p>
 <p>
-You can also write, and if this interferes with the 'sync',
-the process continues, skipping the written part.
+If the <em>snapshot</em> option is enabled, you can also write to and modify files without any interference: SnapRAID reads from a frozen, read-only snapshot created at the start of the operation, ensuring that live filesystem modifications do not cause parity mismatches or aborted operations.
 </p>
 <p>
-This may affect potential recovery, but it is equivalent to writing just after the 'sync' completes.
+Without snapshots, you can still write, but if a file being read is concurrently modified, the process skips the written part. This may affect potential recovery until the next sync, which is equivalent to modifying the file immediately after the sync completes.
 </p>
 </div>
 </div>
@@ -1723,7 +1785,7 @@ What is the optimal hardware configuration for the best performance?
 </h3>
 <div class="faq-answer">
 <p>
-The most critical factor is using (E)SATA connections for all disks to avoid controller slowdowns.
+The most critical factor is using internal connections (SATA, SAS, or NVMe) for all disks to avoid controller slowdowns.
 Avoid USB disks.
 </p>
 <p>
@@ -1809,8 +1871,8 @@ How fast are the hash and parity computations?
 <div class="faq-answer">
 <p>
 Murmur3 hash is very fast on 32-bit systems, and SpookyHash is even faster on 64-bit systems.
-Parity computation is efficient up to double parity, even without SSE support.
-Beyond double parity, a CPU with SSSE3 support is recommended.
+Parity computation is heavily optimized using hardware SIMD acceleration across all major architectures: SSE2, SSSE3, AVX2, and AVX-512 on x86/x64, as well as ARM NEON on 64-bit (AArch64) and 32-bit (AArch32) ARM platforms.
+Parity computation is efficient up to double parity even on basic CPUs. Beyond double parity, a CPU with SSSE3, AVX2, AVX-512, or NEON support is recommended for optimal performance.
 For low-end CPUs without SSE, a special, incompatible triple-parity option is available.
 See 'z-parity' in the manual for details.
 </p>
@@ -1820,11 +1882,19 @@ Check your values with the -T option:
 </p>
 <p><pre>
 root@redstar:/root# snapraid -T
-snapraid v14.0 by Andrea Mazzoleni, https://www.snapraid.it
+snapraid v15.0 by Andrea Mazzoleni, https://www.snapraid.it
 Compiler gcc 11.2.0
-CPU GenuineIntel, family 6, model 165, flags sse2 ssse3 crc32 avx2
-Memory is little-endian 64-bit
+CPU GenuineIntel, family 6 (0x6), model 165 (0xa5), stepping 5, flags sse2 ssse3 crc32 avx2
+Model Intel(R) Core(TM) i7-10700 CPU @ 2.90GHz
+Clock 2.90 GHz (max 4.80 GHz)
+Cache L1 Data 32 KB, L2 256 KB, L3 16384 KB
+Machine has 16 cores
+Running on cpu 1
+Memory 31806 MB, little-endian 64-bit, page 4 KB
+128-bit integers are supported
 Support nanosecond timestamps with futimens()
+Host Slackware 15.0 x86_64 (post 15.0 -current) (Linux 6.18.38)
+System Dell Inc. OptiPlex 5080
 
 Speed test using 8 data buffers of 262144 bytes, for a total of 2048 KiB.
 Memory blocks have a displacement of 1792 bytes to improve cache performance.
@@ -1832,42 +1902,87 @@ The reported values are the aggregate bandwidth of all data blocks in MB/s,
 not counting parity blocks.
 
 Memory write speed using the C memset() function:
-  memset   61338
+  memset   58052
 
 CRC used to check the content file integrity:
-   table    1665
-   intel   12488
+   table    1669
+   intel   36099
 
 Hash used to check the data blocks integrity:
-            best murmur3 spooky2   metro museair
-    hash spooky2    6172   18024   20752   29206
+            best murmur3 spooky2 museair
+    hash spooky2    6172   17914   30727
 
-RAID functions used for computing the parity with 'sync':
+RAID polynomial functions used for computing parity with 'sync':
             best    int8   int32   int64    sse2   sse2e   ssse3  ssse3e    avx2   avx2e
-    gen1    avx2           19147   34378   62743                           78638
-    gen2    avx2            5303    9850   26288   26926                   45010
-    genz   avx2e            3086    4950   14319   13838                           25299
-    gen3   avx2e    1278                                   13042   14120           27155
-    gen4   avx2e     960                                    9895   11008           21764
-    gen5   avx2e     784                                    7960    8713           17174
-    gen6   avx2e     652                                    6502    7502           14638
+    gen1    avx2           20738   37638   60622                           70014
+    gen2   avx2e    2465    5220    9863   27038   30954                   45964   51622
+    gen3   avx2e    1659                                   12945   14665           28876
+    gen4   avx2e    1142                                    9284   10311           22265
+    gen5   avx2e     862                                    7206    7796           14847
+    gen6   avx2e     673                                    5829    6487           12501
 
-RAID functions used for recovering with 'fix':
-            best    int8   ssse3    avx2
-    rec1    avx2    1602    3942    4301
-    rec2    avx2     698    1731    2224
-    rec3    avx2     166     908    1391
-    rec4    avx2     108     607     973
-    rec5    avx2      76     421     694
-    rec6    avx2      57     313     532
+AES polynomial functions used for computing parity with 'sync':
+            best    int8   int32   int64    sse2   sse2e   ssse3  ssse3e    avx2   avx2e
+    gen1    avx2           20712   37765   60677                           70051
+    gen2   avx2e    2465    4763    8456   23497   28220                   41045   49308
+    gen3   avx2e    1659                                   12043   13606           27257
+    gen4   avx2e    1137                                    8825    9945           21277
+    gen5   avx2e     857                                            7543           14513
+    gen6   avx2e     663                                            6335           12264
+
+Vandermonde functions used for computing parity with 'sync':
+            best    int8   int32   int64    sse2   sse2e   ssse3  ssse3e    avx2   avx2e
+    genz   avx2e            2918    5332   14488   14450                           25930
+
+RAID polynomial functions used for recovering with 'fix':
+            best     int   ssse3  ssse3e    avx2   avx2e
+ rec1of1   avx2e   37680   58508   58457   66444   66444
+ rec1of2   avx2e    2896   26525   28901   44590   46896
+ rec1of3   avx2e    2898   18517   20460   37638   37638
+ rec2of2   avx2e    2585   19611   21592   27346   31388
+ rec2of3   avx2e    1749   12875   13389   19440   23984
+ rec2of4   avx2e    1744   12865   13336   19228   23933
+ rec3of3   avx2e    1667    9436   10658   18325   20636
+ rec4of4   avx2e    1154    6584    8422   12700   15033
+ rec5of5   avx2e     853    4355    7025    8648   12372
+ rec6of6   avx2e     692    3682    5370    7313   10466
+
+(recNofM: N data disks recovered using parities up to the M-th parity,
+ e.g. rec1of1 uses P, rec1of2 uses Q, rec2of2 uses P+Q, rec2of3 uses Q+R)
 </pre></p>
 </div>
 </div>
 </div>
 <div class="faq-section">
-<h2 id="kwownproblems">
+<h2 id="knownproblems">
 Known Problems
 </h2>
+<div class="faq-item">
+<h3 class="faq-question" id="smartignore">
+Why does SnapRAID Daemon show warnings for fluctuating SMART attributes?
+</h3>
+<div class="faq-answer">
+<p>
+SnapRAID Daemon monitors disk health and warns whenever a SMART attribute marked as <em>PRE-FAIL</em> degrades its normalized value, allowing you to anticipate potential drive issues early.
+</p>
+<p>
+However, certain hard drive models exhibit natural fluctuations in non-critical attributes during normal operation, most commonly <b>Spin_Up_Time</b> (attribute 3) or <b>Raw_Read_Error_Rate</b> (attribute 1).
+These normal variations can cause harmless warnings on the WebUI dashboard and trigger notification emails.
+</p>
+<p>
+You can silence these noisy attributes in the daemon configuration file (<em>snapraidd.conf</em>) using the <em>sys_smartignore</em> option.
+Specify the disk name (or <b>*</b> for all disks) followed by attribute names or numbers:
+</p>
+<pre>
+sys_smartignore = * Spin_Up_Time
+sys_smartignore = * Spin_Up_Time Raw_Read_Error_Rate
+sys_smartignore = parity 188 Command_Timeout
+</pre>
+<p>
+Even when an attribute is suppressed with <em>sys_smartignore</em>, your disks remain fully protected: if an attribute exceeds the manufacturer's critical failure threshold, SnapRAID Daemon will always alert you.
+</p>
+</div>
+</div>
 <div class="faq-item">
 <h3 class="faq-question" id="panic">
 Why does my machine reboot or crash while SnapRAID is running?
@@ -1948,6 +2063,16 @@ mkfs.ext4 -m 0 -T largefile4 DEVICE
 </pre></p>
 <p>
 The '-T largefile4' and '-m 0' options provide more space for the parity file.
+</p>
+<p>
+You can also split the parity across multiple disks or partitions using split parity.
+In the configuration file, you can specify multiple comma-separated files for the same parity level (up to 8 files):
+</p>
+<pre>
+parity /mnt/diskp1/snapraid.parity,/mnt/diskp2/snapraid.parity
+</pre>
+<p>
+As soon as the first file cannot grow anymore due to lack of space, SnapRAID automatically starts growing the next file in the list.
 </p>
 </div>
 </div>
