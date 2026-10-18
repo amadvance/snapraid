@@ -90,12 +90,12 @@ jobs:
         with:
           usesh: true
           prepare: |
-            pkg install -y autoconf automake gmake
+            pkg install -y autoconf automake
           run: |
             autoreconf -i
-            ./configure --enable-warning-as-error MAKE=gmake
-            gmake all -j$(sysctl -n hw.ncpu)
-            gmake dist check
+            ./configure --enable-warning-as-error
+            make all -j$(sysctl -n hw.ncpu)
+            make dist check
   build-musl:
     runs-on: ubuntu-latest
     container: alpine:latest

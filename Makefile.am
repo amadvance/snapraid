@@ -228,13 +228,28 @@ dist-hook:
 
 LANG_CODES = de es fr it ja ko pl pt ro ru sv uk zh
 
-LIST_D = doc/snapraid.d doc/snapraid_log.d $(patsubst %, doc/snapraid-%.d, $(LANG_CODES))
+LIST_LANG_D = \
+	doc/snapraid-de.d \
+	doc/snapraid-es.d \
+	doc/snapraid-fr.d \
+	doc/snapraid-it.d \
+	doc/snapraid-ja.d \
+	doc/snapraid-ko.d \
+	doc/snapraid-pl.d \
+	doc/snapraid-pt.d \
+	doc/snapraid-ro.d \
+	doc/snapraid-ru.d \
+	doc/snapraid-sv.d \
+	doc/snapraid-uk.d \
+	doc/snapraid-zh.d
 
-LIST_MAN = doc/snapraid.1 doc/snapraid_log.1 $(patsubst %, doc/snapraid-%.1, $(LANG_CODES))
+LIST_D = doc/snapraid.d doc/snapraid_log.d $(LIST_LANG_D)
 
-LIST_TXT = doc/snapraid.txt doc/snapraid_log.txt $(patsubst %, doc/snapraid-%.txt, $(LANG_CODES))
+LIST_MAN = $(LIST_D:.d=.1)
 
-LIST_XML = doc/snapraid.xml doc/snapraid_log.xml $(patsubst %, doc/snapraid-%.xml, $(LANG_CODES))
+LIST_TXT = $(LIST_D:.d=.txt)
+
+LIST_XML = $(LIST_D:.d=.xml)
 
 EXTRA_DIST = \
 	autogen.sh autover.sh valgrind.supp \
@@ -385,8 +400,13 @@ else # HAVE_POSIX
 CHECKCOUNT_DEFAULT = 500
 endif # HAVE_POSIX
 
-CHECKCOUNT = $(if $(filter 1,$(SHORTCHECK)),500,$(CHECKCOUNT_DEFAULT))
-CHECKSIZE = $(if $(filter 1,$(SHORTCHECK)),100,4000)
+CHECKCOUNT_0 = $(CHECKCOUNT_DEFAULT)
+CHECKCOUNT_1 = 500
+CHECKCOUNT = $(CHECKCOUNT_$(SHORTCHECK))
+
+CHECKSIZE_0 = 4000
+CHECKSIZE_1 = 100
+CHECKSIZE = $(CHECKSIZE_$(SHORTCHECK))
 
 CONF = $(srcdir)/test/test-par6.conf
 THERMAL = $(srcdir)/test/test-par6-thermal.conf
