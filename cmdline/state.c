@@ -171,7 +171,6 @@ void state_init(struct snapraid_state* state)
 	state->autosave = 0;
 	state->need_write = 0;
 	state->written = 0;
-	state->checked_read = 0;
 	state->block_size = 256 * KIBI; /* default 256 KiB */
 	state->raid_mode = RAID_MODE_CAUCHY_RAID;
 	state->file_mode = ADVISE_DEFAULT;
@@ -5423,9 +5422,6 @@ void state_read(struct snapraid_state* state)
 		log_tag("content_info:read_unixtime:%" PRId64 "\n", (int64_t)st.st_mtime);
 	}
 	log_flush();
-
-	/* mark that we read the content file, and it passed all the checks */
-	state->checked_read = 1;
 }
 
 /**
@@ -5967,7 +5963,6 @@ void state_write(struct snapraid_state* state)
 	log_flush();
 
 	state->need_write = 0; /* no write needed anymore */
-	state->checked_read = 0; /* what we wrote is not checked in read */
 	state->written = 1;
 }
 
