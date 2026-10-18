@@ -1530,7 +1530,8 @@ int snapraid_main(int argc, char* argv[])
 		if (state.opt.force_realloc)
 			state_locate_mark_tail_blocks_for_resync(&state, opt.parity_tail);
 
-		if (opt.gui_touch_before) {
+		/* skip touch itself until content is loaded and sync has initialized parity sizes */
+		if (opt.gui_touch_before && state_is_write_ready(&state)) {
 			ret = state_touch(&state);
 
 			/* save the new state if required */
@@ -1627,6 +1628,9 @@ int snapraid_main(int argc, char* argv[])
 	} else if (operation == OPERATION_REHASH) {
 		state_read(&state);
 
+		/* prevent saving content with uninitialized parity split sizes */
+		state_require_write_ready(&state);
+
 		state_rehash(&state);
 
 		/*
@@ -1644,6 +1648,9 @@ int snapraid_main(int argc, char* argv[])
 			state_write(&state);
 	} else if (operation == OPERATION_SCRUB) {
 		state_read(&state);
+
+		/* prevent saving content with uninitialized parity split sizes */
+		state_require_write_ready(&state);
 
 		/* refresh the size info before the content write */
 		state_refresh(&state);
@@ -1667,6 +1674,9 @@ int snapraid_main(int argc, char* argv[])
 	} else if (operation == OPERATION_REWRITE) {
 		state_read(&state);
 
+		/* prevent saving content with uninitialized parity split sizes */
+		state_require_write_ready(&state);
+
 		/* intercept signals while operating */
 		os_signal_init(app_signal_handler, app_signal_handler);
 
@@ -1682,6 +1692,9 @@ int snapraid_main(int argc, char* argv[])
 	} else if (operation == OPERATION_TOUCH) {
 		state_read(&state);
 
+		/* prevent saving content with uninitialized parity split sizes */
+		state_require_write_ready(&state);
+
 		memory();
 
 		ret = state_touch(&state);
@@ -1696,6 +1709,7 @@ int snapraid_main(int argc, char* argv[])
 		 */
 		os_signal_init(app_signal_handler, app_signal_handler);
 
+		/* save the new state if required */
 		if (state.need_write)
 			state_write(&state);
 	} else if (operation == OPERATION_SPINUP) {

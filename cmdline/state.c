@@ -5428,6 +5428,37 @@ void state_read(struct snapraid_state* state)
 	state->checked_read = 1;
 }
 
+/**
+ * Check if all configured parity splits have persistent sizes.
+ */
+int state_is_write_ready(struct snapraid_state* state)
+{
+	unsigned l, s;
+
+	for (l = 0; l < state->level; ++l) {
+		for (s = 0; s < state->parity[l].split_mac; ++s) {
+			if (state->parity[l].split_map[s].size == PARITY_SIZE_INVALID)
+				return 0;
+		}
+	}
+
+	return 1;
+}
+
+/**
+ * Require sync to initialize parity sizes before commands that can save content.
+ * Check before modifying timestamps or metadata, as a later write could fail
+ * even if the command has no blocks to process (e.g. a missing content replica).
+ */
+void state_require_write_ready(struct snapraid_state* state)
+{
+	if (!state_is_write_ready(state)) {
+		log_fatal(EUSER, "The array has not been synced yet, or its parity configuration has changed.\n");
+		log_fatal(EUSER, "Run 'snapraid sync' before '%s'.\n", state->command);
+		exit(EXIT_FAILURE);
+	}
+}
+
 struct state_verify_thread_context {
 	struct snapraid_state* state;
 	struct snapraid_content* content;

@@ -241,6 +241,16 @@ void state_probe(struct snapraid_state* state);
 void state_read(struct snapraid_state* state);
 
 /**
+ * Check if all configured parity splits have persistent sizes.
+ */
+int state_is_write_ready(struct snapraid_state* state);
+
+/**
+ * Require initialized parity split sizes before commands that can save content.
+ */
+void state_require_write_ready(struct snapraid_state* state);
+
+/**
  * Count the number of unsynced parity positions using an event sweep across extents.
  * Counts positions in [blockmin, blockmax). The caller must ensure that the disk list,
  * extent trees, and block states remain unchanged for the duration of the call.
