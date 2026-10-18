@@ -6,18 +6,22 @@ This is the list of TODO items for SnapRAID.
 16.x Releases
 =============
 
-* Use statx() instead of lstat() when scanning directories.
+* Support a `[power_control: off]` tag in `smartctl` options to disable power
+  management (`up` and `down`) on specific disks (e.g. for SAS drives that
+  fail to wake up on write). Emit an attribute tag in probe for snapraid-daemon.
+
+* Enable MuseAir and disable random seed
 
 * Add a new 'restore' command, similar to 'fix', that recovers a whole disk 
   using the same multithreaded approach as sync/scrub.
+
+* Use statx() instead of lstat() when scanning directories.
 
 * Integration with MergerFS ?
 
 * Restore ownership and permissions, at least in Unix.
 
 * Restore directory timestamps.
-
-* Enable MuseAir and disable random seed
 
 * Check Reliability Test. We can derive Failure probability from MBTF
 https://github.com/linuxhw/SMART
