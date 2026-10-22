@@ -3,6 +3,9 @@ SnapRAID HISTORY
 
 15.1 2026/10
 ============
+ * Add synthetic device IDs on Linux, allowing SnapRAID Daemon to
+   preserve history for devices without unique hardware IDs while
+   they remain connected within the same boot.
  * Fix a failed internal inconsistency check when '--gui-touch-before'
    is used before the first sync when no content file exists yet.
    Also ensure that commands that can save the content file ('touch',

@@ -4447,11 +4447,28 @@ int devmap(void)
 {
 #if HAVE_LINUX_DEVICE
 	char path[PATH_MAX];
+	char boot_id[64];
 	DIR* d = opendir("/sys/block");
 	if (!d) {
 		/* LCOV_EXCL_START */
 		return -1;
 		/* LCOV_EXCL_STOP */
+	}
+
+	/* optional boot identity: failure must not affect hardware mappings */
+	if (sysattr("/proc/sys/kernel/random/boot_id", boot_id, sizeof(boot_id)) != 0 || strlen(boot_id) != 36) {
+		boot_id[0] = 0;
+	} else {
+		for (unsigned i = 0; i < 36; ++i) {
+			if (i == 8 || i == 13 || i == 18 || i == 23) {
+				if (boot_id[i] == '-')
+					continue;
+			} else if (hexval(boot_id[i]) >= 0) {
+				continue;
+			}
+			boot_id[0] = 0;
+			break;
+		}
 	}
 
 	struct dirent* dd;
@@ -4516,6 +4533,20 @@ int devmap(void)
 		pathprint(path, sizeof(path), "/sys/block/%s/uuid", dd->d_name);
 		if (sysattr(path, buf, sizeof(buf)) == 0 && buf[0] != 0) {
 			log_tag("map:/dev/%s:%s\n", dd->d_name, esc_tag(buf));
+		}
+
+		/*
+		 * This identifies the kernel device instance within one boot, not
+		 * persistent hardware across reconnections. Missing attributes are optional.
+		 */
+		if (boot_id[0] != 0) {
+			pathprint(path, sizeof(path), "/sys/block/%s/diskseq", dd->d_name);
+			if (sysattr(path, buf, sizeof(buf)) == 0) {
+				char* end;
+				unsigned long long diskseq = strtonll(buf, &end, 10);
+				if (buf[0] >= '0' && buf[0] <= '9' && diskseq != 0 && end != buf && *end == 0)
+					log_tag("map:/dev/%s:linux-diskseq.%s.%llu\n", esc_tag(dd->d_name), esc_tag(boot_id), diskseq);
+			}
 		}
 	}
 
