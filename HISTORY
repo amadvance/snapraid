@@ -1,8 +1,20 @@
 SnapRAID HISTORY
 ================
 
-15.0 (Work in Progress)
-=======================
+15.1 2026/10
+============
+ * Fix a failed internal inconsistency check when '--gui-touch-before'
+   is used before the first sync when no content file exists yet.
+   Also ensure that commands that can save the content file ('touch',
+   'scrub', 'rehash', 'rewrite') fail with a clear error message if the
+   array has not been synced yet. This fix is required by
+   SnapRAID-Daemon.
+ * Make test and doc variables in Makefile.am compatible with BSD make,
+   allowing builds, tests, and documentation generation on BSD systems
+   without requiring GNU make.
+
+15.0 2026/10
+============
  * Added support for automated filesystem snapshots to ensure data
    consistency and improve recovery reliability.
    When the 'snapshot' option is enabled, SnapRAID transparently manages
