@@ -96,8 +96,17 @@
 Synopsis
 </h1>
 <pre>
-snapraidd [-c, --conf CONFIG] [-f, --foreground] [-p, --pidfile FILE]
-&nbsp;&nbsp;&nbsp;&nbsp;[-N, --no-cache] [-v, --verbose]
+snapraidd [-c, --conf CONFIG] [-C, --engine-conf FILE] [-i, --instance NAME]
+&nbsp;&nbsp;&nbsp;&nbsp;[-f, --foreground] [-p, --pidfile FILE] [-N, --no-cache]
+&nbsp;&nbsp;&nbsp;&nbsp;[-v, --verbose]
+</pre>
+<pre>
+snapraidd [-i, --instance NAME] [--service-install] [--service-remove]
+&nbsp;&nbsp;&nbsp;&nbsp;[--service-start-all] [--service-stop-all] [--service-remove-all]
+&nbsp;&nbsp;&nbsp;&nbsp;[--service-list]
+</pre>
+<pre>
+snapraidd [-g, --gen-auth USERNAME:PASSWORD]
 </pre>
 <pre>
 snapraidd [-V, --version] [-H, --help]
@@ -143,10 +152,36 @@ argument to the configure script).
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
+-C, --engine-conf FILE
+</div><div class="manual-option-description">
+Specifies the path to the SnapRAID array configuration file.
+If not specified, the SnapRAID engine's default configuration resolution is used.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 -f, --foreground
 </div><div class="manual-option-description">
 Runs the process in the foreground. This prevents the
 daemon from detaching from the terminal (daemonizing).
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-i, --instance NAME
+</div><div class="manual-option-description">
+Specifies the daemon instance name. When running multiple
+instances of the daemon, this option separates their namespaces
+(e.g., config file suffix, PID file, logging identifiers, and
+Windows service names). The name must only contain alphanumeric
+characters, hyphens, and underscores, with a maximum length of 63
+characters. On Windows, instance names are converted to lowercase
+because Windows service names are case-insensitive. On Unix, the
+supplied letter case is preserved.
 </div>
 </div>
 </div>
@@ -187,6 +222,79 @@ vulnerabilities if not properly isolated.
 -v, --verbose
 </div><div class="manual-option-description">
 Verbose logging including all HTTP requests.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-g, --gen-auth USERNAME:PASSWORD
+</div><div class="manual-option-description">
+Generates a secure Argon2id credential string for the configured
+username and password, and prints the configuration line ready to
+be added to the <b>snapraidd.conf</b> file.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+--service-install
+</div><div class="manual-option-description">
+[Windows Only] Installs and starts the current configuration as a Windows service.
+If an instance name is specified using the <b>-i</b> option, a dedicated
+service is created and started for that instance. This allows running
+multiple instances of the daemon simultaneously.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+--service-remove
+</div><div class="manual-option-description">
+[Windows Only] Stops and removes the Windows service associated with the
+current configuration. If an instance name is specified using <b>-i</b>,
+only that specific instance service is stopped and removed.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+--service-start-all
+</div><div class="manual-option-description">
+[Windows Only] Starts all Windows services associated with SnapRAID Daemon
+(i.e., all services starting with <b>snapraidd</b>).
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+--service-stop-all
+</div><div class="manual-option-description">
+[Windows Only] Stops all Windows services associated with SnapRAID Daemon.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+--service-remove-all
+</div><div class="manual-option-description">
+[Windows Only] Stops and removes all Windows services associated with
+SnapRAID Daemon.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+--service-list
+</div><div class="manual-option-description">
+[Windows Only] Lists all registered Windows services associated with
+SnapRAID Daemon and their current execution status.
 </div>
 </div>
 </div>
@@ -267,9 +375,9 @@ Configuring the <b>notify_result</b> system to receive alerts
 regarding array health and task outcomes.
 </li>
 </ul>
-<p>To make manual changes to the <b>/etc/snapraidd.conf</b> file effective,
-you must either restart the daemon or send a <b>SIGHUP</b> signal to the
-running process.
+<p>To make manual changes to runtime-reloadable options in the
+<b>/etc/snapraidd.conf</b> file effective, send a <b>SIGHUP</b> signal to the
+running process. Changes to <b>sys_*</b> options require a daemon restart.
 </p><p>Example:
 </p><pre>
 sudo killall -HUP snapraidd
@@ -289,11 +397,12 @@ Health
 </h1>
 <p>The array's aggregate health is determined by evaluating historical log
 data alongside real-time hardware telemetry.
-</p><p>If the array transitions into a problematic state, the daemon issues
-an alert through the configured notification system. Note that the
-detection of such states is not instantaneous, it occurs during the
-telemetry collection cycle, the frequency of which is determined by
-the <b>probe_interval_minutes</b> option.
+</p><p>If the array transitions into a problematic health state, the daemon
+issues an alert through the configured notification system.
+The PENDING state is informational and does not by itself trigger an alert.
+Note that the detection of such states is not instantaneous, it occurs
+during the telemetry collection cycle, the frequency of which is determined
+by the <b>probe_interval_minutes</b> option.
 </p><p>In the REST API, the health state is reported by the <b>health</b> field.
 Whenever the health is not PASSED, a supplementary <b>health_reason</b> field
 is provided to give a discursive explanation of the specific condition or
@@ -312,6 +421,9 @@ The health has not yet been assessed. The daemon requires a
 successful hardware probe where all disks are spinning at
 least once to read SMART attributes.
 Issuing an <b>up</b> command is sufficient to satisfy this.
+PENDING is an informational state, not a problematic health
+state, and does not by itself raise the severity of result
+notifications.
 </div>
 </div>
 <div class="manual-tag-entry">
@@ -333,13 +445,25 @@ In this state, scheduled maintenance remains active.
 </div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
+DEGRADED
+</div><div class="manual-tag-description">
+The filesystem UUID does not match the UUID recorded in the
+content file, or an associated physical device is currently disconnected.
+This typically indicates that the expected filesystem might not be
+present at the mount point (for example, if the disk is not mounted),
+or that the storage configuration is incomplete (such as a missing member
+of a multi-device volume), representing a serious array condition without
+implying physical hardware failure.
+Automated maintenance is suspended in this state, and manual
+intervention is required.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
 PREFAIL
 </div><div class="manual-tag-description">
-The SMART telemetry reports a pre-failing condition (e.g.,
-reallocated sectors), or a task encountered input/output errors
-while accessing files.
-File input/output errors are temporary and they are cleared
-automatically after a successful sync.
+The SMART telemetry reports a pre-failing condition, or a
+task encountered input/output errors while accessing files.
 Automated maintenance is suspended in this state, and manual
 intervention is required.
 </div>
@@ -355,15 +479,48 @@ manual intervention is required.
 </div>
 </div>
 </div>
-<p>Individual tasks also maintain a health state reflecting only the
+<p>Physical Input/Output errors also affect disk health. Data and parity
+I/O errors that SnapRAID can associate with a block, as well as I/O
+errors associated with a concrete filesystem object, are tracked as
+transient disk errors. Transient disk errors remain active until a later
+scrub reports that no blocks are bad.
+</p><p>By contrast, unlocalized data and parity I/O errors, such as close errors,
+are still counted in the lifetime error_io counter but do not affect disk
+health.
+</p><p>Individual tasks also maintain a health state reflecting only the
 problems identified during that specific operation.
 For example, an array in a CORRUPT state may still produce a PASSED
 result for a <b>probe</b> task if that operation encountered no specific
 errors.
-</p><p>In the PREFAIL or FAILING state, the <b>Maintenance</b> button in the Web
+</p><p>In the DEGRADED, PREFAIL or FAILING state, the <b>Maintenance</b> button in the Web
 UI is replaced with a <b>Refresh</b> button. This allows you to force the
 daemon to re-scan the state of the array (by re-reading the content
 file) after any manual fixes have been performed via the command line.
+</p><p>If the array entered the PREFAIL state due to input/output errors,
+and the content file loaded after clicking <b>Refresh</b> contains no
+marked bad sectors, the input/output error counters for each disk
+are automatically cleared, allowing the array to re-enter the
+PASSED state.
+</p><p>Note that clicking the <b>Refresh</b> button does not cause the daemon
+to verify that the underlying input/output errors are resolved.
+Instead, the daemon assumes that you have:
+</p><ul>
+<li>
+Checked the log files manually to understand the cause of the failure.
+</li>
+<li>
+Resolved the root cause of the input/output errors.
+</li>
+<li>
+Re-run the command that failed to ensure that the errors are gone.
+</li>
+<li>
+Used the <b>fix</b> and <b>scrub</b> commands to restore any files that needed
+to be recovered to clear any marked bad sectors.
+</li>
+</ul>
+<p>If the underlying cause of the input/output errors is not resolved,
+the errors will eventually reappear.
 </p></div>
 <div class="manual-section-level-1">
 <h1 id="sec6" class="manual-title-level-1">
@@ -395,14 +552,18 @@ flag is manually enabled in this file.
 </p><p>operational settings like maintenance schedules, scrub intensities,
 and disk monitoring intervals. These parameters are fully
 accessible and can be modified in real-time via the API.
-Changes made through the REST interface are instantly applied
-to the running process and persisted back to this file while
-preserving all existing manual comments.
-</p><p>To make changes to the <b>/etc/snapraidd.conf</b> file effective, you must
-either restart the daemon or send a SIGHUP signal to the running process.
-This is required for any manual edit to ensure the daemon's memory state
-stays in sync with the file and to prevent the API from accidentally
-overwriting your changes.
+Changes made through the REST interface are applied to
+the running process and written back to this file
+while preserving all existing manual comments.
+</p><p>Configuration changes are not applied atomically to all runtime components
+and existing operations. A successful configuration update means that
+the new configuration has been accepted, but does not guarantee that
+every component or previously scheduled task has already switched to it.
+</p><p>After manually editing <b>/etc/snapraidd.conf</b>, apply the change before
+making configuration changes through the API to prevent the daemon from
+overwriting the manual edit with its memory state. Runtime-reloadable
+options can be applied with a SIGHUP signal. Changes to <b>sys_*</b> options
+require a daemon restart because a SIGHUP that changes them is rejected.
 </p><p>Example:
 </p><pre>
 sudo killall -HUP snapraidd
@@ -416,9 +577,11 @@ System
 </h2>
 <p>These settings control the core execution environment and the
 underlying daemon.
-These options are not visible or modifiable via the REST API.
-They require a manual edit of the configuration file and a
-configuration reload (SIGHUP) or daemon restart to apply.
+</p><p>These options are not visible or modifiable via the REST API.
+All <b>sys_*</b> options are read at daemon startup and changing any
+of them requires a daemon restart. A SIGHUP reload which changes
+a <b>sys_*</b> option is rejected and the previous configuration
+remains active.
 </p><div class="manual-section-level-3">
 <h3 id="sec6-1-1" class="manual-title-level-3">
 sys_engine
@@ -450,14 +613,103 @@ sys_log_retention_days
 age at which old command logs are deleted. Logs are kept indefinitely
 if this is set to 0 or left unset.
 </p></div>
+<div class="manual-section-level-3">
+<h3 id="sec6-1-4" class="manual-title-level-3">
+sys_log_compression
+</h3>
+<p>Enables compression of individual SnapRAID task log files in gzip (.gz)
+format.
+</p><p>Setting this option to 1 enables gzip compression, saving files with the
+.log.gz extension. If set to 0 or left empty (the default), log files are
+saved as plain text with the .log extension.
+</p><p>Gzip compression requires the daemon to be built with zlib support. If
+compression is enabled on a build without zlib, the daemon logs an error
+and falls back to uncompressed logs.
+</p><p>Changing this option only affects newly created task logs. Existing logs
+(whether uncompressed .log or compressed .log.gz) continue to be read
+transparently by the daemon when reconstructing array history, and are
+purged by sys_log_retention_days regardless of format.
+</p></div>
+<div class="manual-section-level-3">
+<h3 id="sec6-1-5" class="manual-title-level-3">
+sys_shutdown_on
+</h3>
+<p>A comma-separated list of events that trigger an automatic system shutdown.
+</p><p>Supported events are:
+</p><div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+maintenance
+</div><div class="manual-tag-description">
+Shuts down the host after scheduled maintenance finishes
+its finalization. Post-hooks and Docker unpause operations
+are executed, and the final report is sent, before initiating
+the shutdown, even if intermediate dependent phases (such as
+scrub) were canceled due to errors. If an emergency shutdown
+is triggered by a prefail or failing health state, post-hooks
+and Docker unpause operations are not executed.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+prefail/failing
+</div><div class="manual-tag-description">
+Shuts down the host immediately when array health
+transitions to prefail/failing.
+</div>
+</div>
+</div>
+<p>For both prefail and failing emergency shutdowns, if the daemon is still
+able to process runner tasks, it first sends the emergency report.
+Queued tasks and post-hooks are canceled, and paused Docker containers are
+not unpaused, to prevent further disk activity. If daemon termination or
+a fatal daemon failure is already in progress, the emergency shutdown
+may proceed without sending the report.
+</p><p>Spaces around commas are ignored.
+</p><p>Health-based shutdowns (prefail and failing) trigger strictly on a
+state transition from an established health state. If the array is
+already in a prefail or failing state when the daemon starts,
+shutdown is not triggered. This allows you to start the machine and
+perform manual maintenance or recovery without triggering an
+immediate shutdown.
+</p></div>
+<div class="manual-section-level-3">
+<h3 id="sec6-1-6" class="manual-title-level-3">
+sys_smartignore
+</h3>
+<p>Allows you to ignore specific SMART attributes for one or more disks.
+Changes of ignored attributes are omitted from status reports and do not
+generate warning notifications. The attributes continue to be collected
+and are exported in the REST API as ignored. Typical attributes to ignore
+are Spin_Up_Time and Raw_Read_Error_Rate. You can also use <b>Error_Protocol</b>
+and <b>Error_Medium</b> to ignore device-level protocol or medium errors.
+</p><p>Normalized-value degradations of critical PREFAIL SMART attributes generate
+warning notifications. Normalized-value changes of non-critical PREFAIL
+attributes are informational, even when not ignored. sys_smartignore can
+still be used to hide noisy vendor-specific changes from reports and to
+suppress warnings from actionable raw/error-counter changes.
+</p><p>sys_smartignore does not affect SMART failure states reported by smartctl.
+If an attribute is reported as currently failed, it will still trigger a
+critical notification and degrade the array health.
+</p><p>The option is a sequence of words separated by spaces.
+The first word is a disk name or '*' for all disks.
+The subsequent words are attribute numbers or names (case-insensitive).
+</p><p>Examples:
+</p><pre>
+sys_smartignore=parity 188 Command_Timeout
+sys_smartignore=d1 Error_Protocol
+sys_smartignore=* Spin_Up_Time Raw_Read_Error_Rate
+</pre>
+</div>
 </div>
 <div class="manual-section-level-2">
 <h2 id="sec6-2" class="manual-title-level-2">
 Network &amp; REST API
 </h2>
-<p>These settings control the network interface. These options are not
-visible from the REST API. They require a manual edit of the
-configuration file and a configuration reload (SIGHUP) to apply.
+<p>These settings control the network interface.
+</p><p>These options are not visible or modifiable via the REST API.
+They require a manual edit of the configuration file and a
+configuration reload (SIGHUP) or daemon restart to apply.
 </p><div class="manual-section-level-3">
 <h3 id="sec6-2-1" class="manual-title-level-3">
 net_enabled
@@ -605,6 +857,13 @@ The absolute path to the hook script.
 </div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
+hook_docker_pause
+</div><div class="manual-tag-description">
+The docker containers to pause.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
 notify_run_as_user
 </div><div class="manual-tag-description">
 The account used for notification commands.
@@ -615,6 +874,14 @@ The account used for notification commands.
 notify_heartbeat
 </div><div class="manual-tag-description">
 The command used for health monitoring pings.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+notify_start
+</div><div class="manual-tag-description">
+The command used to notify the start of maintenance, heal,
+undelete, and refresh tasks.
 </div>
 </div>
 <div class="manual-tag-entry">
@@ -647,7 +914,7 @@ rules:
 <div class="manual-tag-name">
 ZIP_Filename
 </div><div class="manual-tag-description">
-If a simple filename is provided (e.g., commander.zip),
+If a simple filename is provided (e.g., commander.zip or brutale.zip),
 the daemon searches for it in $PREFIX/share/snapraidd/ or
 /usr/share/snapraidd/.
 </div>
@@ -683,6 +950,32 @@ UI until the daemon is restarted. This behavior can be bypassed by using
 the -N, --no-cache option during daemon startup, which is recommended
 for development environments only.
 </p></div>
+<div class="manual-section-level-3">
+<h3 id="sec6-2-8" class="manual-title-level-3">
+net_auth_credential
+</h3>
+<p>Specifies the credentials required to access the REST API and dashboard
+via HTTP Basic Authentication. If empty or omitted, authentication is
+disabled.
+</p><p>The credentials must be formatted as:
+</p><pre>
+username:$argon2id$v=19$m=65536,t=3,p=1$salt_base64$hash_base64
+</pre>
+<p>This is calculated using Argon2id with 64MiB of memory cost (m=65536),
+3 iterations (t=3), and 1 thread (p=1).
+</p><p>A secure configuration line can be generated by running the daemon with
+the <b>-g, --gen-auth</b> command line argument.
+</p><p>Note that the <b>/metrics</b> endpoint is exempt from authentication to
+support unauthenticated scraping by Prometheus or other monitoring tools.
+</p><p>WARNING: Basic Authentication transmits credentials in plaintext (Base64)
+over the network. Using this over unencrypted HTTP is NOT secure.
+You should deploy an HTTPS encryption layer (such as a reverse proxy
+like Caddy, Nginx, or Traefik) or restrict network access to a trusted,
+secure network (e.g., using a VPN or Tailscale).
+</p><p>This option is security-sensitive and cannot be modified via the REST
+API. It requires a manual edit and a configuration reload (SIGHUP)
+to apply.
+</p></div>
 </div>
 <div class="manual-section-level-2">
 <h2 id="sec6-3" class="manual-title-level-2">
@@ -694,6 +987,17 @@ the SnapRAID Daemon.
 net_config_full_access option is enabled.
 </p><div class="manual-section-level-3">
 <h3 id="sec6-3-1" class="manual-title-level-3">
+check_updates
+</h3>
+<p>Enables (1) or disables (0) periodic check for daemon and engine updates
+on GitHub via the curl CLI tool.
+If enabled, the daemon queries the GitHub API every 12 hours in the
+background. The WebUI displays the update status and alerts you when
+new versions are available, and status reports include an update notice.
+If missing or set to 0, update checking is disabled.
+</p></div>
+<div class="manual-section-level-3">
+<h3 id="sec6-3-2" class="manual-title-level-3">
 maintenance_schedule
 </h3>
 <p>Defines the timing for the automated maintenance sequence, which
@@ -708,7 +1012,7 @@ represented by their short names (Mon, Tue, Wed, Thu, Fri, Sat, Sun).
 "Mon 03:00, Thu 04:00" - Run every Monday at 3 AM and Thursday at 4 AM.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec6-3-2" class="manual-title-level-3">
+<h3 id="sec6-3-3" class="manual-title-level-3">
 sync_threshold_deletes
 </h3>
 <p>Sets the number of deleted or missing files that will trigger an automatic
@@ -720,7 +1024,7 @@ enforced during automated maintenance schedules and tasks initiated
 through the Web UI.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec6-3-3" class="manual-title-level-3">
+<h3 id="sec6-3-4" class="manual-title-level-3">
 sync_threshold_updates
 </h3>
 <p>Sets the number of modified or updated files that will trigger an
@@ -733,7 +1037,7 @@ during automated maintenance schedules and tasks initiated through
 the Web UI.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec6-3-4" class="manual-title-level-3">
+<h3 id="sec6-3-5" class="manual-title-level-3">
 sync_prehash
 </h3>
 <p>If set to 1, the sync command is executed with the --prehash option.
@@ -745,7 +1049,7 @@ under critical system stress.
 If missing or set to 0, no pre-hashing is performed.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec6-3-5" class="manual-title-level-3">
+<h3 id="sec6-3-6" class="manual-title-level-3">
 sync_prevent_truncations
 </h3>
 <p>If set to 1, the sync is halted to prevent overwriting
@@ -756,7 +1060,7 @@ If this is missing or set to 0, the sync is allowed
 to proceed even if files have shrunk to zero size.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec6-3-6" class="manual-title-level-3">
+<h3 id="sec6-3-7" class="manual-title-level-3">
 scrub_percentage
 </h3>
 <p>Determines the portion of the array verified after a successful sync.
@@ -765,7 +1069,7 @@ You may use decimal points to specify fractions of a percent
 If missing or set to 0, the scrub phase is skipped entirely.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec6-3-7" class="manual-title-level-3">
+<h3 id="sec6-3-8" class="manual-title-level-3">
 scrub_older_than
 </h3>
 <p>Specifies that only blocks older than the defined number of days
@@ -774,7 +1078,7 @@ older data while skipping recently synced blocks.
 If missing or set to 0, no age-based filtering is applied.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec6-3-8" class="manual-title-level-3">
+<h3 id="sec6-3-9" class="manual-title-level-3">
 touch_zero_subseconds
 </h3>
 <p>If set to 1, a specific timestamp alignment pass is performed
@@ -795,7 +1099,7 @@ file blocks.
 <h2 id="sec6-4" class="manual-title-level-2">
 Disk Monitoring &amp; Power
 </h2>
-<p>The following settings manage how the daemon interacts with physical
+<p>These settings manage how the daemon interacts with physical
 hardware to monitor disk health and optimize energy consumption
 </p><div class="manual-section-level-3">
 <h3 id="sec6-4-1" class="manual-title-level-3">
@@ -815,6 +1119,12 @@ the specified duration of inactivity.
 </p><p>Note that this applies only to <b>data</b> and <b>parity</b> disks configured in
 <b>snapraid.conf</b>. Any other disks, including <b>extra</b> disks, are not
 subject to spindown.
+</p><p>You can specify a single integer (e.g. 15) to apply the timeout to both
+data and parity disks, or two comma-separated integers (e.g. 15, 30)
+to set separate timeouts for data and parity disks respectively.
+A value of 0 disables spindown for that specific disk type. For example,
+<b>0, 30</b> disables spindown for data disks but spins down parity disks
+after 30 idle minutes.
 </p><p>This timer monitors the global activity of the disks across the entire
 operating system. A disk will only be spun down if it has remained
 completely idle for the specified period. If any other application,
@@ -829,39 +1139,268 @@ hook_script
 <p>Defines an absolute path to an executable script to be triggered by
 daemon events.
 </p><p>The script is executed with a single positional argument that
-represents the lifecycle stage of the task currently being processed
-by the daemon:
+represents the current stage of a hook lifecycle. A hook lifecycle
+is an uninterrupted session covering one or more consecutive tasks
+that access the array:
 </p><div class="manual-tag-list">
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 task-begin
 </div><div class="manual-tag-description">
-Triggered immediately before the daemon begins a
-scheduled sequence of actions that access the array
-(e.g., sync, scrub, or maintenance).
+Triggered immediately before the daemon begins an
+array-access session (e.g., sync, scrub, or maintenance).
+This starts a hook lifecycle, which may span multiple
+consecutive task groups.
 </div>
 </div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 task-end
 </div><div class="manual-tag-description">
-Triggered after the entire sequence of actions has
-concluded successfully.
+Triggered after the session has concluded successfully.
+This closes the matching hook lifecycle and uses the same
+hook configuration snapshot captured when <b>task-begin</b> was
+executed.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+task-error
+</div><div class="manual-tag-description">
+Triggered if the session is aborted, interrupted, or
+encounters an operational failure. This closes the active hook
+lifecycle using the same hook configuration snapshot and
+acquired-resource state captured when <b>task-begin</b> was executed.
 </div>
 </div>
 </div>
-<p>task-error: Triggered if the task sequence is aborted, interrupted,
-</p><p>or encounters an operational failure.
-</p><p>Note that 'task-end' reflects only whether the task finished its
-execution cycle. It does not necessarily reflect hardware or data
-integrity. For example, a sync command may return 'task-end' even if
-the array is technically in a corrupt state, provided the sync process
-itself finished without crashing.
+<p>If <b>task-begin</b> fails, <b>task-error</b> is not invoked. The <b>task-begin</b>
+handler is responsible for reverting any partial changes before
+returning an error.
+</p><p>Hook lifecycle boundaries do not necessarily match task group boundaries.
+When consecutive array-access tasks can safely share the same paused
+state (such as paused Docker containers and pre-hook preparations), the
+daemon may postpone hook cleanup and keep that state active across the
+boundary between two task groups. As a result, a <b>task-begin</b> event may
+occur while processing one group and the corresponding <b>task-end</b> or
+<b>task-error</b> event may occur only after tasks belonging to a subsequent
+group have completed.
+</p><p>The hook configuration is snapshotted when the hook lifecycle begins
+and remains associated with that lifecycle until its cleanup attempt
+completes.
+Configuration reloads do not alter an already active hook lifecycle.
+In particular, the corresponding <b>task-end</b> or <b>task-error</b> hook,
+the post-script, and Docker cleanup always use the same hook configuration
+and acquired-resource state established by the matching <b>task-begin</b>,
+even if the daemon configuration changes in the meantime.
+</p><p>A new configuration becomes effective for hooks when a new hook lifecycle
+is started after the cleanup attempt for the previous lifecycle has
+completed.
+</p><p>Note that 'task-end' reflects only whether the hook lifecycle finished
+its execution cycle successfully. It does not necessarily reflect
+hardware or data integrity. For example, a sync command may return
+'task-end' even if the array is technically in a corrupt state, provided
+the sync process itself finished without crashing.
 </p><p>Future versions of the daemon will introduce new event types that may
 not relate to array access or follow the <b>task-</b> naming convention.
 It is strongly recommended to implement a default handler to ignore
-unrecognized events
-</p><p>SECURITY REQUIREMENTS:
+unrecognized events.
+</p><p>The script is executed with several environment variables providing details
+about the execution context:
+</p><div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+SNAPRAID_EVENT
+</div><div class="manual-tag-description">
+The event type (<b>task-begin</b>, <b>task-end</b> or <b>task-error</b>).
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+SNAPRAID_NUMBER
+</div><div class="manual-tag-description">
+The unique sequential ID of the task.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+SNAPRAID_COMMAND
+</div><div class="manual-tag-description">
+The specific command name (e.g. <b>sync</b>, <b>scrub</b>, <b>diff</b>).
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+SNAPRAID_HIGH_COMMAND
+</div><div class="manual-tag-description">
+The high-level command if part of a group (e.g.
+<b>maintenance</b>, <b>heal</b> or <b>undelete</b>).
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+SNAPRAID_LOG_FILE
+</div><div class="manual-tag-description">
+Path to the task execution log file.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+SNAPRAID_RUN_AS_USER
+</div><div class="manual-tag-description">
+The user account configured for running the hooks.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+SNAPRAID_DAEMON_CONFIG
+</div><div class="manual-tag-description">
+Path to the daemon configuration file.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+SNAPRAID_ENGINE_CONFIG
+</div><div class="manual-tag-description">
+Path to the SnapRAID engine configuration file.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+SNAPRAID_INSTANCE
+</div><div class="manual-tag-description">
+The name of the daemon instance (if specified via -i).
+</div>
+</div>
+</div>
+<p>During <b>task-end</b> and <b>task-error</b> events, the following additional
+variables are also available:
+</p><div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+SNAPRAID_ARRAY_HEALTH
+</div><div class="manual-tag-description">
+The health classification of the array after the
+task (<b>passed</b>, <b>prefail</b>, <b>failing</b>, <b>degraded</b>, <b>corrupt</b> or <b>pending</b>).
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+SNAPRAID_HEALTH
+</div><div class="manual-tag-description">
+The health classification of the task.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+SNAPRAID_STATUS
+</div><div class="manual-tag-description">
+The exit status of the task (<b>terminated</b>, <b>signaled</b>, <b>canceled</b>).
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+SNAPRAID_EXIT_CODE
+</div><div class="manual-tag-description">
+The exit code of the task if <b>terminated</b>.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+SNAPRAID_EXIT_SIGNAL
+</div><div class="manual-tag-description">
+The termination signal of task if <b>signaled</b>.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+SNAPRAID_ELAPSED_SECONDS
+</div><div class="manual-tag-description">
+The total task execution time in seconds.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+SNAPRAID_ERROR_IO
+</div><div class="manual-tag-description">
+Count of input/output errors during the task.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+SNAPRAID_ERROR_DATA
+</div><div class="manual-tag-description">
+Count of data errors during the task.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+SNAPRAID_ERROR_SOFT
+</div><div class="manual-tag-description">
+Count of soft errors during the task.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+SNAPRAID_ERROR_RECOVERED
+</div><div class="manual-tag-description">
+Count of recovered blocks/errors during the task.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+SNAPRAID_ERROR_UNRECOVERABLE
+</div><div class="manual-tag-description">
+Count of unrecoverable blocks/errors during the task.
+</div>
+</div>
+</div>
+<p>For <b>diff</b> and <b>sync</b> commands, modification metrics are also exposed:
+</p><div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+SNAPRAID_DIFF_EQUAL
+</div><div class="manual-tag-description">
+Count of equal/unchanged files.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+SNAPRAID_DIFF_ADDED
+</div><div class="manual-tag-description">
+Count of added files.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+SNAPRAID_DIFF_REMOVED
+</div><div class="manual-tag-description">
+Count of removed files.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+SNAPRAID_DIFF_UPDATED
+</div><div class="manual-tag-description">
+Count of updated/modified files.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+SNAPRAID_DIFF_MOVED
+</div><div class="manual-tag-description">
+Count of moved files.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+SNAPRAID_DIFF_COPIED
+</div><div class="manual-tag-description">
+Count of copied files.
+</div>
+</div>
+</div>
+<p>SECURITY REQUIREMENTS:
 * The script path MUST be absolute (must start with /).
 * The script AND the directory containing the script MUST be owned by
 </p><p>the daemon's real UID, effective UID, or root (UID 0).
@@ -891,11 +1430,25 @@ the exact reason.
 </p></div>
 <div class="manual-section-level-3">
 <h3 id="sec6-4-4" class="manual-title-level-3">
+hook_docker_pause
+</h3>
+<p>Specifies a comma-separated list of Docker containers to pause during
+tasks that access the array (e.g., plex, transmission).
+</p><p>At the start of a hook lifecycle (immediately before executing the
+<b>task-begin</b> hook), the daemon pauses only the listed containers that
+are running and not already paused. When the hook lifecycle concludes,
+it attempts to unpause only those containers. Containers that were
+already paused remain paused, and stopped containers remain stopped.
+</p><p>If the unpause operation fails, the hook cleanup is reported as failed.
+The daemon does not retry the unpause operation in a later hook lifecycle.
+</p></div>
+<div class="manual-section-level-3">
+<h3 id="sec6-4-5" class="manual-title-level-3">
 hook_run_as_user
 </h3>
 <p>Specifies the user account used to execute the hook_script.
 If this is missing or blank, the script is executed with the
-same privileges as the daemon process.
+daemon's original startup privileges.
 </p><p>On Linux, <b>nobody</b> is the standard choice for maximum isolation. Note that
 using <b>nobody</b> may prevent certain tools, such as Docker, from functioning
 correctly due to restricted permissions. Ensure you are aware of these
@@ -941,6 +1494,14 @@ or the task is failing.
 </p></div>
 <div class="manual-section-level-3">
 <h3 id="sec6-5-4" class="manual-title-level-3">
+notify_start
+</h3>
+<p>Specifies a command triggered at the start of maintenance, heal,
+undelete, and refresh tasks. The daemon pipes a simple plain-text start
+message directly into the command's stdin.
+</p></div>
+<div class="manual-section-level-3">
+<h3 id="sec6-5-5" class="manual-title-level-3">
 notify_result
 </h3>
 <p>Specifies a command triggered after every report task generated by
@@ -1012,8 +1573,25 @@ ntfy priority (urgent, high, default, low, min).
 ntfy tag (rotating_light, warning, default, -1, +1, heavy_check_mark).
 </div>
 </div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+%h
+</div><div class="manual-tag-description">
+high-level task name (maintenance, heal, undelete, refresh).
 </div>
-<p>If the command contains --mail-from or --mail-rcpt, the daemon
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+%c
+</div><div class="manual-tag-description">
+resulting task/group exit code; negative values are daemon-defined
+failures (-1 execution/infrastructure, -2 pre-hook, -3 post-hook).
+</div>
+</div>
+</div>
+<p>The report contents are not available as a placeholder. They are passed
+to the command through standard input (stdin).
+</p><p>If the command contains --mail-from or --mail-rcpt, the daemon
 automatically prepends standard email headers (From, To, Subject)
 followed by a blank line to the report text. This ensures
 compatibility with curl's SMTP engine.
@@ -1051,21 +1629,25 @@ password your-16-char-app-password-without-spaces
 </pre>
 </div>
 <div class="manual-section-level-3">
-<h3 id="sec6-5-5" class="manual-title-level-3">
+<h3 id="sec6-5-6" class="manual-title-level-3">
 notify_result_level
 </h3>
 <p>Controls the filter for <b>notify_result</b>. The notification is sent only
 if the task result is equal to or more severe than this level.
 Valid values are <b>info</b> (always send), <b>warning</b>, <b>error</b>, and <b>critical</b>.
-The default is <b>error</b>.
+The default is <b>warning</b>.
+</p><p>Note that SMART attribute changes are rated as <b>warning</b>.
+Problematic array health states (<b>CORRUPT</b>, <b>DEGRADED</b>, <b>PREFAIL</b>, and
+<b>FAILING</b>) are rated as <b>critical</b>. The <b>PENDING</b> state is informational
+and does not by itself increase the notification severity.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec6-5-6" class="manual-title-level-3">
+<h3 id="sec6-5-7" class="manual-title-level-3">
 notify_run_as_user
 </h3>
-<p>The user account used for notify_heartbeat, notify_result and mail
+<p>The user account used for notify_heartbeat, notify_start, notify_result and mail
 notifications. If missing or left blank, the task runs with the
-daemon's current privileges.
+daemon's original startup privileges.
 </p><p>On Linux, <b>nobody</b> is the standard choice for maximum isolation. However,
 while sufficient for simple <b>curl</b> commands, it may cause failures for
 mailers (like sendmail or postfix) that require specific group memberships
@@ -1077,7 +1659,7 @@ Alternatively, <b>NetworkService</b> can be used if the script specifically
 requires the computer's network identity to access remote resources.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec6-5-7" class="manual-title-level-3">
+<h3 id="sec6-5-8" class="manual-title-level-3">
 notify_differences
 </h3>
 <p>If set to 1, the daemon logs a detailed list of file changes discovered
@@ -1154,6 +1736,11 @@ for monitoring and controlling the parity array.
 specific error codes, please refer to the <b>snapraidd.yaml</b> OpenAPI
 specification file typically located in the documentation directory of
 the installation.
+</p><p>All state-changing API requests require the <b>Content-Type</b> header to be
+set to <b>application/json</b>, even when the request body is empty. This
+ensures that browser cross-origin requests require a CORS preflight,
+providing protection against Cross-Site Request Forgery (CSRF).
+Chunked request bodies are not supported.
 </p><div class="manual-section-level-2">
 <h2 id="sec7-1" class="manual-title-level-2">
 Maintenance &amp; Recovery
@@ -1172,13 +1759,16 @@ notification containing the operation's results.
 a parity synchronization, followed by a data integrity scrub, and
 concludes by issuing a system-wide health report.
 This is the primary endpoint for routine array upkeep.
+The operation is aborted if the array is in a <b>DEGRADED</b>, <b>PREFAIL</b> or
+<b>FAILING</b> health state.
 This task is subject to the <b>sync_threshold_deletes</b> and
 <b>sync_threshold_updates</b> safety checks defined in the configuration.
 The percentage of the array checked and the age filter are determined
 by the <b>scrub_percentage</b> and <b>scrub_older_than</b> settings.
 </p><p>Example:
 </p><pre>
-curl -X POST <a href="http://localhost:7627/snapraid/v1/maintenance">http://localhost:7627/snapraid/v1/maintenance</a>
+curl <a href="http://localhost:7627/snapraid/v1/maintenance">http://localhost:7627/snapraid/v1/maintenance</a> \
+&nbsp;&nbsp;&nbsp;&nbsp;--json '{}'
 </pre>
 <p>It is implemented with the sequence of commands: up, diff, sync, scrub, and
 report.
@@ -1194,7 +1784,8 @@ blocks to ensure the recovery was successful, and concludes by issuing
 a report of the result.
 </p><p>Example:
 </p><pre>
-curl -X POST <a href="http://localhost:7627/snapraid/v1/heal">http://localhost:7627/snapraid/v1/heal</a>
+curl <a href="http://localhost:7627/snapraid/v1/heal">http://localhost:7627/snapraid/v1/heal</a> \
+&nbsp;&nbsp;&nbsp;&nbsp;--json '{}'
 </pre>
 <p>It is implemented with the sequence of commands: up, fix -e, scrub -p bad,
 and report.
@@ -1209,9 +1800,8 @@ This is used to roll back accidental deletions to the state of the
 last successful synchronization.
 </p><p>Example:
 </p><pre>
-curl -s -X POST <a href="http://localhost:7627/snapraid/v1/undelete">http://localhost:7627/snapraid/v1/undelete</a> \
-&nbsp;&nbsp;&nbsp;&nbsp;-H "Content-Type: application/json" \
-&nbsp;&nbsp;&nbsp;&nbsp;-d '{ "filters": [ "*.txt" ] }'
+curl <a href="http://localhost:7627/snapraid/v1/undelete">http://localhost:7627/snapraid/v1/undelete</a> \
+&nbsp;&nbsp;&nbsp;&nbsp;--json '{ "filters": [ "*.txt" ] }'
 </pre>
 <p>It is implemented with the sequence of commands: up, fix -m -f ...,
 and report.
@@ -1227,7 +1817,8 @@ down_idle command to disks that have exceeded the
 generated.
 </p><p>Example:
 </p><pre>
-curl -X POST <a href="http://localhost:7627/snapraid/v1/suspend_idle">http://localhost:7627/snapraid/v1/suspend_idle</a>
+curl <a href="http://localhost:7627/snapraid/v1/suspend_idle">http://localhost:7627/snapraid/v1/suspend_idle</a> \
+&nbsp;&nbsp;&nbsp;&nbsp;--json '{}'
 </pre>
 <p>It is implemented with the sequence of commands: probe, down_idle.
 </p></div>
@@ -1242,12 +1833,26 @@ a failed disk, fixing UUID mismatches, or manually updating configuration).
 </p><p>The operation executes a <b>read</b> task to load the current content file
 data, followed by a <b>report</b> task to evaluate and broadcast the
 resulting array health.
-</p><p>This is specifically useful for clearing <b>FAILING</b> or <b>PREFAIL</b> modes
+</p><p>This is specifically useful for clearing <b>FAILING</b>, <b>PREFAIL</b> or <b>DEGRADED</b> modes
 once the underlying hardware or configuration issues have been
 resolved manually.
 </p><p>Example:
 </p><pre>
-curl -X POST <a href="http://localhost:7627/snapraid/v1/refresh">http://localhost:7627/snapraid/v1/refresh</a>
+curl <a href="http://localhost:7627/snapraid/v1/refresh">http://localhost:7627/snapraid/v1/refresh</a> \
+&nbsp;&nbsp;&nbsp;&nbsp;--json '{}'
+</pre>
+</div>
+<div class="manual-section-level-3">
+<h3 id="sec7-1-6" class="manual-title-level-3">
+/snapraid/v1/report
+</h3>
+<p>Generates a status report describing the current array state and health.
+The report task is scheduled asynchronously and is executed according to
+the normal task queue semantics.
+</p><p>Example:
+</p><pre>
+curl <a href="http://localhost:7627/snapraid/v1/report">http://localhost:7627/snapraid/v1/report</a> \
+&nbsp;&nbsp;&nbsp;&nbsp;--json '{}'
 </pre>
 </div>
 </div>
@@ -1272,7 +1877,7 @@ curl -s <a href="http://localhost:7627/snapraid/v1/array">http://localhost:7627/
 </div>
 <div class="manual-section-level-3">
 <h3 id="sec7-2-2" class="manual-title-level-3">
-/snapraid/v1/disks
+/snapraid/v2/disks
 </h3>
 <p>Returns a comprehensive inventory of every physical disk associated
 with the SnapRAID configuration. It reports real-time hardware
@@ -1280,7 +1885,7 @@ metrics including SMART health status, temperature, and the current
 power state (Active/Spin-up vs. Standby/Spin-down).
 </p><p>Example:
 </p><pre>
-curl -s <a href="http://localhost:7627/snapraid/v1/disks">http://localhost:7627/snapraid/v1/disks</a> | jq
+curl -s <a href="http://localhost:7627/snapraid/v2/disks">http://localhost:7627/snapraid/v2/disks</a> | jq
 </pre>
 </div>
 </div>
@@ -1292,7 +1897,7 @@ Runtime Configuration
 operational parameters of the daemon in real-time.
 </p><div class="manual-section-level-3">
 <h3 id="sec7-3-1" class="manual-title-level-3">
-/snapraid/v1/config
+/snapraid/v2/config
 </h3>
 <p>Retrieves and updates the current runtime configuration parameters of
 the snapraidd service. Changes are applied instantly to memory and
@@ -1301,9 +1906,9 @@ Note that certain networking and security settings are read-only and
 require a manual edit and SIGHUP.
 </p><p>Example:
 </p><pre>
-curl -X GET <a href="http://localhost:7627/snapraid/v1/config">http://localhost:7627/snapraid/v1/config</a> | jq
-curl -X PATCH <a href="http://localhost:7627/snapraid/v1/config">http://localhost:7627/snapraid/v1/config</a> \
-&nbsp;&nbsp;&nbsp;&nbsp;-d '{ "probe_interval_minutes": 10 }'
+curl -s <a href="http://localhost:7627/snapraid/v2/config">http://localhost:7627/snapraid/v2/config</a> | jq
+curl -X PATCH <a href="http://localhost:7627/snapraid/v2/config">http://localhost:7627/snapraid/v2/config</a> \
+&nbsp;&nbsp;&nbsp;&nbsp;--json '{ "probe_interval_minutes": 10 }'
 </pre>
 </div>
 </div>
@@ -1349,7 +1954,21 @@ curl -s <a href="http://localhost:7627/snapraid/v1/tasks">http://localhost:7627/
 sending a SIGTERM signal to the background process.
 </p><p>Example:
 </p><pre>
-curl -X POST <a href="http://localhost:7627/snapraid/v1/stop">http://localhost:7627/snapraid/v1/stop</a>
+curl <a href="http://localhost:7627/snapraid/v1/stop">http://localhost:7627/snapraid/v1/stop</a> \
+&nbsp;&nbsp;&nbsp;&nbsp;--json '{}'
+</pre>
+</div>
+<div class="manual-section-level-3">
+<h3 id="sec7-4-4" class="manual-title-level-3">
+/snapraid/v1/clear
+</h3>
+<p>Cancels all tasks currently waiting in the execution queue, moving
+them to the task execution history with canceled status. Any task
+currently running is unaffected.
+</p><p>Example:
+</p><pre>
+curl <a href="http://localhost:7627/snapraid/v1/clear">http://localhost:7627/snapraid/v1/clear</a> \
+&nbsp;&nbsp;&nbsp;&nbsp;--json '{}'
 </pre>
 </div>
 </div>
@@ -1378,7 +1997,7 @@ because they are reset if the daemon restarts. You should compare
 them only for equality.
 </p><p>Example:
 </p><pre>
-curl -X GET <a href="http://localhost:7627/snapraid/v1/state">http://localhost:7627/snapraid/v1/state</a> | jq
+curl -s <a href="http://localhost:7627/snapraid/v1/state">http://localhost:7627/snapraid/v1/state</a> | jq
 </pre>
 </div>
 </div>
@@ -1408,8 +2027,8 @@ the generation of a report that reflects the final state of the system.
 <p>Queues a sequence of standard SnapRAID operations.
 </p><p>Example:
 </p><pre>
-curl -X POST <a href="http://localhost:7627/snapraid/v1/schedule">http://localhost:7627/snapraid/v1/schedule</a> \
-&nbsp;&nbsp;&nbsp;&nbsp;-d '{"tasks": [{"command": "diff"}, {"command": "report"}]}'
+curl <a href="http://localhost:7627/snapraid/v1/schedule">http://localhost:7627/snapraid/v1/schedule</a> \
+&nbsp;&nbsp;&nbsp;&nbsp;--json '{"tasks": [{"command": "diff"}, {"command": "report"}]}'
 </pre>
 <p>Supported Commands:
 </p><div class="manual-tag-list">
@@ -1496,7 +2115,10 @@ the parity information.
 report
 </div><div class="manual-tag-description">
 Generates a comprehensive summary of the last operations and
-array statistics.
+array statistics. When a fix command has been executed, the
+report includes a recovery section listing all files recovered
+or unrecoverable since the last sync, reflecting the current
+repair status of the array.
 </div>
 </div>
 <div class="manual-tag-entry">
@@ -1513,6 +2135,104 @@ have exceeded the <b>spindown_idle_minutes</b> threshold.
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec8" class="manual-title-level-1">
+Multiple arrays in Linux systemd
+</h1>
+<p>To manage multiple independent SnapRAID arrays on a single systemd
+host, you can run multiple daemon instances using the systemd
+template unit <b>snapraidd@.service</b>.
+</p><p>Each instance runs isolated under its own configuration, listening port,
+and SnapRAID array config.
+</p><p>To configure multiple instances:
+</p><p>Create distinct daemon configuration files:
+</p><pre>
+cp /etc/snapraidd.conf /etc/snapraidd-main.conf
+cp /etc/snapraidd.conf /etc/snapraidd-backup.conf
+</pre>
+<p>Edit <b>/etc/snapraidd-main.conf</b> to set a custom port and log folder:
+</p><pre>
+net_port = 127.0.0.1:7627
+sys_log_directory = /var/log/snapraid/main
+</pre>
+<p>Edit <b>/etc/snapraidd-backup.conf</b> to use a different port and log folder:
+</p><pre>
+net_port = 127.0.0.1:7628
+sys_log_directory = /var/log/snapraid/backup
+</pre>
+<p>Disable the default single-array service (if running):
+</p><pre>
+systemctl disable --now snapraidd.service
+</pre>
+<p>Create distinct SnapRAID engine configuration files for each array,
+e.g. <b>/etc/snapraid-main.conf</b> and <b>/etc/snapraid-backup.conf</b>,
+each pointing to its own set of disks and parity drives.
+</p><p>Enable and start the template instances. The instance name after the
+@ corresponds to the suffix of the config file. For example, <b>main</b>
+will load <b>/etc/snapraidd-main.conf</b> and use <b>/etc/snapraid-main.conf</b>
+as the SnapRAID engine configuration:
+</p><pre>
+systemctl enable --now snapraidd@main
+systemctl enable --now snapraidd@backup
+</pre>
+<p>Access the independent dashboards at:
+</p><pre>
+<a href="http://localhost:7627">http://localhost:7627</a>
+<a href="http://localhost:7628">http://localhost:7628</a>
+</pre>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec9" class="manual-title-level-1">
+Multiple arrays in Windows
+</h1>
+<p>To manage multiple independent SnapRAID arrays on a Windows host,
+you can install multiple distinct Windows service instances of the
+daemon using the <b>--service-install</b> command with the <b>-i</b> option.
+</p><p>Each instance runs under its own configuration and listening port.
+</p><p>To configure multiple instances:
+</p><p>Create distinct daemon configuration files in your installation directory:
+</p><pre>
+copy C:\snapraid\snapraidd.conf C:\snapraid\snapraidd-main.conf
+copy C:\snapraid\snapraidd.conf C:\snapraid\snapraidd-backup.conf
+</pre>
+<p>Edit <b>C:\snapraid\snapraidd-main.conf</b> to set a custom port and log folder:
+</p><pre>
+net_port = 127.0.0.1:7627
+sys_log_directory = C:\snapraid\log\main
+</pre>
+<p>Edit <b>C:\snapraid\snapraidd-backup.conf</b> to use a different port and log folder:
+</p><pre>
+net_port = 127.0.0.1:7628
+sys_log_directory = C:\snapraid\log\backup
+</pre>
+<p>Remove the default service instance (if registered):
+</p><pre>
+C:\snapraid\snapraidd.exe --service-remove
+</pre>
+<p>Create distinct SnapRAID engine configuration files for each array,
+e.g. <b>C:\snapraid\snapraid-main.conf</b> and
+<b>C:\snapraid\snapraid-backup.conf</b>, each pointing to its own set of
+disks and parity drives.
+</p><p>Install the service instances using the <b>--service-install</b> option.
+Use <b>-c</b> to specify the daemon configuration file and <b>-C</b> to specify
+the SnapRAID engine configuration file for each instance:
+</p><pre>
+C:\snapraid\snapraidd.exe --service-install -i main -c C:\snapraid\snapraidd-main.conf -C C:\snapraid\snapraid-main.conf
+C:\snapraid\snapraidd.exe --service-install -i backup -c C:\snapraid\snapraidd-backup.conf -C C:\snapraid\snapraid-backup.conf
+</pre>
+<p>This registers and starts two Windows services named <b>snapraidd-main</b> and
+<b>snapraidd-backup</b> configured to start automatically.
+</p><p>Access the independent dashboards at:
+</p><pre>
+<a href="http://localhost:7627">http://localhost:7627</a>
+<a href="http://localhost:7628">http://localhost:7628</a>
+</pre>
+<p>To remove a service instance, run the <b>--service-remove</b> option:
+</p><pre>
+C:\snapraid\snapraidd.exe --service-remove -i main
+C:\snapraid\snapraidd.exe --service-remove -i backup
+</pre>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec10" class="manual-title-level-1">
 Signals
 </h1>
 <p>This section defines how the daemon responds to standard Unix signals,
@@ -1532,8 +2252,9 @@ service.
 SIGTERM, SIGINT
 </h3>
 <p>Initiates a graceful shutdown. If a task is currently
-running, the daemon attempts to terminate the child process
-before exiting.
+running, the active SnapRAID process is terminated, the
+post-run hook is executed and any paused Docker containers are
+unpaused.
 </p></div>
 <div class="manual-section-level-3">
 <h3 class="manual-title-level-3">
@@ -1547,18 +2268,18 @@ performed.
 </p></div>
 </div>
 <div class="manual-section-level-1">
-<h1 id="sec9" class="manual-title-level-1">
+<h1 id="sec11" class="manual-title-level-1">
 Files
 </h1>
 <p>The following list specifies the default filesystem paths used by the
 daemon for configuration, data persistence, and inter-process communication.
 </p><div class="manual-section-level-2">
-<h2 id="sec9-1" class="manual-title-level-2">
+<h2 id="sec11-1" class="manual-title-level-2">
 Linux
 </h2>
 <p>On Linux and Unix-like systems:
 </p><div class="manual-section-level-3">
-<h3 id="sec9-1-1" class="manual-title-level-3">
+<h3 id="sec11-1-1" class="manual-title-level-3">
 $PREFIX/etc/snapraidd.conf
 </h3>
 <p>The primary configuration file location. The $PREFIX variable
@@ -1568,35 +2289,35 @@ values include <b>/usr/local</b> or <b>/usr</b>. If this file does not
 exist, the daemon falls back to <b>/etc/snapraidd.conf</b>.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec9-1-2" class="manual-title-level-3">
+<h3 id="sec11-1-2" class="manual-title-level-3">
 $PREFIX/share/snapraidd
 </h3>
 <p>The primary system data directory. This is the first location
-searched for the web dashboard ZIP file (e.g., commander.zip).
+searched for the web dashboard ZIP file (e.g., commander.zip or brutale.zip).
 If not found here, the daemon falls back to <b>/usr/share/snapraidd</b>.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec9-1-3" class="manual-title-level-3">
+<h3 id="sec11-1-3" class="manual-title-level-3">
 /etc/snapraidd.conf
 </h3>
 <p>The secondary/system-wide configuration file location, used if
 the prefix-specific file is missing.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec9-1-4" class="manual-title-level-3">
+<h3 id="sec11-1-4" class="manual-title-level-3">
 /usr/share/snapraidd
 </h3>
 <p>The secondary/system-wide data directory, used as a fallback for
 web assets.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec9-1-5" class="manual-title-level-3">
+<h3 id="sec11-1-5" class="manual-title-level-3">
 /run/snapraidd.pid
 </h3>
 <p>Default PID file location.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec9-1-6" class="manual-title-level-3">
+<h3 id="sec11-1-6" class="manual-title-level-3">
 /var/log/snapraid
 </h3>
 <p>Default directory for SnapRAID command execution logs. This
@@ -1607,19 +2328,19 @@ upon the first execution of a SnapRAID command.
 </p></div>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec9-2" class="manual-title-level-2">
+<h2 id="sec11-2" class="manual-title-level-2">
 Windows
 </h2>
 <p>On Windows systems:
 </p><div class="manual-section-level-3">
-<h3 id="sec9-2-1" class="manual-title-level-3">
+<h3 id="sec11-2-1" class="manual-title-level-3">
 snapraidd.conf
 </h3>
 <p>The configuration file is expected to be in the same directory
 where the <b>snapraidd.exe</b> binary is located.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec9-2-2" class="manual-title-level-3">
+<h3 id="sec11-2-2" class="manual-title-level-3">
 log\
 </h3>
 <p>A subdirectory named <b>log</b> within the installation directory is
@@ -1628,13 +2349,170 @@ directory does not exist, the service will attempt to create it
 upon the first execution of a SnapRAID command.
 </p></div>
 <div class="manual-section-level-3">
-<h3 id="sec9-2-3" class="manual-title-level-3">
-commander.zip
+<h3 id="sec11-2-3" class="manual-title-level-3">
+commander.zip or brutale.zip
 </h3>
 <p>The web dashboard assets are searched for in the same directory
 as the executable.
 </p></div>
 </div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec12" class="manual-title-level-1">
+Known Issues
+</h1>
+<div class="manual-section-level-2">
+<h2 id="sec12-1" class="manual-title-level-2">
+Monotonic Time Assumption
+</h2>
+<p>The daemon assumes that time progresses monotonically.
+</p><p>Historical log files are named using the local wall-clock time and are
+replayed in filename order at startup. If the local clock moves
+backwards, for example during a daylight-saving-time transition or
+after a manual clock adjustment, logs created later may be replayed
+before older ones, or two tasks may generate the same log filename.
+</p><p>The daemon also assumes that the modification time of the SnapRAID
+content file increases whenever the file is updated. If the system
+clock moves backwards and the content file is subsequently modified
+by a SnapRAID command executed outside the daemon, the startup probe
+may not detect the newer content state.
+</p><p>For correct state reconstruction, the system clock and local civil
+time are therefore expected not to move backwards while retained
+daemon logs or
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec12-2" class="manual-title-level-2">
+Lifetime Counters Depend on Log Retention
+</h2>
+<p>Some cumulative statistics are reconstructed at startup from the
+retained daemon logs rather than from separately persistent state.
+</p><p>When old logs are removed according to the configured log retention
+period, information contained only in those logs is no longer
+available during a subsequent restart. As a result, cumulative
+counters reconstructed from the available history may decrease or
+restart from zero after older logs have been removed.
+</p><p>Such counters should therefore be interpreted as covering the history
+available in the retained daemon logs, rather than necessarily the
+complete lifetime of the installation.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec12-3" class="manual-title-level-2">
+Incomplete Log Recovery
+</h2>
+<p>Incomplete daemon logs are recovered only up to the last complete
+record that can be parsed successfully.
+</p><p>For plain logs, a final unterminated line is discarded. For compressed
+logs, a truncated gzip stream may still be recovered up to the last
+complete decompressed record available before the truncation.
+</p><p>Any data contained only in an incomplete final record is therefore
+lost during restart reconstruction. Tasks without the required final
+termination information are treated as interrupted according to the
+available log state.
+</p><p>Log recovery should therefore be considered best effort and guarantees
+only the preservation of complete records successfully written before
+the interruption.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec12-4" class="manual-title-level-2">
+Configuration Changes
+</h2>
+<p>Configuration updates and reloads are applied asynchronously and are not
+guaranteed to take effect atomically or immediately across all runtime
+components and operations.
+</p><p>For a short transition period, components and in-flight operations may
+observe settings from different configuration generations at different
+points in their lifecycle, while tasks already scheduled or running may
+continue using settings captured before the change.
+</p><p>This also applies to security-sensitive settings. In-flight REST requests
+and already accepted connections may continue under previously admitted
+conditions or observe security settings from different configuration
+generations.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec12-5" class="manual-title-level-2">
+Non-UTF-8 Paths in the REST API
+</h2>
+<p>On Unix, filesystem paths containing invalid UTF-8 bytes are represented
+in the REST API with Python's surrogateescape encoding (PEP 383).
+Non-decodable bytes in the range 0x80-0xFF are mapped to lone Unicode
+surrogate code points in the range U+DC80-U+DCFF (formatted in JSON as
+<b>\udc80</b>-<b>\udcff</b>), allowing paths with arbitrary byte sequences to be
+represented losslessly across the REST API.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec12-6" class="manual-title-level-2">
+Devices Without Stable or Unique IDs
+</h2>
+<p>The daemon relies on stable and unique device identifiers, such as hardware
+serial numbers, to preserve physical device health information across mapping
+updates.
+</p><p>If a device exposes no stable identifier, or if an identifier is not unique
+across the currently detected devices, it cannot be trusted as a persistent
+physical-device identity. This can happen with virtual disks, certain USB
+enclosures, cloned identifiers, or hardware that reports incomplete or
+ambiguous identification data.
+</p><p>The daemon therefore discards historical device information when the device
+cannot be identified reliably.
+</p><p>As a result, previous SMART or health state may be lost until fresh telemetry
+is collected.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec12-7" class="manual-title-level-2">
+Concurrent Docker Changes During Hooks
+</h2>
+<p>Docker container state is inspected before the daemon performs its
+pause and resume operations.
+</p><p>Concurrent external Docker operations, such as pausing, unpausing, or
+removing a selected container outside the daemon while a task is running,
+may cause the daemon to unpause a container that was externally paused,
+or cause unpause cleanup to fail if the container was removed.
+</p><p>External changes to selected containers should not be performed while
+a hook lifecycle is being established or is active.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec12-8" class="manual-title-level-2">
+Blocking Hooks, Docker Operations, and Notifications
+</h2>
+<p>Hook scripts, Docker operations, and notification commands are expected
+to terminate.
+</p><p>If any of these operations block indefinitely, task execution, hook
+cleanup, report generation, notification processing, and graceful
+daemon shutdown may also remain blocked. Paused Docker containers
+may remain paused until external recovery is performed.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec12-9" class="manual-title-level-2">
+Incomplete JSON syntax validation
+</h2>
+<p>The REST API uses JSMN in strict mode, which does not fully validate
+the JSON grammar. Some malformed JSON inputs, such as trailing commas
+or repeated colons, may therefore be accepted and processed normally.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec12-10" class="manual-title-level-2">
+Global Authentication Rate Limiting Can Starve New Clients
+</h2>
+<p>REST authentication globally rate-limits uncached attempts to bound Argon2
+CPU and memory usage. A continuous stream of uncached attempts can therefore
+consume every authentication slot and cause other uncached clients to receive
+HTTP 429 indefinitely.
+</p><p>Cached credentials bypass the limit. This is an intentional tradeoff: per-client
+limits do not protect against distributed sources, while removing the global
+limit could allow concurrent Argon2 operations to exhaust system resources.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec12-11" class="manual-title-level-2">
+Configuration File ACLs Are Not Preserved
+</h2>
+<p>Configuration updates made through the REST API rewrite the daemon
+configuration using a temporary file followed by file replacement.
+</p><p>On Unix, the replacement preserves the original file owner, group, and
+standard permission bits, but it does not preserve extended POSIX ACLs
+or other per-file access-control metadata.
+</p><p>On Windows, a replacement file may likewise receive security settings
+derived from its creation context rather than preserving a custom
+security descriptor attached to the original configuration file.
+</p></div>
 </div>
 
 

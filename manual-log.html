@@ -179,6 +179,11 @@ is escaped to \\.
 <p>Some tags are output only when the <b>--gui</b> or <b>--gui-verbose</b> option
 is used. They provide extra verbose state and runtime progress only
 useful for a GUI interface.
+In GUI mode, the structured log is intended to be consumed by the GUI.
+Fatal errors are therefore not duplicated to standard error when they
+are successfully written to the log. If the log is unavailable or
+writing it fails, the fatal error is printed to standard error as a
+fallback.
 </p><p>Integer values are marked as <b>uint</b> when they are unsigned and as <b>int</b>
 when they are signed. However, for practical purposes you can treat
 all of them as signed integers.
@@ -3695,6 +3700,16 @@ smartctl command.
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
+attr:&lt;device_file&gt;:&lt;disk_name&gt;[/&lt;split_index&gt;]:power:unknown
+</div><div class="manual-option-description">
+Logs that the device power state could not be determined
+after a status probe.
+</div>
+</div>
+</div>
+<div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
 stat:&lt;disk_name&gt;:&lt;access_number&gt;
 </div><div class="manual-option-description">
 Logs the total number of read and write accesses done on the
@@ -3849,27 +3864,27 @@ commands that access files and parities.
 <div class="manual-option-name">
 error[_io|_data]:&lt;block&gt;:&lt;disk_name&gt;:&lt;file&gt;:&lt;msg&gt;
 </div><div class="manual-option-description">
-Logs file access errors (open, read, file changed) during the
-data disk read operation for parity calculation or verification.
+Logs errors affecting data files.
 </div>
 </div>
 </div>
-<div class="manual-tag-list">
+<p>With no suffix, <b>error</b> indicates a soft or logical error not
+classified as a hardware I/O or silent data error.
+</p><div class="manual-tag-list">
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 _io
 </div><div class="manual-tag-description">
-Indicates a physical Input/Output error.
-The disk was unable to read or write a specific block,
-typically signaling a failing sector or cable issue.
+Indicates a physical Input/Output error, typically
+signaling a failing sector, device, or cable issue.
 </div>
 </div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 _data
 </div><div class="manual-tag-description">
-Indicates the data was read successfully but failed
-the checksum/hash verification. This signals <b>silent</b>
+Indicates data that was read successfully but failed
+the checksum/hash verification, signaling <b>silent</b>
 corruption or an unsuccessful parity match.
 </div>
 </div>
@@ -3877,7 +3892,13 @@ corruption or an unsuccessful parity match.
 <div class="manual-tag-name">
 &lt;block&gt;
 </div><div class="manual-tag-description">
-The zero-based index of the block where the error occurred (uint).
+The zero-based SnapRAID parity position associated with
+the error (uint). It identifies the logical position affected
+by the failed operation, not necessarily the physical sector
+that caused the failure. Data file open/create errors occurring
+while processing a position report the current block. The field
+is empty when the error cannot be associated with a specific
+position, such as for close errors.
 </div>
 </div>
 <div class="manual-tag-entry">
@@ -3910,34 +3931,39 @@ error (e.g., <b>Open/Read/Write error</b>,
 <div class="manual-option-name">
 parity_error[_io|_data]:&lt;block&gt;:&lt;level&gt;:&lt;msg&gt;
 </div><div class="manual-option-description">
-Logs errors during parity disk read or write operations.
+Logs errors affecting parity.
 </div>
 </div>
 </div>
-<div class="manual-tag-list">
+<p>With no suffix, <b>parity_error</b> indicates a soft or logical error
+not classified as a hardware I/O or silent data error.
+</p><div class="manual-tag-list">
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 _io
 </div><div class="manual-tag-description">
-Indicates a physical Input/Output error.
-The disk was unable to read or write a specific block,
-typically signaling a failing sector or cable issue.
+Indicates a physical Input/Output error, typically
+signaling a failing sector, device, or cable issue.
 </div>
 </div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 _data
 </div><div class="manual-tag-description">
-Indicates the data was read successfully but failed
-the checksum/hash verification. This signals <b>silent</b>
-corruption or an unsuccessful parity match.
+Indicates data that was read successfully but failed
+the parity verification, signaling <b>silent</b> corruption.
 </div>
 </div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 &lt;block&gt;
 </div><div class="manual-tag-description">
-The zero-based index of the block where the error occurred (uint).
+The zero-based SnapRAID parity position associated with
+the error (uint). Parity open/create errors report block 0 as
+a retry marker; this does not mean that parity block 0 is bad.
+Parity access is attempted again by subsequent commands. The
+field is empty when the error cannot be associated with a
+specific position, such as for close errors.
 </div>
 </div>
 <div class="manual-tag-entry">
@@ -3953,7 +3979,7 @@ The configuration name of the parity level (e.g.,
 &lt;msg&gt;
 </div><div class="manual-tag-description">
 A descriptive message indicating the nature of the
-error (e.g., <b>Read/Write error</b>,
+error (e.g., <b>Open/Read/Write error</b>,
 <b>Data error, diff bits &lt;diff&gt;/&lt;bits&gt;</b>).
 </div>
 </div>

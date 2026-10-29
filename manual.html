@@ -194,17 +194,32 @@ Limitations
 <p>SnapRAID is a hybrid between a RAID and a backup program, aiming to combine
 the best benefits of both. However, it has some limitations that you should
 consider before using it.
-</p><p>The main limitation is that if a disk fails and you haven't recently synced,
-you may not be able to fully recover.
-More specifically, you may be unable to recover up to the size of
-the changed or deleted files since the last sync operation.
-This occurs even if the changed or deleted files are not on the
-failed disk. This is why SnapRAID is better suited for
-data that rarely changes.
-</p><p>On the other hand, newly added files don't prevent recovery of already
-existing files. You will only lose the recently added files if they
-are on the failed disk.
-</p><p>Other SnapRAID limitations are:
+</p><p>The main limitation is that if a disk fails, you can only recover data up to
+the state of the last <b>sync</b> operation. Any data added or modifications made
+since the last sync that are located on the failed disk will be lost.
+</p><p>Consequently, SnapRAID is primarily suited for data that rarely changes.
+</p><p>For data that already existed at the last sync, recovery reliability depends
+on whether the <b>snapshot</b> option is used:
+</p><ul>
+<li>
+With snapshot support (available on Btrfs, ZFS, Bcachefs, and NTFS),
+SnapRAID can automatically maintain an independent frozen reference
+of each supported data filesystem.
+This ensures that even if you modify or delete files on your live
+filesystem during or after a sync, the recovery process remains
+consistent and reliable.
+</li>
+</ul>
+<ul>
+<li>
+Without snapshot support, deleting or changing files after a <b>sync</b>
+can prevent the full recovery of other failed disks. This occurs
+because the parity no longer matches the modified files, even if
+those files are not on the failed disk. On the other hand, newly added
+files don't prevent recovery of already&nbsp;&nbsp;&nbsp;&nbsp;existing files.
+</li>
+</ul>
+<p>Other SnapRAID limitations are:
 </p><ul>
 <li>
 With SnapRAID, you still have separate file systems for each disk.
@@ -350,7 +365,7 @@ Pooling
 </h2>
 <p>Note: The pooling feature described below has been superseded by the
 mergerfs tool, which is now the recommended option for Linux users in
-the SnapRAID community. Mergefs provides a more flexible and efficient
+the SnapRAID community. Mergerfs provides a more flexible and efficient
 way to pool multiple drives into a single unified mount point,
 allowing seamless access to files across your array without relying
 on symbolic links. It integrates well with SnapRAID for parity
@@ -545,13 +560,13 @@ Print the status of the array -&gt; <b>status</b>
 Control the disks -&gt; <b>smart</b>, <b>probe</b>, <b>up</b>, <b>down</b>
 </li>
 <li>
-Make a backup/snapshot -&gt; <b>sync</b>
+Make a backup/recovery point -&gt; <b>sync</b>
 </li>
 <li>
 Periodically check data -&gt; <b>scrub</b>
 </li>
 <li>
-Restore the last backup/snapshot -&gt; <b>fix</b>.
+Restore the last backup/recovery point -&gt; <b>fix</b>.
 </li>
 </ul>
 <p>Commands must be written in lowercase.
@@ -705,9 +720,10 @@ were modified.
 <div class="manual-tag-name">
 moved
 </div><div class="manual-tag-description">
-Files moved to a different directory on the same disk.
-They are identified by having the same name, size, timestamp,
-and inode, but a different directory.
+Files moved or renamed on the same disk while retaining
+the same inode. They are identified by having the same inode,
+size, and timestamp, but a different path. The file name may
+also be different.
 </div>
 </div>
 <div class="manual-tag-entry">
@@ -725,12 +741,12 @@ identified, not just the name.
 <div class="manual-tag-name">
 relocated
 </div><div class="manual-tag-description">
-Files moved on the same or a different disk where
-the original has disappeared. They are identified by
-having the same name, size, and timestamp. If the
-sub-second timestamp is zero, the full path must match
-to be identified. Unlike 'moved' files on the same disk,
-relocated files have a different inode.
+Files moved to a different directory or disk where the
+original file has disappeared and the inode is not retained.
+They are identified by having the same name, size, and timestamp.
+If the sub-second timestamp is zero, the full path must match to
+be identified. Unlike 'moved' files, relocated files require the
+file name to remain the same.
 </div>
 </div>
 <div class="manual-tag-entry">
@@ -813,9 +829,9 @@ The files in the array are NOT modified.
 fix
 </h2>
 <p>Fixes all the files and the parity data.
-</p><p>All files and parity data are compared with the snapshot
-state saved in the last <b>sync</b>.
-If a difference is found, it is reverted to the stored snapshot.
+</p><p>All files and parity data are compared with the state saved in
+the last <b>sync</b>.
+If a difference is found, it is reverted to the stored state.
 </p><p>WARNING! The <b>fix</b> command does not differentiate between errors and
 intentional modifications. It unconditionally reverts the file state
 to the last <b>sync</b>.
@@ -1362,7 +1378,8 @@ However, <b>check</b> and <b>fix</b> always stop at the first error.
 Starts processing from the specified
 block number. This can be useful for retrying to check
 or fix specific blocks in case of a damaged disk.
-This option is mainly for advanced manual recovery.
+This option is mainly for advanced manual recovery and
+is supported only by <b>check</b> and <b>fix</b>.
 </div>
 </div>
 </div>
@@ -1372,7 +1389,8 @@ This option is mainly for advanced manual recovery.
 -B, --count BLKCOUNT
 </div><div class="manual-option-description">
 Processes only the specified number of blocks.
-This option is mainly for advanced manual recovery.
+This option is mainly for advanced manual recovery and
+is supported only by <b>check</b> and <b>fix</b>.
 </div>
 </div>
 </div>
@@ -1537,6 +1555,10 @@ be unique. DIR is the mount point of the disk in the
 file system.
 </p><p>You can change the mount point as needed, as long as
 you keep the NAME fixed.
+</p><p>However, the configured path must consistently resolve to the
+same underlying data. If the path contains symbolic links,
+their targets must remain stable. Retargeting such symlinks
+to switch the data directory on the fly is unsupported.
 </p><p>You should use one option for each data disk in the array.
 </p><p>You can rename a disk later by changing the NAME directly
 in the configuration file and then running a <b>sync</b> command.
@@ -1557,6 +1579,30 @@ because they are expected to be always spinning.
 </p></div>
 <div class="manual-section-level-2">
 <h2 id="sec7-7" class="manual-title-level-2">
+snapshot
+</h2>
+<p>Enable the use of filesystem snapshots for the <b>sync</b>, <b>scrub</b>,
+<b>check</b>, and <b>fix</b> commands.
+</p><p>When enabled, SnapRAID creates a read-only snapshot of each supported
+data filesystem at the start of a 'sync'. This provides a stable view of
+each filesystem, preventing later modifications from changing the data
+used for parity computation.
+</p><p>This significantly improves recovery: if a file is deleted from the live
+filesystem, it remains preserved in the snapshot. This prevents the parity
+from becoming "broken" for that block, ensuring you can still successfully
+recover data if another disk fails.
+</p><p>This option applies exclusively to data disks formatted with the
+Btrfs, Bcachefs or ZFS filesystems in Linux and NTFS in Windows.
+Parity disks, or data disks using other filesystems, will always use
+the live version of the filesystem.
+</p><p>Snapshot creation and deletion require administrative privileges.
+Ensure SnapRAID is run with the necessary permissions (e.g., sudo) when
+this option is enabled.
+</p><p>See the SNAPSHOTS section for a detailed explanation of the snapshot
+lifecycle.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-8" class="manual-title-level-2">
 nohidden
 </h2>
 <p>Excludes all hidden files and directories.
@@ -1564,7 +1610,7 @@ In Unix, hidden files are those starting with <b>.</b>.
 In Windows, they are those with the hidden attribute.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-8" class="manual-title-level-2">
+<h2 id="sec7-9" class="manual-title-level-2">
 exclude/include PATTERN
 </h2>
 <p>Defines the file or directory patterns to exclude or include
@@ -1575,12 +1621,16 @@ is excluded. If it is an <b>include</b> one, the file is included.
 If no pattern matches, the file is excluded if the last pattern
 specified is an <b>include</b>, or included if the last pattern
 specified is an <b>exclude</b>.
+</p><p>Note that filtering occurs hierarchically during directory traversal.
+If a directory matches an <b>exclude</b> rule, the entire directory is
+skipped (pruned), and any <b>include</b> rules for files or subdirectories
+inside it will not be evaluated.
 </p><p>See the PATTERN section for more details on pattern
 specifications.
 </p><p>This option can be used multiple times.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-9" class="manual-title-level-2">
+<h2 id="sec7-10" class="manual-title-level-2">
 blocksize SIZE_IN_KIBIBYTES
 </h2>
 <p>Defines the basic block size in kibibytes for the parity.
@@ -1621,7 +1671,7 @@ a 4 TB disk, which allows about 460,000 files on each data disk without
 any wasted space.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-10" class="manual-title-level-2">
+<h2 id="sec7-11" class="manual-title-level-2">
 hashsize SIZE_IN_BYTES
 </h2>
 <p>Defines the hash size in bytes for the saved blocks.
@@ -1656,7 +1706,7 @@ RAM = (8 * 4 * 10^12) * (1+8) / (512 * 2^10) = 0.51 GiB
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-11" class="manual-title-level-2">
+<h2 id="sec7-12" class="manual-title-level-2">
 autosave SIZE_IN_GIGABYTES
 </h2>
 <p>Automatically saves the state when syncing or scrubbing after the
@@ -1665,7 +1715,7 @@ This option is useful to avoid restarting long <b>sync</b>
 commands from scratch if interrupted by a machine crash or any other event.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-12" class="manual-title-level-2">
+<h2 id="sec7-13" class="manual-title-level-2">
 temp_limit TEMPERATURE_CELSIUS
 </h2>
 <p>Sets the maximum allowed disk temperature in Celsius. When specified,
@@ -1694,7 +1744,7 @@ temperature measured at the start of the run as a fallback reference.
 To display the temperature of all disks, use the -A or --stats option.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-13" class="manual-title-level-2">
+<h2 id="sec7-14" class="manual-title-level-2">
 temp_sleep TIME_IN_MINUTES
 </h2>
 <p>Sets the standby time, in minutes, when the temperature limit is
@@ -1702,7 +1752,7 @@ reached. During this period, the disks remain spun down. The default
 is 5 minutes.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-14" class="manual-title-level-2">
+<h2 id="sec7-15" class="manual-title-level-2">
 pool DIR
 </h2>
 <p>Defines the pooling directory where the virtual view of the disk
@@ -1710,7 +1760,7 @@ array is created using the <b>pool</b> command.
 </p><p>The directory must already exist.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-15" class="manual-title-level-2">
+<h2 id="sec7-16" class="manual-title-level-2">
 share UNC_DIR
 </h2>
 <p>Defines the Windows UNC path required to access the disks remotely.
@@ -1724,7 +1774,7 @@ file directory and name.
 </p><p>This option is required only for Windows.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-16" class="manual-title-level-2">
+<h2 id="sec7-17" class="manual-title-level-2">
 smartctl DISK/PARITY OPTIONS...
 </h2>
 <p>Defines custom smartctl options to obtain the SMART attributes for
@@ -1737,6 +1787,8 @@ PARITY is one of the parity names: <b>parity</b>, <b>2-parity</b>, <b>3-parity</
 </p><p>In the specified OPTIONS, the <b>%s</b> string is replaced by the
 device name. For RAID controllers, the device is
 likely fixed, and you may not need to use <b>%s</b>.
+</p><p>You can also specify a custom info options string using the
+<b>[info: ...]</b> tag to override the default <b>-a</b> option.
 </p><p>Refer to the smartmontools documentation for possible options:
 </p><pre>
 <a href="https://www.smartmontools.org/wiki/Supported_RAID-Controllers">https://www.smartmontools.org/wiki/Supported_RAID-Controllers</a>
@@ -1744,11 +1796,12 @@ likely fixed, and you may not need to use <b>%s</b>.
 </pre>
 <p>For example:
 </p><pre>
+smartctl d1 [info: -H -i -c -A] -d sat %s
 smartctl parity -d sat %s
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-17" class="manual-title-level-2">
+<h2 id="sec7-18" class="manual-title-level-2">
 smartignore DISK/PARITY ATTR [ATTR...]
 </h2>
 <p>Ignores the specified SMART attribute when computing the probability
@@ -1758,18 +1811,23 @@ misleading values for a particular attribute.
 PARITY is one of the parity names: <b>parity</b>, <b>2-parity</b>, <b>3-parity</b>,
 <b>4-parity</b>, <b>5-parity</b>, <b>6-parity</b>, or <b>z-parity</b>.
 The special value * can be used to ignore the attribute on all disks.
-</p><p>For example, to ignore the <b>Current Pending Sector Count</b> attribute on
-all disks:
+</p><p>Multiple attributes can be specified separated by spaces.
+Each attribute can be specified as a number from 1 to 255, or as a
+case-insensitive name (e.g. <b>Current_Pending_Sector</b>).
+</p><p>For example, to ignore the <b>Current Pending Sector Count</b> and
+<b>Reallocated Sectors Count</b> attributes on all disks by their number
+or name:
 </p><pre>
-smartignore * 197
+smartignore * 197 5
+smartignore * Current_Pending_Sector Reallocated_Sector_Ct
 </pre>
-<p>To ignore it only on the first parity disk:
+<p>To ignore them only on the first parity disk:
 </p><pre>
-smartignore parity 197
+smartignore parity 197 5
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-18" class="manual-title-level-2">
+<h2 id="sec7-19" class="manual-title-level-2">
 Examples
 </h2>
 <p>An example of a typical configuration for Unix is:
@@ -1782,7 +1840,7 @@ data d2 /mnt/disk2/
 data d3 /mnt/disk3/
 exclude /lost+found/
 exclude /tmp/
-smartctl d1 -d sat %s
+smartctl d1 [info: -H -i -c -A] -d sat %s
 smartctl d2 -d usbjmicron %s
 smartctl parity -d areca,1/1 /dev/sg0
 smartctl 2-parity -d areca,2/1 /dev/sg0
@@ -1798,7 +1856,7 @@ data d3 I:\array\
 exclude Thumbs.db
 exclude \$RECYCLE.BIN
 exclude \System Volume Information
-smartctl d1 -d sat %s
+smartctl d1 [info: -H -i -c -A] -d sat %s
 smartctl d2 -d usbjmicron %s
 smartctl parity -d areca,1/1 /dev/arcmsr0
 smartctl 2-parity -d areca,2/1 /dev/arcmsr0
@@ -1807,6 +1865,162 @@ smartctl 2-parity -d areca,2/1 /dev/arcmsr0
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec8" class="manual-title-level-1">
+Snapshots
+</h1>
+<p>If the snapshot option is enabled in the configuration, SnapRAID
+uses filesystem snapshots to keep the data read during an operation
+stable, even when files on the live filesystems are subsequently
+modified or deleted.
+</p><p>The management of snapshots is completely automatic and transparent.
+You can continue to use SnapRAID exactly as before, with the
+additional protection provided by snapshots handled entirely in
+the background.
+</p><p>This provides two primary benefits:
+</p><div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+Consistency
+</div><div class="manual-tag-description">
+Files modified on the live filesystem during a long-running
+sync or scrub will not cause parity mismatches or aborted
+operations, because each snapshotted filesystem remains unchanged
+for the duration of the operation.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+Recovery
+</div><div class="manual-tag-description">
+If a file is updated or deleted from the live filesystem,
+it remains preserved in the snapshot. If a disk failure occurs
+before the next sync is run, SnapRAID uses the data preserved
+in the snapshot to reconstruct the failed disk.
+In case of a disk failure during an active sync process,
+SnapRAID  is also able to read automatically from both the
+snapshot of the previous parity computation and the current one.
+This maximizes the probability of a full recovery by
+providing access to the exact data blocks required to solve
+the parity equations, even if those blocks were modified
+or deleted between syncs.
+Without snapshots, an updated or deleted file on a healthy
+disk results in missing data blocks that may be required to
+fix other failed disks.
+</div>
+</div>
+</div>
+<p>Snapshots are created only for data disks and only if the underlying
+filesystem supports this functionality. Parity disks always use
+the live filesystem.
+</p><p>At present, this is supported on Btrfs, Bcachefs, and ZFS in Linux
+and on NTFS in Windows.
+</p><p>You can mix data disks with different filesystems. Only those that
+support snapshots will utilize them, while other disks will continue
+to operate directly on the live filesystem.
+</p><p>Snapshot creation and deletion require administrative privileges.
+Ensure SnapRAID is run with the necessary permissions (e.g., sudo)
+when snapshots are enabled.
+</p><div class="manual-section-level-2">
+<h2 id="sec8-1" class="manual-title-level-2">
+Command Behavior with Snapshots
+</h2>
+<p>The <b>sync</b> and <b>scrub</b> commands use snapshots for data disks whose
+filesystems support them. On a snapshotted disk, the command sees
+a stable filesystem image unaffected by concurrent changes to the
+live filesystem.
+During a <b>sync</b>, a new snapshot is created independently for each
+supported data filesystem. These snapshots collectively provide the
+data used for parity computation.
+In contrast, the <b>scrub</b> command utilizes the last snapshot, the one
+created during the most recent sync, to maintain a reliable reference
+point that matches the existing parity.
+</p><p>For the <b>check</b> and <b>fix</b> commands, the use of the last snapshot
+depends on whether specific disks are targeted using the
+-d, --filter-disk option.
+</p><p>A disk explicitly selected via -d (the "target" of the operation)
+always uses the live filesystem. For <b>fix</b>, this allows restoring
+data to the active disk replacement. For <b>check</b>, it allows simulating
+the <b>fix</b> operation under the same conditions.
+</p><p>All other data disks (the "reference" disks) will be accessed via
+their snapshots. This ensures that even if you are modifying files
+on your healthy disks while a recovery is in progress, SnapRAID
+has a stable, frozen reference to solve the parity equations.
+</p><p>If no -d option is provided, SnapRAID assumes the operation applies
+to the entire array, in this case, <b>check</b> and <b>fix</b> will use the
+live filesystems exclusively.
+</p><p>All other commands operate exclusively on the live filesystem.
+</p></div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec9" class="manual-title-level-1">
+Snapshots Lifecycle
+</h1>
+<p>SnapRAID manages three specific snapshots, <b>stable</b>, <b>pending</b>, and <b>scan</b>,
+within a hidden directory at the root of each data subvolume.
+In Btrfs, Bcachefs, and NTFS it's used the <b>.snapraid/</b> directory,
+in ZFS the standard <b>.zfs/snapshot/</b>.
+</p><p>The <b>stable</b> snapshot represents the state of the last
+successfully completed <b>sync</b>, containing the exact data used to
+compute the current parity. It serves as the primary data source
+for <b>scrub</b>, <b>check</b>, and <b>fix</b> commands.
+</p><p>The <b>scan</b> snapshot is a temporary image created at the start
+of a <b>sync</b> to provide a frozen state for scanning and parity computation.
+After scanning and saving the new content state, it replaces the previous
+<b>pending</b> snapshot.
+</p><p>The <b>pending</b> snapshot is the image used by an interrupted sync.
+Upon successful completion of the operation, the previous <b>stable</b>
+snapshot is deleted, and the <b>pending</b> snapshot is promoted to
+take its place as the new stable reference.
+</p><p>If a <b>sync</b> is interrupted, the <b>pending</b> snapshot is preserved.
+Subsequent <b>scrub</b>, <b>check</b>, and <b>fix</b> commands will use this
+pending snapshot as it matches the filesystem state recorded in
+the .content file, even if the parity is only partially synchronized.
+</p><p>In the event of a <b>sync</b> interruption, <b>check</b> and <b>fix</b> commands
+also read from the <b>stable</b> snapshot to retrieve data blocks
+from files that were updated or deleted during the sync.
+This is possible because the .content file retains metadata for
+all modified or deleted files throughout the sync process.
+This historical information is only cleared once a sync finishes
+successfully and the final version of the .content file is saved.
+</p><p>If a <b>sync</b> is restarted after an interruption, the existing
+pending snapshot is deleted and a new one is created to
+capture the current state of the live filesystem.
+However, if a <b>sync</b> is interrupted, avoid modifying, deleting,
+replacing, or moving files until a subsequent <b>sync</b> completes
+successfully. Parity may still contain blocks computed from the
+snapshot used by the interrupted sync. A later sync may replace
+that snapshot, making intermediate file versions unavailable for
+recovery.
+</p><div class="manual-section-level-2">
+<h2 id="sec9-1" class="manual-title-level-2">
+External backups with filesystem snapshots
+</h2>
+<p>When filesystem snapshots are enabled, SnapRAID accesses or creates
+snapshots at the root of each data subvolume, volume, or dataset.
+</p><p>A simple way to avoid any interference with external tools is to point
+your <b>data</b> configuration to a regular subdirectory within the subvolume
+or volume (for example, <b>/mnt/subvol/data</b> instead of <b>/mnt/subvol</b>).
+SnapRAID always creates the snapshot directory at the subvolume root
+(for example, <b>/mnt/subvol/.snapraid/</b>), leaving the data subdirectory
+clean so that snapshots remain outside and invisible to backup tools
+operating inside it.
+</p><p>Otherwise, if your configured <b>data</b> directory is itself the subvolume
+or volume root, SnapRAID creates the <b>.snapraid/</b> directory directly
+inside it (on Btrfs, Bcachefs, and NTFS). While SnapRAID automatically
+excludes this directory from its own scanning, external backup tools
+or file synchronizers will encounter it. If not excluded, they may
+traverse into the snapshots or directory links and copy the entire
+frozen data tree, duplicating data and potentially exhausting backup
+storage. Always configure external backup tools to exclude the
+<b>.snapraid/</b> directory.
+</p><p>On ZFS, snapshots are exposed through the standard <b>.zfs/snapshot/</b>
+virtual directory rather than <b>.snapraid/</b>. By default (<b>snapdir=hidden</b>),
+ZFS hides this directory from directory listings, so external backup
+tools will not traverse it. If you have enabled <b>snapdir=visible</b>,
+ensure your backup tools exclude the <b>.zfs/</b> directory.
+</p></div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec10" class="manual-title-level-1">
 Pattern
 </h1>
 <p>Patterns are used to select a subset of files to exclude or include in
@@ -1820,25 +2034,25 @@ question mark, it never crosses directory boundaries. It stops at the
 forward slash, making it suitable for matching within a single path
 component. This is the standard wildcard behavior familiar from shell
 globbing.
-</p><p>The double star <b>**</b> is more powerful, it matches any sequence of
-characters including directory separators. This allows patterns to match
-across multiple directory levels. When <b>**</b> appears embedded directly in
-a pattern, it can match zero or more characters including slashes between
-the surrounding literal text.
-</p><p>The most important use of <b>**</b> is in the special form <b>/**/</b>. This matches
-zero or more complete directory levels, making it possible to match files
-at any depth in a directory tree without knowing the exact path structure.
-For example, the pattern <b>src/**/main.js</b> matches <b>src/main.js</b> (skipping
-zero directories), <b>src/ui/main.js</b> (skipping one directory), and
-<b>src/ui/components/main.js</b> (skipping two directories).
+</p><p>The double star <b>**</b> wildcard matches across directory separators only
+when it is adjacent to a directory separator (preceded or followed by a
+slash). In this form, it matches zero or more characters across directory
+levels. For example, <b>foo/**/bar</b> matches <b>foo/bar</b>, <b>foo/a/bar</b>, and
+<b>foo/a/b/bar</b>; <b>**/build</b> matches <b>build</b> and <b>foo/bar/build</b>; and
+<b>src/**.js</b> matches <b>src/main.js</b> and <b>src/ui/components/main.js</b>.
+The standalone form <b>/**/</b> is not accepted as a complete pattern.
+</p><p>When <b>**</b> is not adjacent to a slash, it behaves like <b>*</b> and does not
+match directory separators. For example, <b>**.jpg</b> matches <b>photo.jpg</b>
+within the current directory, but does not match <b>dir/photo.jpg</b>. Use
+<b>**/*.jpg</b> for that purpose.
 </p><p>Character classes using square brackets match a single character from a
 specified set or range. Like the other single character patterns, they do
 not match directory separators. Classes support ranges and negation using
 an exclamation mark.
 </p><p>The fundamental distinction to remember is that <b>*</b>, <b>?</b>, and character
-classes  all respect directory boundaries and only match within a single path
-component, while <b>**</b> is the only pattern that can match across directory
-separators.
+classes all respect directory boundaries and only match within a single path
+component, while <b>**</b> can match across directory separators only when
+adjacent to a slash.
 </p><p>There are four different types of patterns:
 </p><div class="manual-option-list">
 <div class="manual-option-entry">
@@ -1886,9 +2100,9 @@ the array root directory, not the local file system root directory.
 Windows system directories, junctions, mount points, and other Windows
 special directories are treated as files, meaning that to exclude
 them, you must use a file rule, not a directory one.
-</p><p>If the file name contains a <b>*</b>, <b>?</b>, <b>[</b>,
-or <b>]</b> character, you must escape it to avoid having it interpreted as a
-globbing character. In Unix, the escape character is <b>\</b>; in Windows, it is <b>^</b>.
+</p><p>If the file name contains a <b>*</b>, <b>?</b>, <b>[</b>, or <b>]</b> character, you must
+escape it to avoid having it interpreted as a globbing character.
+In Unix, the escape character is <b>\</b>; in Windows, it is <b>^</b>.
 When the pattern is on the command line, you must double the escape
 character to avoid having it interpreted by the command shell.
 </p><p>In the configuration file, you can use different strategies to filter
@@ -1926,6 +2140,24 @@ include /movies/
 include /musics/
 include /pictures/
 </pre>
+<p>Note that excluding a directory (using DIR/ or /PATH/DIR/) prevents
+SnapRAID from entering and scanning that directory. Consequently, it is
+not possible to re-include a file or subdirectory located inside an
+excluded parent directory, because the scanner never traverses into it.
+</p><p>For example, the following configuration will NOT include <b>file.dat</b>
+because <b>/keep/</b> is pruned before <b>file.dat</b> can be seen:
+</p><pre>
+# Does NOT work: /keep/ is skipped entirely
+include /keep/file.dat
+exclude /keep/
+</pre>
+<p>To exclude files inside a directory while keeping specific ones, match
+the files within the directory rather than excluding the directory itself:
+</p><pre>
+# Works: /keep/ is traversed, but other files inside are excluded
+include /keep/file.dat
+exclude /keep/*
+</pre>
 <p>On the command line, using the -f option, you can only use <b>include</b>
 patterns. For example:
 </p><pre>
@@ -1937,7 +2169,7 @@ snapraid -f "*.mp3" check
 quote them to prevent the shell from expanding them.
 </p></div>
 <div class="manual-section-level-1">
-<h1 id="sec9" class="manual-title-level-1">
+<h1 id="sec11" class="manual-title-level-1">
 Ignore File
 </h1>
 <p>In addition to the global rules in the configuration file, you can
@@ -2003,17 +2235,19 @@ build/
 </pre>
 </div>
 <div class="manual-section-level-1">
-<h1 id="sec10" class="manual-title-level-1">
+<h1 id="sec12" class="manual-title-level-1">
 Content
 </h1>
 <p>SnapRAID stores the list and checksums of your files in the content file.
 </p><p>It is a binary file that lists all the files present in your disk array,
 along with all the checksums to verify their integrity.
-</p><p>This file is read and written by the <b>sync</b> and <b>scrub</b> commands and
-read by the <b>fix</b>, <b>check</b>, and <b>status</b> commands.
+</p><p>The content file is read and written by the <b>sync</b>, <b>scrub</b>, <b>touch</b>, and
+<b>rehash</b> commands. It is read by the <b>status</b>, <b>diff</b>, <b>check</b>, <b>fix</b>,
+<b>list</b>, <b>dup</b>, <b>locate</b>, and <b>pool</b> commands, and it is completely
+ignored by the <b>smart</b>, <b>probe</b>, <b>up</b>, <b>down</b>, and <b>devices</b> commands.
 </p></div>
 <div class="manual-section-level-1">
-<h1 id="sec11" class="manual-title-level-1">
+<h1 id="sec13" class="manual-title-level-1">
 Parity
 </h1>
 <p>SnapRAID stores the parity information of your array in the parity
@@ -2024,7 +2258,7 @@ blocks defined in the <b>content</b> file.
 only read by the <b>scrub</b> and <b>check</b> commands.
 </p></div>
 <div class="manual-section-level-1">
-<h1 id="sec12" class="manual-title-level-1">
+<h1 id="sec14" class="manual-title-level-1">
 Encoding
 </h1>
 <p>SnapRAID in Unix ignores any encoding. It reads and stores the
@@ -2038,6 +2272,252 @@ This affects only the printed file names; if you
 redirect the console output to a file, the resulting file is always
 in UTF-8 format.
 </p></div>
+<div class="manual-section-level-1">
+<h1 id="sec15" class="manual-title-level-1">
+Exit Code
+</h1>
+<p>SnapRAID terminates with the following error codes:
+</p><div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+0
+</div><div class="manual-tag-description">
+Everything OK.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+1
+</div><div class="manual-tag-description">
+The command encountered some errors.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+2
+</div><div class="manual-tag-description">
+The <b>diff</b> command found everything is OK, but a <b>sync</b> is
+needed.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+3
+</div><div class="manual-tag-description">
+A disk device command (<b>probe</b>, <b>smart</b>, <b>devices</b>, <b>up</b>,
+<b>down</b>) completed, but at least one filesystem is running in
+degraded mode with missing device(s).
+</div>
+</div>
+</div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec16" class="manual-title-level-1">
+Known Issues
+</h1>
+<div class="manual-section-level-2">
+<h2 id="sec16-1" class="manual-title-level-2">
+Filesystem boundaries
+</h2>
+<p>SnapRAID does not cross filesystem, mount, or subvolume boundaries while
+scanning a data disk. When such a boundary is detected, SnapRAID reports
+a WARNING and does not scan beyond it.
+</p><p>Files located beyond such boundaries are not included in the data disk and
+must be configured separately if they have to be protected.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-2" class="manual-title-level-2">
+Mount points with filesystem snapshots
+</h2>
+<p>When filesystem snapshots are enabled, nested mount points and bind mounts
+inside a data disk are not supported.
+</p><p>Mount points are part of the live system mount namespace and are not
+preserved in filesystem snapshots. Consequently, when scanning a snapshot,
+a directory hidden by a mount point in the live filesystem may become
+visible.
+</p><p>Do not place nested mount points or bind mounts inside data disks when
+filesystem snapshots are enabled.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-3" class="manual-title-level-2">
+Multiple configurations with filesystem snapshots
+</h2>
+<p>Snapshot support cannot be safely shared by multiple independent
+SnapRAID configurations using the same filesystem snapshot namespace.
+</p><p>On Btrfs and Bcachefs, only one SnapRAID configuration with snapshot
+support enabled may use data directories within the same subvolume.
+On ZFS, the same restriction applies to a dataset, and on NTFS to a volume.
+</p><p>Multiple configurations sharing the same snapshot namespace use the same
+<b>stable</b>, <b>pending</b>, and <b>scan</b> snapshots. Running one configuration may
+therefore replace or delete recovery snapshots required by another.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-4" class="manual-title-level-2">
+In-place file modifications without timestamp changes
+</h2>
+<p>SnapRAID detects file modifications by comparing file sizes and
+modification timestamps (mtime).
+</p><p>If an application modifies a file in-place without altering its size
+or updating its modification timestamp, "diff" and "sync" will not
+detect that the file has changed, and its parity will not be updated.
+</p><p>To ensure SnapRAID recognizes such changes, update the file's
+modification timestamp (for example, with the "touch" utility).
+Otherwise, the difference will only be detected as a hash mismatch
+during a subsequent "scrub" or "check".
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-5" class="manual-title-level-2">
+Windows non-ASCII case matching
+</h2>
+<p>SnapRAID uses standard, predictable UTF-8 encoding across all platforms,
+limiting case-insensitive matching to ASCII characters.
+</p><p>Windows filesystems suffer from the legacy design of enforcing case
+insensitivity across Unicode filenames via arbitrary, system-dependent
+folding tables. Consequently, Windows obscures the reality of the
+filesystem by treating completely different Unicode byte sequences as if
+they were the same file.
+</p><p>For example, <b>À.txt</b> and <b>à.txt</b> are distinct Unicode names, yet Windows
+illogically treats them as identical, while SnapRAID preserves their true
+distinction.
+</p><p>This limitation is caused by Windows's inconsistent handling of Unicode
+filenames and its insistence on case-insensitive aliasing. To prevent
+discrepancies arising from Windows's case folding, always specify the
+exact case for any non-ASCII characters in configuration paths and filters.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-6" class="manual-title-level-2">
+Partial fix recovery
+</h2>
+<p>When <b>fix</b> is restricted using <b>-S, --start</b> or <b>-B, --count</b>,
+SnapRAID operates only on the selected blocks and does not perform
+file-level finalization or quarantine.
+</p><p>If recovery produces best-effort data that cannot be proven to represent
+the current contents, such blocks may still be written under the normal
+filename. The uncertainty associated with these recovered blocks is not
+persisted after the command terminates.
+</p><p>As a consequence, a later <b>fix</b> will treat these readable blocks as valid
+file data and will not attempt to recover them again. This can cause a
+subsequent recovery to report success while leaving incomplete or stale
+data in the file.
+</p><p>The <b>-S</b> and <b>-B</b> options are intended only for advanced manual recovery,
+typically after a normal <b>fix</b> has failed. If a partial <b>fix</b> reports
+unrecoverable data, remove or rename the affected files before attempting
+another recovery, or verify their contents manually.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-7" class="manual-title-level-2">
+NTFS hard links and excluded paths
+</h2>
+<p>On NTFS, directory entries cache file size and timestamps independently
+for each hard link. When a file is modified through one link, the directory
+entries of other links pointing to the same file may retain stale metadata
+until they are accessed.
+</p><p>SnapRAID automatically detects and normalizes this condition whenever at
+least two hard links to the same file are encountered during a scan.
+However, if only one hard link is scanned while the others are excluded by
+filters or reside outside the data disk path, SnapRAID cannot detect the
+inode collision and relies on the cached metadata of the single visible
+link.
+</p><p>Consequently, modifications made through an excluded or external hard link
+may go unnoticed by SnapRAID until the metadata of the included link is
+refreshed by the operating system (such as when the file is accessed or
+opened through that path).
+</p><p>To avoid this limitation, avoid modifying protected files through hard
+links that are excluded from SnapRAID, or ensure that all hard links to a
+file are included in the scan so SnapRAID can normalize them.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-8" class="manual-title-level-2">
+Recovery after an interrupted multi-parity sync
+</h2>
+<p>In an array with multiple parity disks, an interrupted <b>sync</b> can leave
+parity levels temporarily out of sync with each other. For example,
+parity 1 might already contain newly updated data, while parity 2 still
+contains the old data.
+</p><p>During <b>check</b> or <b>fix</b>, SnapRAID tries different parity combinations
+and validates reconstructed data against the known block hashes (covering
+the full block, typically 256 KiB).
+</p><p>If SnapRAID attempts a reconstruction using an inconsistent mix of old
+and new parity, the linear RAID equations will produce incorrect data.
+For this invalid combination to be falsely accepted, the equations would
+have to accidentally reconstruct at least one complete 256 KiB block so
+perfectly that its hash matches, while other unsynchronized blocks in the
+same stripe are reconstructed with incorrect data.
+</p><p>This scenario does not depend on a hash collision; rather, the mixed
+parity equations themselves would have to coincidentally yield the exact
+original 256 KiB block contents. While mathematically possible with
+specially crafted or highly repetitive data, it is practically impossible
+with real-world data.
+</p><p>If all disks are healthy, completing the interrupted <b>sync</b> before making
+further changes removes this ambiguity. If a disk has failed and recovery
+is required, avoid modifying any data disks before running <b>check</b> or
+<b>fix</b>.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-9" class="manual-title-level-2">
+Reserved file and directory names
+</h2>
+<p>SnapRAID reserves some file, directory, and snapshot names for its internal
+operation. Do not use these names for user data:
+</p><div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+.snapraidignore
+</div><div class="manual-tag-description">
+Local exclusion-rules file.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+.snapraid
+</div><div class="manual-tag-description">
+Snapshot container directory.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+snapraid-*
+</div><div class="manual-tag-description">
+SnapRAID-managed ZFS snapshot names.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+*.unrecoverable
+</div><div class="manual-tag-description">
+Damaged files quarantined during recovery.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+CONTENT.tmp
+</div><div class="manual-tag-description">
+Temporary file for content updates.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+CONTENT.lock
+</div><div class="manual-tag-description">
+Content lock file.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+PARITY.spaceholder
+</div><div class="manual-tag-description">
+Temporary space-holder file during Windows parity
+allocation.
+</div>
+</div>
+</div>
+<p>Using these names for unrelated data may cause files or snapshots to be
+ignored, misinterpreted as metadata, overwritten, renamed, or deleted.
+</p><p>On Windows, all case variants are reserved as well, even in NTFS directories
+configured for case-sensitive operation (for example, .SNAPRAIDIGNORE,
+.SnapRaid, CONTENT.TMP, and CONTENT.Lock).
+</p></div>
+</div>
 
 
             </div>

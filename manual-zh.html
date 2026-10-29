@@ -114,7 +114,7 @@
 
 <div class="manual-section-level-1">
 <h1 id="sec1" class="manual-title-level-1">
-Synopsis
+概要 (Synopsis)
 </h1>
 <pre>
 snapraid [-c, --conf CONFIG]
@@ -142,7 +142,7 @@ snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec2" class="manual-title-level-1">
-Description
+描述 (Description)
 </h1>
 <p>SnapRAID 是一款专为磁盘阵列设计的备份程序，它存储奇偶校验信息，
 以在最多六个磁盘发生故障时进行数据恢复。
@@ -181,19 +181,32 @@ SnapRAID 不会锁定您的数据；您可以随时停止使用它，无需重�
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec3" class="manual-title-level-1">
-Limitations
+限制 (Limitations)
 </h1>
-<p>SnapRAID 是 RAID 和备份程序之间的混合体，旨在结合两者的优点。
-然而，在使用它之前，您应该考虑一些限制。
-</p><p>主要的限制是，如果一个磁盘发生故障而您最近没有进行同步（sync），
-您可能无法完全恢复。
-更具体地说，您可能无法恢复自上次同步操作以来已更改或已删除文件的
-大小所对应的部分。
-即使更改或删除的文件不在发生故障的磁盘上，也会发生这种情况。
-这就是为什么 SnapRAID 更适用于很少更改的数据。
-</p><p>另一方面，新添加的文件不会阻止对已有文件的恢复。
-您只会丢失位于发生故障磁盘上的最近添加的文件。
-</p><p>SnapRAID 的其他限制包括：
+<p>SnapRAID 是 RAID 和备份程序之间的混合体，旨在结合两者的最佳优势。
+但是，在使用它之前，您应该考虑它的一些限制。
+</p><p>主要的限制是，如果磁盘发生故障，您只能将数据恢复到上一次 <b>sync</b>（同步）操作的状态。
+自上次同步以来添加的任何数据或进行的任何修改（如果位于发生故障的磁盘上）都将丢失。
+</p><p>因此，SnapRAID 主要适用于很少更改的数据。
+</p><p>对于上次同步时已经存在的数据，恢复的可靠性取决于是否使用了 <b>snapshot</b>（快照）选项：
+</p><ul>
+<li>
+具有快照支持（在 Btrfs、ZFS、Bcachefs 和 NTFS 上可用），
+SnapRAID 可以自动维护每个受支持的数据文件系统的独立冻结引用。
+这确保了即使您在同步期间或之后在活动文件系统上修改或删除文件，
+恢复过程仍保持一致且可靠。
+</li>
+</ul>
+<ul>
+<li>
+在没有快照支持的情况下，在 <b>sync</b> 之后删除或更改文件
+可能会阻止其他损坏磁盘的完全恢复。发生这种情况
+是因为校验数据不再与修改后的文件匹配，即使
+这些文件不在损坏的磁盘上。另一方面，新添加的文件
+不会阻止已存在文件的恢复。
+</li>
+</ul>
+<p>SnapRAID 的其他限制包括：
 </p><ul>
 <li>
 使用 SnapRAID，每个磁盘仍然有单独的文件系统。
@@ -219,7 +232,7 @@ SnapRAID 只能从有限数量的磁盘故障中恢复数据。
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec4" class="manual-title-level-1">
-Getting Started
+入门 (Getting Started)
 </h1>
 <p>要使用 SnapRAID，您需要首先选择磁盘阵列中的一个磁盘专用于
 <b>parity</b>（奇偶校验）信息。使用一个奇偶校验磁盘，
@@ -282,7 +295,7 @@ snapraid sync
 </p><p>现在您可以开始随意使用您的阵列，并定期运行 <b>sync</b> 命令更新奇偶校验信息。
 </p><div class="manual-section-level-2">
 <h2 id="sec4-1" class="manual-title-level-2">
-Scrubbing
+数据擦洗 (Scrubbing)
 </h2>
 <p>要定期检查数据和奇偶校验的错误，您可以运行 <b>scrub</b> 命令。
 </p><pre>
@@ -317,11 +330,11 @@ snapraid -p bad scrub
 </p></div>
 <div class="manual-section-level-2">
 <h2 id="sec4-2" class="manual-title-level-2">
-Pooling
+合并池 (Pooling)
 </h2>
 <p>注意：下面描述的 pooling 功能已被 mergerfs 工具取代，
 mergerfs 现在是 SnapRAID 社区推荐的 Linux 用户选项。
-Mergefs 提供了一种更灵活、更高效的方式，将多个驱动器汇集到一个
+Mergerfs 提供了一种更灵活、更高效的方式，将多个驱动器汇集到一个
 统一的挂载点中，允许跨阵列无缝访问文件，而无需依赖符号链接。
 它与 SnapRAID 很好地集成以提供奇偶校验保护，常用于
 OpenMediaVault (OMV) 或自定义 NAS 配置等设置中。
@@ -384,7 +397,7 @@ fsutil behavior set SymlinkEvaluation L2L:1 R2R:1 L2R:1 R2L:1
 </div>
 <div class="manual-section-level-2">
 <h2 id="sec4-3" class="manual-title-level-2">
-Undeleting
+取消删除 (Undeleting)
 </h2>
 <p>SnapRAID 的功能更像一个备份程序而不是 RAID 系统，
 它可以使用 -f, --filter 选项来恢复或取消删除文件到其以前的状态：
@@ -407,7 +420,7 @@ snapraid fix -m
 </div>
 <div class="manual-section-level-2">
 <h2 id="sec4-4" class="manual-title-level-2">
-Recovering
+数据恢复 (Recovering)
 </h2>
 <p>最糟糕的情况发生了，您丢失了一个或多个磁盘！
 </p><p>**不要惊慌！** 您将能够恢复它们！
@@ -494,9 +507,9 @@ snapraid sync
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec5" class="manual-title-level-1">
-Commands
+命令 (Commands)
 </h1>
-<p>SnapRAID 提供了一些简单的命令，允许您：
+<p>SnapRAID 提供了几个简单的命令，允许您：
 </p><ul>
 <li>
 打印阵列的状态 -&gt; <b>status</b>
@@ -505,22 +518,22 @@ Commands
 控制磁盘 -&gt; <b>smart</b>、<b>probe</b>、<b>up</b>、<b>down</b>
 </li>
 <li>
-进行备份/快照 -&gt; <b>sync</b>
+创建备份/恢复点 -&gt; <b>sync</b>
 </li>
 <li>
 定期检查数据 -&gt; <b>scrub</b>
 </li>
 <li>
-恢复上次备份/快照 -&gt; <b>fix</b>。
+恢复上一个备份/恢复点 -&gt; <b>fix</b>。
 </li>
 </ul>
-<p>命令必须用小写字母书写。
+<p>命令必须用小写字母编写。
 </p><div class="manual-section-level-2">
 <h2 id="sec5-1" class="manual-title-level-2">
 status
 </h2>
 <p>打印磁盘阵列状态的摘要。
-</p><p>它包括有关奇偶校验碎片、块未经检查有多久，以及在 scrubbing
+</p><p>它包括有关奇偶校验碎片、块未经检查有多久，以及在数据擦洗 (scrubbing)
 期间遇到的所有记录的静默错误的信息。
 </p><p>所提供的信息指的是您上次运行 <b>sync</b> 的时间。
 不考虑后来的修改。
@@ -652,8 +665,9 @@ updated
 <div class="manual-tag-name">
 moved
 </div><div class="manual-tag-description">
-在同一磁盘上移动到不同目录的文件。
-它们通过具有相同的名称、大小、时间戳和 inode，但目录不同来识别。
+在同一磁盘上移动或重命名并保留相同 inode 的文件。
+它们通过具有相同的 inode、大小和时间戳，但路径不同来识别。
+文件名也可以不同。
 </div>
 </div>
 <div class="manual-tag-entry">
@@ -670,10 +684,10 @@ copied
 <div class="manual-tag-name">
 relocated
 </div><div class="manual-tag-description">
-在相同或不同磁盘上移动的文件，且原始文件已消失。
+移动到不同目录或磁盘的文件，且原始文件已消失并不保留 inode。
 它们通过具有相同的名称、大小和时间戳进行识别。
 如果亚秒级时间戳为零，则必须完整路径匹配才能识别。
-与同一磁盘上的 'moved' 文件不同，重定位的文件具有不同的 inode。
+与 'moved' 文件不同，重定位的文件要求文件名保持不变。
 </div>
 </div>
 <div class="manual-tag-entry">
@@ -745,12 +759,12 @@ full - Scrub 所有内容。
 <h2 id="sec5-9" class="manual-title-level-2">
 fix
 </h2>
-<p>修复所有文件和奇偶校验数据。
-</p><p>所有文件和奇偶校验数据都与上次 <b>sync</b> 中保存的快照
-状态进行比较。
-如果发现差异，则将其恢复到存储的快照。
-</p><p>**警告！** <b>fix</b> 命令不区分错误和
-故意修改。它**无条件地**将文件状态恢复到上次 <b>sync</b>。
+<p>修复所有文件和校验数据。
+</p><p>将所有文件和校验数据与上一次 <b>sync</b> 中保存的状态进行比较。
+如果发现差异，则将其恢复到存储的状态。
+</p><p>警告！
+<b>fix</b> 命令不区分错误和故意修改。
+它会无条件地将文件状态恢复到上一次 <b>sync</b> 的状态。
 </p><p>如果未指定其他选项，则处理整个阵列。
 使用过滤选项选择要操作的文件或磁盘的子集。
 </p><p>要仅修复在 <b>sync</b> 和 <b>scrub</b> 期间标记为坏块的块，
@@ -871,7 +885,7 @@ locate
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec6" class="manual-title-level-1">
-Options
+选项 (Options)
 </h1>
 <p>SnapRAID 提供以下选项：
 </p><div class="manual-option-list">
@@ -1045,7 +1059,7 @@ DAYS 是块被 scrub 的最小天数；默认值为 10。
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
--t, --tail 大小
+-t, --tail SIZE
 </div><div class="manual-option-description">
 将文件列表限制为那些使用校验盘指定尾部大小以内的文件。
 您可以使用乘数，如 K、M、G 或 T（例如 --tail 1G）。
@@ -1182,10 +1196,10 @@ DAYS 是块被 scrub 的最小天数；默认值为 10。
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
--W, --force-realloc-tail 大小
+-W, --force-realloc-tail SIZE
 </div><div class="manual-option-description">
 工作方式类似于 -R, --force-realloc，但仅限于每个校验文件的
-指定尾部部分（最后“大小”字节）。
+指定尾部部分（最后 SIZE 字节）。
 它会强制重新分配（移动）当前存储在该尾部部分的任何文件分片/块，
 允许它们被放置在校验文件中任何有可用空间的地方（包括现有的
 空隙）。
@@ -1243,7 +1257,7 @@ HHMMSS。在 Windows 批处理文件中，您必须双写 <b>%</b> 字符，
 </div><div class="manual-option-description">
 从指定的块号开始处理。
 在磁盘损坏的情况下，这对于重试检查或修复特定块可能很有用。
-此选项主要用于高级手动恢复。
+此选项主要用于高级手动恢复，并且仅受 <b>check</b> 和 <b>fix</b> 支持。
 </div>
 </div>
 </div>
@@ -1253,7 +1267,7 @@ HHMMSS。在 Windows 批处理文件中，您必须双写 <b>%</b> 字符，
 -B, --count BLKCOUNT
 </div><div class="manual-option-description">
 仅处理指定数量的块。
-此选项主要用于高级手动恢复。
+此选项主要用于高级手动恢复，并且仅受 <b>check</b> 和 <b>fix</b> 支持。
 </div>
 </div>
 </div>
@@ -1316,7 +1330,7 @@ HHMMSS。在 Windows 批处理文件中，您必须双写 <b>%</b> 字符，
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec7" class="manual-title-level-1">
-Configuration
+配置 (Configuration)
 </h1>
 <p>SnapRAID 需要一个配置文件来了解您的磁盘阵列
 位于何处以及在哪里存储奇偶校验信息。
@@ -1404,6 +1418,8 @@ data NAME DIR
 NAME 用于标识磁盘，并且必须是唯一的。
 DIR 是磁盘在文件系统中的挂载点。
 </p><p>您可以根据需要更改挂载点，只要保持 NAME 固定即可。
+</p><p>但是，配置的路径必须始终解析为相同的基础数据。如果路径包含符号链接，
+其目标必须保持稳定。不支持重定向此类符号链接以在运行中切换数据目录。
 </p><p>您应该为阵列中的每个数据磁盘使用一个选项。
 </p><p>您可以通过直接在配置文件中更改 NAME，然后运行 <b>sync</b> 命令来
 稍后重命名磁盘。
@@ -1420,6 +1436,24 @@ extra NAME DIR
 </p></div>
 <div class="manual-section-level-2">
 <h2 id="sec7-7" class="manual-title-level-2">
+snapshot
+</h2>
+<p>为 <b>sync</b>、<b>scrub</b>、<b>check</b> 和 <b>fix</b> 命令启用文件系统快照的使用。
+</p><p>启用后，SnapRAID 会在“sync”开始时为每个受支持的数据文件系统创建
+只读快照。这提供了每个文件系统的稳定视图，防止后续修改改变用于
+计算校验的数据。
+</p><p>这显著提高了恢复能力：如果从实时文件系统中删除了一个文件，
+它仍会保留在快照中。这可以防止该数据块的校验数据变得“损坏”，
+从而确保在另一个磁盘发生故障时您仍能成功恢复数据。
+</p><p>此选项仅适用于在 Linux 中格式化为 Btrfs、Bcachefs 或 ZFS 文件系统，
+以及在 Windows 中格式化为 NTFS 的数据磁盘。
+校验磁盘或使用其他文件系统的数据磁盘将始终使用文件系统的活动版本。
+</p><p>快照的创建和删除需要管理权限。
+启用此选项时，请确保以必要的权限（例如 sudo）运行 SnapRAID。
+</p><p>有关快照生命周期的详细说明，请参阅 SNAPSHOTS（快照）部分。
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-8" class="manual-title-level-2">
 nohidden
 </h2>
 <p>排除所有隐藏文件和目录。
@@ -1427,7 +1461,7 @@ nohidden
 在 Windows 中，它们是具有隐藏属性的文件。
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-8" class="manual-title-level-2">
+<h2 id="sec7-9" class="manual-title-level-2">
 exclude/include PATTERN
 </h2>
 <p>定义要从同步过程中排除或包含的文件或目录模式。
@@ -1436,11 +1470,13 @@ exclude/include PATTERN
 如果它是 <b>include</b> 模式，则包含该文件。
 如果没有模式匹配，则如果指定的最后一个模式是 <b>include</b>，则排除该文件，
 或者如果指定的最后一个模式是 <b>exclude</b>，则包含该文件。
+</p><p>请注意，过滤是在目录遍历期间分层进行的。如果目录匹配 <b>exclude</b> 规则，
+则整个目录将被跳过（修剪），并且不会评估其内部文件或子目录的任何 <b>include</b> 规则。
 </p><p>有关模式规范的更多详细信息，请参阅 PATTERN 部分。
 </p><p>此选项可以多次使用。
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-9" class="manual-title-level-2">
+<h2 id="sec7-10" class="manual-title-level-2">
 blocksize SIZE_IN_KIBIBYTES
 </h2>
 <p>定义奇偶校验的基本块大小（以 KiB 为单位）。
@@ -1477,7 +1513,7 @@ mkfs.ext4 -m 0 -T largefile4 DEVICE
 这允许每个数据磁盘上大约 460,000 个文件而不会浪费任何空间。
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-10" class="manual-title-level-2">
+<h2 id="sec7-11" class="manual-title-level-2">
 hashsize SIZE_IN_BYTES
 </h2>
 <p>定义保存块的散列大小（以字节为单位）。
@@ -1487,37 +1523,37 @@ hashsize SIZE_IN_BYTES
 </p><p>使用不同 hashsize 的一个原因是，如果您的系统内存有限。
 根据经验，SnapRAID 通常每 16 TB 的阵列数据需要 1 GiB 的 RAM。
 </p><p>具体来说，为了存储数据的散列，SnapRAID 大约需要
-$TS*(1+HS)/BS$ 字节的 RAM，
-其中 $TS$ 是您的磁盘阵列的总大小（以字节为单位），$BS$ 是块大小（以字节为单位），
-$HS$ 是散列大小（以字节为单位）。
+TS*(1+HS)/BS 字节的 RAM，
+其中 TS 是您的磁盘阵列的总大小（以字节为单位），BS 是块大小（以字节为单位），
+HS 是散列大小（以字节为单位）。
 </p><p>例如，对于 8 个 4 TB 磁盘，块大小为 256 KiB
 （1 KiB = 1024 字节），散列大小为 16，您将获得：
 </p><pre>
-RAM = $(8 * 4 * 10^{12}) * (1+16) / (256 * 2^{10}) = 1.93$ GiB
+RAM = (8 * 4 * 10^12) * (1+16) / (256 * 2^10) = 1.93 GiB
 </pre>
 <p>切换到散列大小为 8，您将获得：
 </p><pre>
-RAM = $(8 * 4 * 10^{12}) * (1+8) / (256 * 2^{10}) = 1.02$ GiB
+RAM = (8 * 4 * 10^12) * (1+8) / (256 * 2^10) = 1.02 GiB
 </pre>
 <p>切换到块大小为 512，您将获得：
 </p><pre>
-RAM = $(8 * 4 * 10^{12}) * (1+16) / (512 * 2^{10}) = 0.96$ GiB
+RAM = (8 * 4 * 10^12) * (1+16) / (512 * 2^10) = 0.96 GiB
 </pre>
 <p>切换到散列大小为 8 和块大小为 512，您将获得：
 </p><pre>
-RAM = $(8 * 4 * 10^{12}) * (1+8) / (512 * 2^{10}) = 0.51$ GiB
+RAM = (8 * 4 * 10^12) * (1+8) / (512 * 2^10) = 0.51 GiB
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-11" class="manual-title-level-2">
+<h2 id="sec7-12" class="manual-title-level-2">
 autosave SIZE_IN_GIGABYTES
 </h2>
-<p>在同步或 scrub 之后，处理指定数量的 GB 后，自动保存状态。
+<p>在同步或 scrub 期间，每处理指定数量的 GB 后就自动保存状态。
 此选项有助于避免在机器崩溃或任何其他事件中断时，
 从头开始重新启动长时间的 <b>sync</b> 命令。
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-12" class="manual-title-level-2">
+<h2 id="sec7-13" class="manual-title-level-2">
 temp_limit TEMPERATURE_CELSIUS
 </h2>
 <p>设置允许的最高磁盘温度（摄氏度）。指定后，
@@ -1535,22 +1571,22 @@ SnapRAID 运行时会显示当前磁盘温度。
 有助于评估系统的冷却是否足够。
 此估计温度仅供参考，对 SnapRAID 的行为没有影响。
 程序的动作仅基于实际测量的磁盘温度。
-</p><p>要执行此分析，SnapRAID 需要一个系统温度的参考。
+</p><p>要执行此分析，SnapRAID 需要一个系统温度的参考基准值。
 它首先尝试从可用的硬件传感器读取。
 如果无法访问系统传感器，它会使用运行时测量的最低磁盘温度
-作为备用参考。
+作为备用基准值。
 </p><p>通常，SnapRAID 只显示最热磁盘的温度。
 要显示所有磁盘的温度，请使用 -A 或 --stats 选项。
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-13" class="manual-title-level-2">
+<h2 id="sec7-14" class="manual-title-level-2">
 temp_sleep TIME_IN_MINUTES
 </h2>
 <p>设置达到温度限制时的待机时间（以分钟为单位）。
 在此期间，磁盘保持停转状态。默认值为 5 分钟。
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-14" class="manual-title-level-2">
+<h2 id="sec7-15" class="manual-title-level-2">
 pool DIR
 </h2>
 <p>定义 <b>pooling</b> 目录，其中使用 <b>pool</b> 命令创建磁盘
@@ -1558,7 +1594,7 @@ pool DIR
 </p><p>目录必须已经存在。
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-15" class="manual-title-level-2">
+<h2 id="sec7-16" class="manual-title-level-2">
 share UNC_DIR
 </h2>
 <p>定义远程访问磁盘所需的 Windows UNC 路径。
@@ -1571,7 +1607,7 @@ share UNC_DIR
 </p><p>此选项仅在 Windows 中需要。
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-16" class="manual-title-level-2">
+<h2 id="sec7-17" class="manual-title-level-2">
 smartctl DISK/PARITY OPTIONS...
 </h2>
 <p>定义自定义 smartctl 选项以获取每个磁盘的 SMART 属性。
@@ -1584,6 +1620,7 @@ PARITY 是奇偶校验名称之一：<b>parity</b>、<b>2-parity</b>、<b>3-pari
 </p><p>在指定的 OPTIONS 中，字符串 <b>%s</b> 被设备名称替换。
 对于 RAID 控制器，设备可能是固定的，
 您可能不需要使用 <b>%s</b>。
+</p><p>您还可以使用 <b>[info: ...]</b> 标记指定自定义信息选项字符串，以替换默认的 <b>-a</b> 选项。
 </p><p>请参阅 smartmontools 文档以了解可能的选项：
 </p><pre>
 <a href="https://www.smartmontools.org/wiki/Supported_RAID-Controllers">https://www.smartmontools.org/wiki/Supported_RAID-Controllers</a>
@@ -1591,11 +1628,12 @@ PARITY 是奇偶校验名称之一：<b>parity</b>、<b>2-parity</b>、<b>3-pari
 </pre>
 <p>例如：
 </p><pre>
+smartctl d1 [info: -H -i -c -A] -d sat %s
 smartctl parity -d sat %s
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-17" class="manual-title-level-2">
+<h2 id="sec7-18" class="manual-title-level-2">
 smartignore DISK/PARITY ATTR [ATTR...]
 </h2>
 <p>在计算磁盘故障概率时忽略指定的 SMART 属性。
@@ -1604,17 +1642,22 @@ smartignore DISK/PARITY ATTR [ATTR...]
 PARITY 是奇偶校验名称之一：<b>parity</b>、<b>2-parity</b>、<b>3-parity</b>、
 <b>4-parity</b>、<b>5-parity</b>、<b>6-parity</b> 或 <b>z-parity</b>。
 特殊值 * 可用于在所有磁盘上忽略该属性。
-</p><p>例如，要在所有磁盘上忽略 <b>Current Pending Sector Count</b> 属性：
+</p><p>可以指定多个属性，用空格分隔。
+每个属性可以指定为 1 到 255 之间的数字，或者不区分大小写的名称
+（例如 <b>Current_Pending_Sector</b>）。
+</p><p>例如，要在所有磁盘上通过编号或名称忽略 <b>Current Pending Sector Count</b> 和
+<b>Reallocated Sectors Count</b> 属性：
 </p><pre>
-smartignore * 197
+smartignore * 197 5
+smartignore * Current_Pending_Sector Reallocated_Sector_Ct
 </pre>
-<p>要仅在第一个奇偶校验磁盘上忽略它：
+<p>要仅在第一个奇偶校验磁盘上忽略它们：
 </p><pre>
-smartignore parity 197
+smartignore parity 197 5
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-18" class="manual-title-level-2">
+<h2 id="sec7-19" class="manual-title-level-2">
 Examples
 </h2>
 <p>Unix 的典型配置示例如下：
@@ -1627,7 +1670,7 @@ data d2 /mnt/disk2/
 data d3 /mnt/disk3/
 exclude /lost+found/
 exclude /tmp/
-smartctl d1 -d sat %s
+smartctl d1 [info: -H -i -c -A] -d sat %s
 smartctl d2 -d usbjmicron %s
 smartctl parity -d areca,1/1 /dev/sg0
 smartctl 2-parity -d areca,2/1 /dev/sg0
@@ -1643,7 +1686,7 @@ data d3 I:\array\
 exclude Thumbs.db
 exclude \$RECYCLE.BIN
 exclude \System Volume Information
-smartctl d1 -d sat %s
+smartctl d1 [info: -H -i -c -A] -d sat %s
 smartctl d2 -d usbjmicron %s
 smartctl parity -d areca,1/1 /dev/arcmsr0
 smartctl 2-parity -d areca,2/1 /dev/arcmsr0
@@ -1652,7 +1695,125 @@ smartctl 2-parity -d areca,2/1 /dev/arcmsr0
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec8" class="manual-title-level-1">
-Pattern
+快照 (Snapshots)
+</h1>
+<p>如果配置中启用了快照选项，SnapRAID 将使用文件系统快照来保持操作期间
+读取的数据稳定，即使实时文件系统上的文件随后被修改或删除也是如此。
+</p><p>快照的管理是完全自动且透明的。
+您可以完全像以前一样继续使用 SnapRAID，而快照提供的
+额外保护完全在后台处理。
+</p><p>这提供了两个主要好处：
+</p><div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+一致性
+</div><div class="manual-tag-description">
+在运行时间较长的 sync 或 scrub 期间在活动文件系统上修改的文件
+不会导致校验不匹配或操作中止，因为每个创建了快照的文件系统在操作期间
+都保持不变。
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+恢复
+</div><div class="manual-tag-description">
+如果从实时文件系统中更新或删除了一个文件，
+它仍会保留在快照中。如果下次 sync 运行之前发生磁盘故障，
+SnapRAID 会使用快照中保留的数据来重建发生故障的磁盘。
+在活动同步过程中发生磁盘故障的情况下，
+SnapRAID 还能自动从上一次校验计算的快照和当前的快照中读取数据。
+这通过提供解校验方程所需的精确数据块访问，
+最大程度地提高了完全恢复的概率，即使这些数据块在同步之间被修改或删除。
+如果没有快照，健康磁盘上更新或删除的文件会导致缺少数据块，
+而这些数据块可能是修复其他损坏磁盘所必需的。
+</div>
+</div>
+</div>
+<p>快照仅为数据磁盘创建，并且仅在底层文件系统支持此功能时创建。
+校验磁盘始终使用实时文件系统。
+</p><p>目前，Linux 上的 Btrfs、Bcachefs 和 ZFS 以及 Windows 上的 NTFS 支持此功能。
+</p><p>您可以混合使用具有不同文件系统的数据磁盘。只有那些
+支持快照的磁盘才会利用它们，而其他磁盘将继续直接在实时文件系统上运行。
+</p><p>快照的创建和删除需要管理权限。
+启用快照时，请确保以必要的权限（例如 sudo）运行 SnapRAID。
+</p><div class="manual-section-level-2">
+<h2 id="sec8-1" class="manual-title-level-2">
+快照的命令行为
+</h2>
+<p><b>sync</b> 和 <b>scrub</b> 命令对支持快照的文件系统的数据磁盘使用快照。
+在启用了快照的磁盘上，该命令看到的是一个不受实时文件系统并发更改影响的
+稳定文件系统镜像。
+在 <b>sync</b> 期间，会为每个受支持的数据文件系统独立创建新的快照。
+这些快照共同提供用于校验计算的数据。
+相比之下，<b>scrub</b> 命令利用上一个快照（即在最近一次同步期间创建的快照）
+来维持与现有校验匹配的可靠参考点。
+</p><p>对于 <b>check</b> 和 <b>fix</b> 命令，上一个快照的使用
+取决于是否使用 -d, --filter-disk 选项指定了特定磁盘。
+</p><p>通过 -d 明确选择的磁盘（操作的“目标”）始终使用实时文件系统。
+对于 <b>fix</b>，这允许将数据恢复到活动的替代磁盘。对于 <b>check</b>，
+它允许在相同条件下模拟 <b>fix</b> 操作。
+</p><p>所有其他数据磁盘（“参考”磁盘）都将通过其快照进行访问。
+这确保了即使您在恢复进行时修改健康磁盘上的文件，
+SnapRAID 也有一个稳定、冻结的参考来求解校验方程。
+</p><p>如果没有提供 -d 选项，SnapRAID 会假设该操作适用于整个阵列，
+在这种情况下，<b>check</b> 和 <b>fix</b> 将排他性地使用实时文件系统。
+</p><p>所有其他命令完全在实时文件系统上运行。
+</p></div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec9" class="manual-title-level-1">
+快照生命周期 (Snapshots Lifecycle)
+</h1>
+<p>SnapRAID 在每个数据子卷根目录下的隐藏目录中管理三个特定的快照：
+<b>stable</b>（稳定）、<b>pending</b>（待定）和 <b>scan</b>（扫描）。
+在 Btrfs、Bcachefs 和 NTFS 中使用 <b>.snapraid/</b> 目录，
+在 ZFS 中使用标准的 <b>.zfs/snapshot/</b>。
+</p><p><b>stable</b> 快照代表上一次成功完成的 <b>sync</b> 的状态，
+包含用于计算当前校验的准确数据。它作为 <b>scrub</b>、<b>check</b>
+和 <b>fix</b> 命令的主要数据源。
+</p><p><b>scan</b> 快照是在 <b>sync</b> 开始时创建的临时镜像，
+用于为扫描和校验计算提供冻结状态。在扫描并保存新的内容状态后，
+它将替换以前的 <b>pending</b> 快照。
+</p><p><b>pending</b> 快照是中断的 <b>sync</b> 所使用的镜像。
+在操作成功完成后，以前的 <b>stable</b> 快照将被删除，
+并且 <b>pending</b> 快照将被提升以接替其作为新的稳定参考。
+</p><p>如果 <b>sync</b> 中断，<b>pending</b> 快照将被保留。
+随后的 <b>scrub</b>、<b>check</b> 和 <b>fix</b> 命令将使用此待定快照，
+因为它与 .content 文件中记录的文件系统状态相匹配，即使校验仅部分同步。
+</p><p>在 <b>sync</b> 中断的情况下，<b>check</b> 和 <b>fix</b> 命令
+还会从 <b>stable</b> 快照中读取数据，以检索在同步期间更新或删除的文件的
+数据块。这是可能的，因为 .content 文件在整个同步过程中保留了
+所有修改或删除的文件的元数据。此历史信息仅在同步
+成功完成并保存 .content 文件的最终版本后才会清除。
+</p><p>如果 <b>sync</b> 在中断后重新启动，现有的 pending 快照将被删除，
+并创建一个新快照以捕获实时文件系统的当前状态。
+但是，如果 <b>sync</b> 中断，请避免在后续 <b>sync</b> 成功完成之前修改、删除、
+替换或移动文件。校验可能仍包含根据中断的同步所使用的快照计算的块。
+以后的同步可能会替换该快照，从而导致中间文件版本无法用于恢复。
+</p><div class="manual-section-level-2">
+<h2 id="sec9-1" class="manual-title-level-2">
+使用文件系统快照进行外部备份 (External backups with filesystem snapshots)
+</h2>
+<p>当启用文件系统快照时，SnapRAID 会在每个数据子卷、卷或数据集（dataset）
+的根目录下访问或创建快照。
+</p><p>避免与外部工具发生冲突的一种简单方法，是将 <b>data</b> 配置指向子卷或卷内的
+常规子目录（例如 <b>/mnt/subvol/data</b> 而不是 <b>/mnt/subvol</b>）。SnapRAID
+始终会在子卷根目录下创建快照目录（例如 <b>/mnt/subvol/.snapraid/</b>），从而保持
+数据子目录整洁，使快照保留在外部且对在该目录内运行的备份工具不可见。
+</p><p>否则，如果配置的 <b>data</b> 目录本身就是子卷或卷的根目录，SnapRAID 会直接在其中
+创建 <b>.snapraid/</b> 目录（在 Btrfs、Bcachefs 和 NTFS 上）。虽然 SnapRAID
+会在其自身的扫描中自动排除此目录，但外部备份工具或文件同步工具会发现它。如果未
+将其排除，它们可能会遍历快照或目录链接并复制整个冻结的数据树，从而导致数据
+重复并耗尽备份存储空间。请务必将外部备份工具配置为排除 <b>.snapraid/</b> 目录。
+</p><p>在 ZFS 上，快照是通过标准虚拟目录 <b>.zfs/snapshot/</b> 而不是 <b>.snapraid/</b>
+公开的。默认情况下（<b>snapdir=hidden</b>），ZFS 会在目录列表中隐藏此目录，因此
+外部备份工具不会遍历它。如果您启用了 <b>snapdir=visible</b>，请确保您的备份工具
+排除 <b>.zfs/</b> 目录。
+</p></div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec10" class="manual-title-level-1">
+模式 (Pattern)
 </h1>
 <p>模式提供了一种灵活的方法来过滤要包含或排除的文件。通过使用通配符（globbing），
 您可以定义匹配特定文件名或整个目录结构的规则，而无需手动列出每个路径。
@@ -1661,19 +1822,21 @@ Pattern
 </p><p>单星号 <b>*</b> 匹配任何字符序列，但与问号一样，它绝不会跨越目录边界。
 它在正斜杠处停止，因此适用于匹配单个路径组件内的内容。
 这是 Shell 通配符中常见的标准行为。
-</p><p>双星号 <b>**</b> 功能更强大，它可以匹配任何字符序列，包括目录分隔符。
-这允许模式匹配跨越多个目录层级。当 <b>**</b> 直接嵌入在模式中时，
-它可以匹配零个或多个字符，包括周围文字文本之间的斜杠。
-</p><p><b>**</b> 最重要的用法是特殊形式 <b>/**/</b>。它可以匹配零个或多个完整的目录层级，
-从而可以在不知道确切路径结构的情况下，匹配目录树中任何深度的文件。
-例如，模式 <b>src/**/main.js</b> 匹配 <b>src/main.js</b>（跳过零个目录）、
-<b>src/ui/main.js</b>（跳过一个目录）以及 <b>src/ui/components/main.js</b>
-（跳过两个目录）。
+</p><p>双星号通配符 <b>**</b> 仅在与目录分隔符相邻时（前面或后面有斜杠）才能跨越
+目录分隔符进行匹配。在此形式下，它可以跨越多个目录层级匹配零个或多个字符。
+例如，<b>foo/**/bar</b> 匹配 <b>foo/bar</b>、<b>foo/a/bar</b> 和 <b>foo/a/b/bar</b>；
+<b>**/build</b> 匹配 <b>build</b> 和 <b>foo/bar/build</b>；<b>src/**.js</b> 匹配 <b>src/main.js</b>
+和 <b>src/ui/components/main.js</b>。
+单独的形式 <b>/**/</b> 不被接受为完整的模式。
+</p><p>当 <b>**</b> 不与斜杠相邻时，其行为类似于 <b>*</b>，不会匹配目录分隔符。例如，
+<b>**.jpg</b> 匹配当前目录中的 <b>photo.jpg</b>，但不会匹配 <b>dir/photo.jpg</b>。
+如需匹配子目录中的文件，请使用 <b>**/*.jpg</b>。
 </p><p>使用方括号 <b>[]</b> 的字符类匹配指定集合或范围内的单个字符。
 与其他单字符模式一样，它们不匹配目录分隔符。字符类支持使用
 感叹号进行范围指定和否定。
 </p><p>需要记住的根本区别是，<b>*</b>、<b>?</b> 和字符类都遵循目录边界，
-并且仅在单个路径组件内匹配，而 <b>**</b> 是唯一可以跨越目录分隔符匹配的模式。
+并且仅在单个路径组件内匹配，而 <b>**</b> 仅在与斜杠相邻时才能跨越
+目录分隔符进行匹配。
 </p><p>有四种不同类型的模式：
 </p><div class="manual-option-list">
 <div class="manual-option-entry">
@@ -1758,6 +1921,21 @@ include /movies/
 include /musics/
 include /pictures/
 </pre>
+<p>请注意，排除目录（使用 DIR/ 或 /PATH/DIR/）会阻止 SnapRAID 进入并扫描该目录。
+因此，无法使用 <b>include</b> 规则重新包含位于已排除父目录内的文件或子目录，
+因为扫描器根本不会遍历到该目录中。
+</p><p>例如，以下配置将不会包含 <b>file.dat</b>，因为 <b>/keep/</b> 在看到 <b>file.dat</b> 之前已被修剪：
+</p><pre>
+# 无法按预期工作: /keep/ 会被完全跳过
+include /keep/file.dat
+exclude /keep/
+</pre>
+<p>若要排除目录中的文件但保留特定文件，请匹配目录内的文件模式，而不是排除目录本身：
+</p><pre>
+# 可以正常工作: 会遍历 /keep/，但其中的其他文件会被排除
+include /keep/file.dat
+exclude /keep/*
+</pre>
 <p>在命令行上，使用 -f 选项，您只能使用 <b>include</b>
 模式。例如：
 </p><pre>
@@ -1769,8 +1947,8 @@ snapraid -f "*.mp3" check
 引用它们以防止 shell 扩展它们。
 </p></div>
 <div class="manual-section-level-1">
-<h1 id="sec9" class="manual-title-level-1">
-Ignore File
+<h1 id="sec11" class="manual-title-level-1">
+忽略文件 (Ignore File)
 </h1>
 <p>除了配置文件中的全局规则外，您还可以在阵列内的任何目录中放置
 <b>.snapraidignore</b> 文件，以定义分散的排除规则。
@@ -1831,18 +2009,20 @@ build/
 </pre>
 </div>
 <div class="manual-section-level-1">
-<h1 id="sec10" class="manual-title-level-1">
-Content
+<h1 id="sec12" class="manual-title-level-1">
+内容 (Content)
 </h1>
 <p>SnapRAID 将文件列表和校验和存储在 content 文件中。
 </p><p>它是一个二进制文件，列出了磁盘阵列中存在的所有文件，
 以及用于验证其完整性的所有校验和。
-</p><p>此文件由 <b>sync</b> 和 <b>scrub</b> 命令读取和写入，并由
-<b>fix</b>、<b>check</b> 和 <b>status</b> 命令读取。
+</p><p>content 文件由 <b>sync</b>、<b>scrub</b>、<b>touch</b> 和 <b>rehash</b> 命令读取和写入。
+它由 <b>status</b>、<b>diff</b>、<b>check</b>、<b>fix</b>、<b>list</b>、<b>dup</b>、<b>locate</b> 和
+<b>pool</b> 命令读取，并被 <b>smart</b>、<b>probe</b>、<b>up</b>、<b>down</b> 和 <b>devices</b>
+命令完全忽略。
 </p></div>
 <div class="manual-section-level-1">
-<h1 id="sec11" class="manual-title-level-1">
-Parity
+<h1 id="sec13" class="manual-title-level-1">
+奇偶校验 (Parity)
 </h1>
 <p>SnapRAID 将阵列的奇偶校验信息存储在 parity 文件中。
 </p><p>这些是二进制文件，包含 <b>content</b> 文件中定义的所有
@@ -1851,8 +2031,8 @@ Parity
 并且仅由 <b>scrub</b> 和 <b>check</b> 命令读取。
 </p></div>
 <div class="manual-section-level-1">
-<h1 id="sec12" class="manual-title-level-1">
-Encoding
+<h1 id="sec14" class="manual-title-level-1">
+编码 (Encoding)
 </h1>
 <p>SnapRAID 在 Unix 中忽略任何编码。它读取并存储
 文件系统使用的相同编码的文件名。
@@ -1863,6 +2043,234 @@ Encoding
 作为控制台字体。这仅影响打印的文件名；如果
 您将控制台输出重定向到文件，则生成的文件始终
 采用 UTF-8 格式。
+</p></div>
+<div class="manual-section-level-1">
+<h1 id="sec15" class="manual-title-level-1">
+退出码 (Exit Code)
+</h1>
+<p>SnapRAID 终止并返回以下错误代码：
+</p><div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+0
+</div><div class="manual-tag-description">
+一切正常。
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+1
+</div><div class="manual-tag-description">
+命令遇到一些错误。
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+2
+</div><div class="manual-tag-description">
+<b>diff</b> 命令发现一切正常，但需要进行 <b>sync</b>。
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+3
+</div><div class="manual-tag-description">
+磁盘设备命令（<b>probe</b>、<b>smart</b>、<b>devices</b>、<b>up</b>、<b>down</b>）已完成，
+但至少有一个文件系统因缺少设备而以降级（degraded）模式运行。
+</div>
+</div>
+</div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec16" class="manual-title-level-1">
+已知问题 (Known Issues)
+</h1>
+<div class="manual-section-level-2">
+<h2 id="sec16-1" class="manual-title-level-2">
+文件系统边界
+</h2>
+<p>SnapRAID 在扫描数据磁盘时不会跨越文件系统、挂载点或子卷边界。
+当检测到此类边界时，SnapRAID 会报告警告（WARNING）并且不会扫描其范围之外的内容。
+</p><p>位于此类边界之外的文件不包含在数据磁盘中，如果需要保护它们，则必须单独配置。
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-2" class="manual-title-level-2">
+带有文件系统快照的挂载点
+</h2>
+<p>启用文件系统快照时，不支持数据磁盘内的嵌套挂载点和 bind 挂载。
+</p><p>挂载点属于活动系统的挂载命名空间，不会保存在文件系统快照中。
+因此，在扫描快照时，活动文件系统中被挂载点隐藏的目录可能会变为可见。
+</p><p>启用文件系统快照时，请勿在数据磁盘内放置嵌套挂载点或 bind 挂载。
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-3" class="manual-title-level-2">
+带有文件系统快照的多套配置
+</h2>
+<p>使用相同文件系统快照命名空间的多套独立 SnapRAID 配置无法安全共享快照支持。
+</p><p>在 Btrfs 和 Bcachefs 上，只有一套启用了快照支持的 SnapRAID 配置可以使用
+同一子卷内的数据目录。在 ZFS 上，相同的限制适用于数据集，在 NTFS 上适用于卷。
+</p><p>共享相同快照命名空间的多套配置使用相同的 <b>stable</b>、<b>pending</b> 和 <b>scan</b> 快照。
+因此，运行其中一套配置可能会替换或删除另一套配置所需的恢复快照。
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-4" class="manual-title-level-2">
+未更改时间戳的原地文件修改
+</h2>
+<p>SnapRAID 通过比较文件大小和修改时间戳（mtime）来检测文件修改。
+</p><p>如果应用程序在不更改文件大小或不更新其修改时间戳的情况下原地修改文件，
+则 “diff” 和 “sync” 将不会检测到文件已更改，并且其奇偶校验也不会更新。
+</p><p>为确保 SnapRAID 识别此类更改，请更新文件的修改时间戳（例如使用 “touch” 实用程序）。
+否则，该差异仅在后续的 “scrub” 或 “check” 期间作为哈希不匹配被检测到。
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-5" class="manual-title-level-2">
+Windows 非 ASCII 大小写匹配
+</h2>
+<p>SnapRAID 在所有平台上均使用标准且可预测的 UTF-8 编码，仅对 ASCII 字符进行
+不区分大小写的匹配。
+</p><p>Windows 文件系统受到遗留设计的困扰，即通过任意的、依赖于系统的大小写折叠表在
+Unicode 文件名之间强制实行不区分大小写。因此，Windows 掩盖了文件系统的真实情况，
+将完全不同的 Unicode 字节序列视为同一个文件。
+</p><p>例如，<b>À.txt</b> 和 <b>à.txt</b> 是不同的 Unicode 名称，但 Windows 却不合逻辑地将它们
+视为相同文件，而 SnapRAID 则保留了它们的真实区别。
+</p><p>该限制是由于 Windows 对 Unicode 文件名的不一致处理及其对不区分大小写别名的
+执着所致。为了防止因 Windows 的大小写折叠而产生差异，请在配置路径和过滤器中
+始终为非 ASCII 字符指定准确的大小写。
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-6" class="manual-title-level-2">
+部分 fix 恢复
+</h2>
+<p>当使用 <b>-S, --start</b> 或 <b>-B, --count</b> 限制 <b>fix</b> 时，
+SnapRAID 仅对选定的块进行操作，而不执行文件级别的最终化处理或隔离。
+</p><p>如果恢复产生了无法证实代表当前内容的尽力而为（best-effort）数据，
+此类块仍可能以常规文件名写入。与这些已恢复块相关的不确定性在命令终止后
+不会保留。
+</p><p>因此，后续的 <b>fix</b> 会将这些可读取的块视为有效的文件数据，并且不会尝试
+再次恢复它们。这可能导致后续恢复报告成功，但在文件中留下不完整或过时的数据。
+</p><p><b>-S</b> 和 <b>-B</b> 选项仅适用于高级手动恢复，通常在常规 <b>fix</b> 失败后使用。
+如果部分 <b>fix</b> 报告了无法恢复的数据，请在尝试另一次恢复之前删除受影响的
+文件或对其重命名，或者手动验证其内容。
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-7" class="manual-title-level-2">
+NTFS 硬链接与排除的路径
+</h2>
+<p>在 NTFS 上，目录条目会为每个硬链接单独缓存文件大小和时间戳。
+当通过其中一个链接修改文件时，指向同一文件的其他链接的目录条目
+可能会保留过时的元数据，直到它们被访问为止。
+</p><p>如果在扫描过程中遇到同一文件的至少两个硬链接，SnapRAID 会自动
+检测并规范化这种情况。但是，如果仅扫描了一个硬链接，而其他硬链接
+被过滤器排除或位于数据磁盘路径之外，SnapRAID 将无法检测到 inode 冲突，
+并会依赖单个可见链接的缓存元数据。
+</p><p>因此，通过被排除或外部的硬链接所做的修改，在操作系统刷新所包含链接
+的元数据之前（例如通过该路径访问或打开文件时），可能会被 SnapRAID 忽略。
+</p><p>为避免此限制，请避免通过已从 SnapRAID 中排除的硬链接来修改受保护
+的文件，或者确保文件的所有硬链接都包含在扫描中，以便 SnapRAID 可以
+对它们进行规范化。
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-8" class="manual-title-level-2">
+中断的多重奇偶校验 sync 后的恢复
+</h2>
+<p>在具有多个奇偶校验磁盘的阵列中，中断的 <b>sync</b> 可能会使不同奇偶校验
+级别之间暂时彼此不同步。例如，奇偶校验 1 可能已经包含新更新的数据，
+而奇偶校验 2 仍包含旧数据。
+</p><p>在执行 <b>check</b> 或 <b>fix</b> 期间，SnapRAID 会尝试不同的奇偶校验组合，
+并根据已知的块哈希（覆盖整个块，通常为 256 KiB）验证重建的数据。
+</p><p>如果 SnapRAID 尝试使用新旧奇偶校验的不一致混合进行重建，线性 RAID
+方程将产生不正确的数据。要错误地接受这种无效组合，这些方程必须在同一
+条带中的其他未同步块被重建为错误数据的情况下，巧合地完美重建出至少一个
+完整的 256 KiB 块以使其哈希完全匹配。
+</p><p>这种情况并不依赖于哈希碰撞；相反，它需要混合奇偶校验方程本身碰巧
+生成原始的完整 256 KiB 块内容。虽然在特别构造的数据或高度重复的数据
+情况下在数学上是可能的，但在实际数据中这几乎是不可能的。
+</p><p>如果所有磁盘都运行良好，在进行进一步更改之前完成中断的 <b>sync</b> 可以消除
+这种不确定性。如果磁盘发生故障且需要恢复，在运行 <b>check</b> 或 <b>fix</b> 之前
+请避免修改任何数据磁盘。
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-9" class="manual-title-level-2">
+保留的文件和目录名称
+</h2>
+<p>SnapRAID 保留了一些文件、目录和快照名称用于其内部操作。请勿将这些名称
+用于用户数据：
+</p><div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+.snapraidignore
+</div><div class="manual-tag-description">
+本地排除规则文件。
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+.snapraid
+</div><div class="manual-tag-description">
+快照容器目录。
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+snapraid-*
+</div><div class="manual-tag-description">
+由 SnapRAID 管理的 ZFS 快照名称。
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+*.unrecoverable
+</div><div class="manual-tag-description">
+在恢复过程中被隔离的受损文件。
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+CONTENT.tmp
+</div><div class="manual-tag-description">
+用于 content 更新的临时文件。
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+CONTENT.lock
+</div><div class="manual-tag-description">
+content 锁定文件。
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+PARITY.spaceholder
+</div><div class="manual-tag-description">
+在 Windows 上分配奇偶校验期间使用的临时占位文件。
+</div>
+</div>
+</div>
+<p>将这些名称用于无关数据可能会导致文件或快照被忽略、被误认为是元数据、
+被覆盖、重命名或删除。
+</p><p>在 Windows 上，所有大小写变体也都被保留，即使在配置为区分大小写的 NTFS
+目录中也是如此（例如 .SNAPRAIDIGNORE、.SnapRaid、CONTENT.TMP 和
+CONTENT.Lock）。
+</p></div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec17" class="manual-title-level-1">
+翻译 (Translation)
+</h1>
+<p>本文档是英文手册的自动翻译。
+请参阅英文手册以获取权威版本。
+</p></div>
+<div class="manual-section-level-1">
+<h1 id="sec18" class="manual-title-level-1">
+版权 (Copyright)
+</h1>
+<p>此文件版权所有 (C) 2026 Andrea Mazzoleni
+</p></div>
+<div class="manual-section-level-1">
+<h1 id="sec19" class="manual-title-level-1">
+参见 (See Also)
+</h1>
+<p>snapraid_log(1), snapraidd(1), rsync(1)
 </p></div>
 
 

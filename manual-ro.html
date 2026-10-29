@@ -114,7 +114,7 @@
 
 <div class="manual-section-level-1">
 <h1 id="sec1" class="manual-title-level-1">
-Sintaxă
+Sintaxă (Synopsis)
 </h1>
 <pre>
 snapraid [-c, --conf CONFIG]
@@ -142,7 +142,7 @@ snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec2" class="manual-title-level-1">
-Descriere
+Descriere (Description)
 </h1>
 <p>SnapRAID este un program de backup conceput pentru matrici de discuri, care stochează
 informații de paritate pentru recuperarea datelor în cazul a până la șase
@@ -152,7 +152,7 @@ care se schimbă rar, SnapRAID oferă câteva caracteristici:
 </p><ul>
 <li>
 Puteți utiliza discuri deja pline cu fișiere fără
-nevoia de a le reformat, accesându-le ca de obicei.
+nevoia de a le reformata, accesându-le ca de obicei.
 </li>
 <li>
 Toate datele dvs. sunt hash-uite pentru a asigura integritatea datelor și a preveni
@@ -175,7 +175,7 @@ Puteți adăuga discuri în orice moment.
 </li>
 <li>
 SnapRAID nu vă blochează datele; puteți înceta să-l utilizați
-oricând fără a reforma sau muta date.
+oricând fără a reformata sau muta date.
 </li>
 <li>
 Pentru a accesa un fișier, este necesar să se rotească doar un singur disc, economisind
@@ -189,22 +189,36 @@ energie și reducând zgomotul.
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec3" class="manual-title-level-1">
-Limitări
+Limitări (Limitations)
 </h1>
-<p>SnapRAID este un hibrid între un program RAID și unul de backup, care urmărește să combine
-cele mai bune beneficii ale ambelor. Cu toate acestea, are unele limitări pe care ar trebui
+<p>SnapRAID este un hibrid între un RAID și un program de backup, având ca scop combinarea
+celor mai bune avantaje ale ambelor. Cu toate acestea, are unele limitări pe care ar trebui
 să le luați în considerare înainte de a-l utiliza.
-</p><p>Principala limitare este că, dacă un disc se defectează și nu ați făcut recent o sincronizare,
-este posibil să nu puteți recupera complet.
-Mai exact, este posibil să nu puteți recupera până la dimensiunea
-fișierelor modificate sau șterse de la ultima operațiune de sincronizare.
-Acest lucru se întâmplă chiar dacă fișierele modificate sau șterse nu sunt pe
-discul defect. Acesta este motivul pentru care SnapRAID este mai potrivit pentru
-date care se schimbă rar.
-</p><p>Pe de altă parte, fișierele nou adăugate nu împiedică recuperarea fișierelor
-deja existente. Veți pierde doar fișierele adăugate recent dacă acestea
-se află pe discul defect.
-</p><p>Alte limitări ale SnapRAID sunt:
+</p><p>Principala limitare este că, dacă un disc se defectează, puteți recupera datele doar până la
+starea ultimei operațiuni de <b>sync</b>. Orice date adăugate sau modificări efectuate
+de la ultima sincronizare care se află pe discul defect vor fi pierdute.
+</p><p>Prin urmare, SnapRAID este potrivit în principal pentru date care se modifică rar.
+</p><p>Pentru datele care existau deja la ultima sincronizare, fiabilitatea recuperării depinde
+de utilizarea sau nu a opțiunii <b>snapshot</b>:
+</p><ul>
+<li>
+Cu suport pentru snapshot (disponibil pe Btrfs, ZFS, Bcachefs și NTFS),
+SnapRAID poate menține automat o referință înghețată independentă
+a fiecărui sistem de fișiere de date acceptat.
+Acest lucru asigură că, chiar dacă modificați sau ștergeți fișiere pe sistemul de fișiere live
+în timpul sau după un sync, procesul de recuperare rămâne consistent și de încredere.
+</li>
+</ul>
+<ul>
+<li>
+Fără suport pentru snapshot, ștergerea sau modificarea fișierelor după un <b>sync</b>
+poate împiedica recuperarea completă a altor discuri defecte. Acest lucru se întâmplă
+deoarece paritatea nu mai corespunde cu fișierele modificate, chiar dacă
+acele fișiere nu se află pe discul defect. Pe de altă parte, fișierele nou adăugate
+nu împiedică recuperarea fișierelor deja existente.
+</li>
+</ul>
+<p>Alte limitări ale SnapRAID sunt:
 </p><ul>
 <li>
 Cu SnapRAID, aveți în continuare sisteme de fișiere separate pentru fiecare disc.
@@ -231,7 +245,7 @@ Permisiunile, proprietarul și atributele extinse nu sunt salvate.
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec4" class="manual-title-level-1">
-Noțiuni de Bază
+Noțiuni de Bază (Getting Started)
 </h1>
 <p>Pentru a utiliza SnapRAID, trebuie mai întâi să selectați un disc în matricea dvs. de discuri
 pentru a-l dedica informațiilor de <b>paritate</b>. Cu un singur disc pentru paritate, veți
@@ -305,7 +319,7 @@ va relua de unde a fost întrerupt.
 să actualizați periodic informațiile de paritate rulând comanda <b>sync</b>.
 </p><div class="manual-section-level-2">
 <h2 id="sec4-1" class="manual-title-level-2">
-Scrubbing (Verificare)
+Verificare (Scrubbing)
 </h2>
 <p>Pentru a verifica periodic datele și paritatea pentru erori, puteți
 rula comanda <b>scrub</b>.
@@ -345,11 +359,11 @@ dar blocurile aferente nu sunt marcate ca defecte.
 </p></div>
 <div class="manual-section-level-2">
 <h2 id="sec4-2" class="manual-title-level-2">
-Pooling (Agregare)
+Agregare (Pooling)
 </h2>
 <p>Notă: Funcționalitatea de pooling descrisă mai jos a fost înlocuită de instrumentul
 mergerfs, care este acum opțiunea recomandată pentru utilizatorii Linux în
-comunitatea SnapRAID. Mergefs oferă o modalitate mai flexibilă și eficientă
+comunitatea SnapRAID. Mergerfs oferă o modalitate mai flexibilă și eficientă
 de a agrega mai multe discuri într-un singur punct de montare unificat,
 permițând accesul neîntrerupt la fișiere pe toată matricea dvs. fără a se baza
 pe link-uri simbolice. Se integrează bine cu SnapRAID pentru protecția parității
@@ -357,7 +371,7 @@ pe link-uri simbolice. Se integrează bine cu SnapRAID pentru protecția parită
 sau configurații NAS personalizate.
 </p><p>Pentru a avea toate fișierele din matricea dvs. afișate în același arbore de directoare,
 puteți activa funcționalitatea de <b>pooling</b>. Aceasta creează o vizualizare virtuală
-doar în citire a tuturor fișierelor din matricea dvs. folosind link-uri simbolice.
+read-only a tuturor fișierelor din matricea dvs. folosind link-uri simbolice.
 </p><p>Puteți configura directorul de <b>pooling</b> în fișierul de configurare cu:
 </p><pre>
 pool /pool
@@ -417,7 +431,7 @@ fsutil behavior set SymlinkEvaluation L2L:1 R2R:1 L2R:1 R2L:1
 </div>
 <div class="manual-section-level-2">
 <h2 id="sec4-3" class="manual-title-level-2">
-Undeleting (Anulare Ștergere)
+Anulare ștergere (Undeleting)
 </h2>
 <p>SnapRAID funcționează mai mult ca un program de backup decât un sistem RAID și poate
 fi folosit pentru a restaura sau anula ștergerea fișierelor la starea lor anterioară utilizând
@@ -442,7 +456,7 @@ snapraid fix -m
 </div>
 <div class="manual-section-level-2">
 <h2 id="sec4-4" class="manual-title-level-2">
-Recuperare
+Recuperare (Recovering)
 </h2>
 <p>Cel mai rău s-a întâmplat și ați pierdut unul sau mai multe discuri!
 </p><p>NU INTRAȚI ÎN PANICĂ! Veți putea să le recuperați!
@@ -459,7 +473,7 @@ suplimentare, dar un disc USB extern sau un disc la distanță vor fi suficiente
 </p><p>Modificați fișierul de configurare SnapRAID pentru a face ca opțiunea <b>data</b> sau <b>parity</b>
 a discului defect să indice o locație cu suficient spațiu gol
 pentru a recupera fișierele.
-</p><p>De exemplu, dacă discul <b>d1</b> a eșuat, schimbați de la:
+</p><p>De exemplu, dacă discul <b>d1</b> s-a defectat, schimbați de la:
 </p><pre>
 data d1 /mnt/disk1/
 </pre>
@@ -492,7 +506,7 @@ sau total nerecuperabile, vor fi redenumite adăugând extensia <b>.unrecoverabl
 verificând toate liniile care încep cu <b>unrecoverable:</b>.
 </p><p>Dacă nu sunteți mulțumit de recuperare, o puteți reîncerca de câte
 ori doriți.
-</p><p>De exemplu, dacă ați eliminat fișiere din matrice după ultima
+</p><p>De exemplu, dacă ați eliminat fișiere din matrice după ultimul
 <b>sync</b>, acest lucru poate duce la nerecuperarea unor fișiere.
 În acest caz, puteți reîncerca <b>fix</b>-ul utilizând opțiunea -i, --import,
 specificând unde se află acum aceste fișiere pentru a le include din nou în
@@ -530,24 +544,24 @@ snapraid sync
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec5" class="manual-title-level-1">
-Comenzi
+Comenzi (Commands)
 </h1>
 <p>SnapRAID oferă câteva comenzi simple care vă permit să:
 </p><ul>
 <li>
-Tipăriți starea matricei -&gt; <b>status</b>
+Afișați starea matricei -&gt; <b>status</b>
 </li>
 <li>
 Controlați discurile -&gt; <b>smart</b>, <b>probe</b>, <b>up</b>, <b>down</b>
 </li>
 <li>
-Faceți un backup/snapshot -&gt; <b>sync</b>
+Creați un punct de backup/recuperare -&gt; <b>sync</b>
 </li>
 <li>
 Verificați periodic datele -&gt; <b>scrub</b>
 </li>
 <li>
-Restaurați ultimul backup/snapshot -&gt; <b>fix</b>.
+Restaurați ultimul punct de backup/recuperare -&gt; <b>fix</b>.
 </li>
 </ul>
 <p>Comenzile trebuie scrise cu litere mici.
@@ -574,14 +588,14 @@ smart
 </h2>
 <p>Tipărește un raport SMART al tuturor discurilor din sistem.
 </p><p>Include o estimare a probabilității de eșec în anul următor,
-permițându-vă să planificați înlocuiri de întreținere a discurilor care prezintă
+permițându-vă să planificați înlocuiri de întreținere ale discurilor care prezintă
 atribute suspecte.
 </p><p>Această estimare a probabilității este obținută prin corelarea atributelor SMART
 ale discurilor cu datele Backblaze disponibile la:
 </p><pre>
 <a href="https://www.backblaze.com/hard-drive-test-data.html">https://www.backblaze.com/hard-drive-test-data.html</a>
 </pre>
-<p>Dacă SMART raportează că un disc este pe cale să eșueze, <b>FAIL</b> sau <b>PREFAIL</b> este tipărit
+<p>Dacă SMART raportează că un disc este pe cale să se defecteze, <b>FAIL</b> sau <b>PREFAIL</b> este tipărit
 pentru acel disc, iar SnapRAID returnează o eroare.
 În acest caz, înlocuirea imediată a discului este puternic recomandată.
 </p><p>Alte șiruri de stare posibile sunt:
@@ -635,7 +649,7 @@ o comandă personalizată utilizând opțiunea <b>smartctl</b> în fișierul de 
 <h2 id="sec5-4" class="manual-title-level-2">
 up
 </h2>
-<p>Pornirea tuturor discurilor din matrice.
+<p>Pornește toate discurile din matrice.
 </p><p>Puteți porni doar discuri specifice utilizând opțiunea -d, --filter-disk.
 </p><p>Pornirea tuturor discurilor în același timp necesită multă energie.
 Asigurați-vă că sursa dvs. de alimentare o poate susține.
@@ -645,7 +659,7 @@ Asigurați-vă că sursa dvs. de alimentare o poate susține.
 <h2 id="sec5-5" class="manual-title-level-2">
 down
 </h2>
-<p>Oprirea (spin down) tuturor discurilor din matrice.
+<p>Oprește (spin down) toate discurile din matrice.
 </p><p>Această comandă utilizează instrumentul <b>smartctl</b> și este echivalentă cu rularea
 <b>smartctl -s standby,now</b> pe toate dispozitivele.
 </p><p>Puteți opri doar discuri specifice utilizând opțiunea -d, --filter-disk.
@@ -658,7 +672,7 @@ atunci când apare o eroare.
 <h2 id="sec5-6" class="manual-title-level-2">
 diff
 </h2>
-<p>Listează toate fișierele modificate de la ultima <b>sync</b> care trebuie
+<p>Listează toate fișierele modificate de la ultimul <b>sync</b> care trebuie
 să li se recalculeze datele de paritate.
 </p><p>Această comandă nu verifică datele fișierului, ci doar marca temporală,
 dimensiunea și inodul fișierului.
@@ -698,9 +712,10 @@ fost modificate.
 <div class="manual-tag-name">
 moved
 </div><div class="manual-tag-description">
-Fișiere mutate într-un director diferit pe același disc.
-Sunt identificate având același nume, dimensiune, marcă temporală
-și inod, dar un director diferit.
+Fișiere mutate sau redenumite pe același disc, păstrând
+același inod. Sunt identificate prin faptul că au același inod,
+dimensiune și marcă temporală, dar o cale diferită. Numele
+fișierului poate fi, de asemenea, diferit.
 </div>
 </div>
 <div class="manual-tag-entry">
@@ -710,8 +725,8 @@ copied
 Fișiere copiate pe același disc sau pe un disc diferit
 unde fișierul original încă există.
 Acestea sunt identificate prin faptul că au același nume,
-dimensiune și amprentă temporală.
-Dacă amprenta temporală sub-secundă este zero, calea completă
+dimensiune și marcă temporală.
+Dacă marca temporală sub-secundă este zero, calea completă
 trebuie să se potrivească pentru a fi identificate, nu doar
 numele.
 </div>
@@ -720,14 +735,13 @@ numele.
 <div class="manual-tag-name">
 relocated
 </div><div class="manual-tag-description">
-Fișiere mutate pe același disc sau pe un disc diferit
-unde originalul a dispărut.
-Acestea sunt identificate prin faptul că au același nume,
-dimensiune și amprentă temporală.
-Dacă amprenta temporală sub-secundă este zero, calea completă
-trebuie să se potrivească pentru a fi identificate.
-Spre deosebire de fișierele 'moved' de pe același disc, fișierele
-relocate au un inod diferit.
+Fișiere mutate într-un director sau pe un disc diferit,
+unde fișierul original a dispărut și inodul nu este păstrat.
+Sunt identificate prin faptul că au același nume, dimensiune și
+marcă temporală. Dacă marca temporală sub-secundă este zero,
+calea completă trebuie să se potrivească pentru a fi identificate.
+Spre deosebire de fișierele 'moved', fișierele relocate necesită
+ca numele fișierului să rămână neschimbat.
 </div>
 </div>
 <div class="manual-tag-entry">
@@ -735,12 +749,12 @@ relocate au un inod diferit.
 restored
 </div><div class="manual-tag-description">
 Fișiere cu un inod diferit, dar care se potrivesc ca
-director, nume, dimensiune și amprentă temporală.
+director, nume, dimensiune și marcă temporală.
 Acestea sunt de obicei fișiere restaurate după ce au fost șterse.
 </div>
 </div>
 </div>
-<p>Dacă este necesară o <b>sync</b>, codul de retur al procesului este 2, în loc de
+<p>Dacă este necesară o sincronizare, codul de retur al procesului este 2, în loc de
 cel implicit 0. Codul de retur 1 este utilizat pentru o condiție de eroare generică.
 </p><p>Nimic nu este modificat.
 </p></div>
@@ -810,18 +824,17 @@ Fișierele din matrice NU sunt modificate.
 fix
 </h2>
 <p>Repară toate fișierele și datele de paritate.
-</p><p>Toate fișierele și datele de paritate sunt comparate cu starea snapshot-ului
-salvată la ultima <b>sync</b>.
-Dacă se găsește o diferență, este readusă la snapshot-ul stocat.
-</p><p>ATENȚIE! Comanda <b>fix</b> nu face diferența între erori și
-modificări intenționate. Ea revine necondiționat la starea fișierului
-de la ultima <b>sync</b>.
+</p><p>Toate fișierele și datele de paritate sunt comparate cu starea salvată în
+ultimul <b>sync</b>. Dacă se găsește o diferență, aceasta este readusă la starea stocată.
+</p><p>AVERTISMENT!
+Comanda <b>fix</b> nu face diferența între erori și modificări intenționate.
+Ea revine necondiționat la starea fișierelor de la ultimul <b>sync</b>.
 </p><p>Dacă nu este specificată nicio altă opțiune, întreaga matrice este procesată.
 Utilizați opțiunile de filtrare pentru a selecta un subset de fișiere sau discuri de operat.
 </p><p>Pentru a repara doar blocurile marcate ca defecte în timpul <b>sync</b> și <b>scrub</b>,
 utilizați opțiunea -e, --filter-error.
 Spre deosebire de alte opțiuni de filtrare, aceasta aplică reparații doar fișierelor care sunt
-neschimbate de la ultima <b>sync</b>.
+neschimbate de la ultimul <b>sync</b>.
 </p><p>SnapRAID redenumește toate fișierele care nu pot fi reparate adăugând extensia
 <b>.unrecoverable</b>.
 </p><p>Înainte de reparare, întreaga matrice este scanată pentru a găsi orice fișiere mutate
@@ -856,7 +869,7 @@ rulare mai rapidă.
 list
 </h2>
 <p>Listează toate fișierele conținute în matrice la momentul
-ultimei <b>sync</b>.
+ultimului <b>sync</b>.
 </p><p>Cu -v sau --verbose, este afișat și timpul sub-secundă.
 </p><p>Nimic nu este modificat.
 </p></div>
@@ -940,15 +953,14 @@ potrivit, afișează locația acestuia în fișierul de paritate și numărul de
 fragmente pe care le ocupă.
 </p><p>Puteți utiliza opțiunea -t, --tail pentru a restricționa operațiunea la fișierele
 care ocupă porțiunea finală specificată a parității.
-Dacă doriți să realocați aceste fișiere, puteți utiliza apoi opțiunea
--W, --force-realloc-tail.
-</p><p>Rețineți că astfel de fișiere nu vor fi protejate de paritate în timpul procesului
-de realocare.
+</p><p>Dacă doriți să realocați aceste fișiere, puteți utiliza apoi opțiunea
+-W, --force-realloc-tail. Rețineți că astfel de fișiere nu vor
+fi protejate de paritate în timpul procesului de realocare.
 </p></div>
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec6" class="manual-title-level-1">
-Opțiuni
+Opțiuni (Options)
 </h1>
 <p>SnapRAID oferă următoarele opțiuni:
 </p><div class="manual-option-list">
@@ -1097,7 +1109,7 @@ Această opțiune poate fi utilizată doar cu <b>sync</b>.
 -i, --import DIR
 </div><div class="manual-option-description">
 Importă din directorul specificat orice fișiere șterse
-din matrice după ultima <b>sync</b>.
+din matrice după ultimul <b>sync</b>.
 Dacă mai aveți astfel de fișiere, ele pot fi utilizate de <b>check</b>
 și <b>fix</b> pentru a îmbunătăți procesul de recuperare.
 Fișierele sunt citite, inclusiv în subdirectoare, și sunt
@@ -1127,14 +1139,14 @@ chiar și atunci când o comandă eșuează.
 </div><div class="manual-option-description">
 Aplică o limită globală de lățime de bandă pentru toate discurile. RATE este
 numărul de octeți pe secundă. Puteți specifica un multiplicator
-cum ar fi K, M sau G (de exemplu, --bw-limit 1G).
+cum ar fi K, M, G sau T (de exemplu, --bw-limit 1G).
 </div>
 </div>
 </div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
--t, --tail DIMENSIUNE
+-t, --tail SIZE
 </div><div class="manual-option-description">
 Limitează listarea fișierelor la cele care nu utilizează mai mult de
 dimensiunea finală specificată a discurilor de paritate.
@@ -1196,11 +1208,7 @@ pe disc lipsesc sau au fost rescrise, se oprește din a continua
 dacă nu specificați această opțiune.
 Acest lucru vă permite să detectați cu ușurință când un sistem de fișiere de date nu este
 montat.
-Este permis, totuși, să aveți o singură schimbare de UUID cu
-paritate simplă și mai multe cu paritate multiplă, deoarece acesta este
-cazul normal la înlocuirea discurilor după o recuperare.
-Această opțiune poate fi utilizată doar cu <b>sync</b>, <b>check</b> sau
-<b>fix</b>.
+Această opțiune poate fi utilizată doar cu <b>sync</b>.
 </div>
 </div>
 </div>
@@ -1292,7 +1300,7 @@ NU aveți protecție a datelor în timpul operațiunii <b>sync</b>.
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
--W, --force-realloc-tail DIMENSIUNE
+-W, --force-realloc-tail SIZE
 </div><div class="manual-option-description">
 Funcționează ca -R, --force-realloc, dar limitat la porțiunea finală
 specificată (ultimii DIMENSIUNE octeți) ai fiecărui fișier de paritate.
@@ -1347,7 +1355,7 @@ Vedeți fișierul snapraid_log.txt sau pagina de manual pentru descrieri ale eti
 </div><div class="manual-option-description">
 Setează o nouă limită de erori înainte de a opri execuția.
 În mod implicit, SnapRAID se oprește dacă întâlnește mai mult de 100
-de erori de intrare/ieșire, indicând că un disc probabil eșuează.
+de erori de intrare/ieșire, indicând că un disc probabil se defectează.
 Această opțiune afectează <b>sync</b> și <b>scrub</b>, cărora li se permite
 să continue după primul set de erori de disc pentru a încerca
 să își finalizeze operațiunile.
@@ -1363,7 +1371,8 @@ Cu toate acestea, <b>check</b> și <b>fix</b> se opresc întotdeauna la prima er
 Începe procesarea de la numărul de bloc
 specificat. Acest lucru poate fi util pentru a reîncerca verificarea
 sau repararea anumitor blocuri în cazul unui disc deteriorat.
-Această opțiune este în principal pentru recuperarea manuală avansată.
+Această opțiune este în principal pentru recuperarea manuală avansată
+și este acceptată numai de <b>check</b> și <b>fix</b>.
 </div>
 </div>
 </div>
@@ -1373,7 +1382,8 @@ Această opțiune este în principal pentru recuperarea manuală avansată.
 -B, --count BLKCOUNT
 </div><div class="manual-option-description">
 Procesează doar numărul specificat de blocuri.
-Această opțiune este în principal pentru recuperarea manuală avansată.
+Această opțiune este în principal pentru recuperarea manuală avansată
+și este acceptată numai de <b>check</b> și <b>fix</b>.
 </div>
 </div>
 </div>
@@ -1439,7 +1449,7 @@ Tipărește versiunea programului.
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec7" class="manual-title-level-1">
-Configurare
+Configurare (Configuration)
 </h1>
 <p>SnapRAID necesită un fișier de configurare pentru a ști unde se află matricea dvs. de discuri
 și unde să stocheze informațiile de paritate.
@@ -1481,7 +1491,7 @@ avertismentul despre discuri pline.
 3-parity activează paritatea triplă.
 </li>
 <li>
-4-parity activează paritatea quad (patru).
+4-parity activează paritatea cvadruplă (patru).
 </li>
 <li>
 5-parity activează paritatea penta (cinci).
@@ -1504,7 +1514,7 @@ z-parity FILE [,FILE] ...
 CPU-urilor low-end precum ARM sau AMD Phenom, Athlon și Opteron care nu
 suportă setul de instrucțiuni SSSE3. În astfel de cazuri, oferă
 o performanță mai bună.
-</p><p>Acest format este similar, dar mai rapid decât cel utilizat de ZFS RAIDZ3.
+</p><p>Acest format este similar cu cel utilizat de ZFS RAIDZ3, dar mai rapid decât acesta.
 Ca și ZFS, nu funcționează dincolo de paritatea triplă.
 </p><p>Când utilizați <b>3-parity</b>, veți fi avertizați dacă este recomandat să utilizați
 formatul <b>z-parity</b> pentru îmbunătățirea performanței.
@@ -1516,7 +1526,7 @@ fișierul de configurare cu fișierul z-parity sau 3-parity dorit
 <h2 id="sec7-4" class="manual-title-level-2">
 content FILE
 </h2>
-<p>Definește fișierul de utilizat pentru a stoca lista și sumele de control (checksums) a tuturor
+<p>Definește fișierul de utilizat pentru a stoca lista și sumele de control (checksums) ale tuturor
 fișierelor prezente în matricea dvs. de discuri.
 </p><p>Poate fi plasat pe un disc utilizat pentru date, paritate sau
 orice alt disc disponibil.
@@ -1537,6 +1547,10 @@ să fie unic. DIR este punctul de montare al discului în
 sistemul de fișiere.
 </p><p>Puteți schimba punctul de montare după cum este necesar, atâta timp cât
 păstrați NAME fix.
+</p><p>Cu toate acestea, calea configurată trebuie să indice în mod consecvent
+aceleași date subiacente. Dacă calea conține legături simbolice,
+țintele acestora trebuie să rămână stabile. Redirecționarea acestor linkuri
+pentru a schimba directorul de date din mers nu este acceptată.
 </p><p>Ar trebui să utilizați o opțiune pentru fiecare disc de date din matrice.
 </p><p>Puteți redenumi un disc mai târziu schimbând NAME direct
 în fișierul de configurare și apoi rulând o comandă <b>sync</b>.
@@ -1557,6 +1571,30 @@ sistemului, cum ar fi discul de pornire.
 </p></div>
 <div class="manual-section-level-2">
 <h2 id="sec7-7" class="manual-title-level-2">
+snapshot
+</h2>
+<p>Activează utilizarea snapshot-urilor sistemului de fișiere pentru comenzile <b>sync</b>, <b>scrub</b>,
+<b>check</b> și <b>fix</b>.
+</p><p>Când este activată, SnapRAID creează un snapshot read-only al fiecărui sistem
+de fișiere de date acceptat la începutul unui 'sync'. Acest lucru oferă o vizualizare
+stabilă a fiecărui sistem de fișiere, împiedicând modificările ulterioare să modifice
+datele utilizate pentru calculul parității.
+</p><p>Acest lucru îmbunătățește semnificativ recuperarea: dacă un fișier este șters din sistemul de fișiere live,
+el rămâne păstrat în snapshot. Acest lucru previne ca paritatea să devină „ruptă”
+pentru acel bloc, asigurându-vă că puteți recupera cu succes datele
+dacă un alt disc se defectează.
+</p><p>Această opțiune se aplică exclusiv discurilor de date formatate cu sistemele de
+fișiere Btrfs, Bcachefs sau ZFS în Linux și NTFS în Windows.
+Discurile de paritate, sau discurile de date care utilizează alte sisteme de fișiere, vor folosi întotdeauna
+versiunea live a sistemului de fișiere.
+</p><p>Crearea și ștergerea snapshot-urilor necesită privilegii administrative.
+Asigurați-vă că SnapRAID este rulat cu permisiunile necesare (de exemplu, sudo) când
+această opțiune este activată.
+</p><p>Consultați secțiunea SNAPSHOTS pentru o explicație detaliată a ciclului de viață
+al snapshot-urilor.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-8" class="manual-title-level-2">
 nohidden
 </h2>
 <p>Exclude toate fișierele și directoarele ascunse.
@@ -1564,7 +1602,7 @@ nohidden
 În Windows, sunt cele cu atributul ascuns.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-8" class="manual-title-level-2">
+<h2 id="sec7-9" class="manual-title-level-2">
 exclude/include PATTERN
 </h2>
 <p>Definește modelele de fișiere sau directoare de exclus sau inclus
@@ -1575,12 +1613,16 @@ este exclus. Dacă este un <b>include</b>, fișierul este inclus.
 Dacă niciun model nu se potrivește, fișierul este exclus dacă ultimul model
 specificat este un <b>include</b>, sau inclus dacă ultimul model
 specificat este un <b>exclude</b>.
+</p><p>Rețineți că filtrarea se produce ierarhic în timpul parcurgerii
+directoarelor. Dacă un director se potrivește cu o regulă <b>exclude</b>,
+întregul director este omis (eliminat), iar regulile <b>include</b> pentru
+fișierele sau subdirectoarele din interiorul său nu vor fi evaluate.
 </p><p>Vedeți secțiunea PATTERN pentru mai multe detalii despre
 specificațiile modelului.
 </p><p>Această opțiune poate fi utilizată de mai multe ori.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-9" class="manual-title-level-2">
+<h2 id="sec7-10" class="manual-title-level-2">
 blocksize SIZE_IN_KIBIBYTES
 </h2>
 <p>Definește dimensiunea de bază a blocului în kibibytes pentru paritate.
@@ -1621,7 +1663,7 @@ un disc de 4 TB, ceea ce permite aproximativ 460.000 de fișiere pe fiecare disc
 niciun spațiu irosit.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-10" class="manual-title-level-2">
+<h2 id="sec7-11" class="manual-title-level-2">
 hashsize SIZE_IN_BYTES
 </h2>
 <p>Definește dimensiunea hash-ului în octeți pentru blocurile salvate.
@@ -1656,16 +1698,16 @@ RAM = (8 * 4 * 10^12) * (1+8) / (512 * 2^10) = 0,51 GiB
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-11" class="manual-title-level-2">
+<h2 id="sec7-12" class="manual-title-level-2">
 autosave SIZE_IN_GIGABYTES
 </h2>
 <p>Salvează automat starea la sincronizare sau verificare după
 cantitatea specificată de GB procesați.
 Această opțiune este utilă pentru a evita repornirea comenzilor <b>sync</b> lungi
-de la zero dacă sunt întrerupte de o cădere a mașinii sau de orice alt eveniment.
+de la zero dacă sunt întrerupte de o pană de sistem sau de orice alt eveniment.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-12" class="manual-title-level-2">
+<h2 id="sec7-13" class="manual-title-level-2">
 temp_limit TEMPERATURE_CELSIUS
 </h2>
 <p>Setează temperatura maximă permisă a discului în Celsius. Când este specificată,
@@ -1674,12 +1716,12 @@ instrumentul smartctl. Temperaturile curente ale discurilor sunt afișate în ti
 SnapRAID funcționează. Dacă un disc depășește această limită, toate operațiunile
 se opresc, iar discurile sunt oprite (puse în standby) pentru durata
 definită de opțiunea <b>temp_sleep</b>. După perioada de așteptare, operațiunile
-reiau, putând întrerupe din nou dacă limita de temperatură este atinsă
+se reiau, putând fi întrerupte din nou dacă limita de temperatură este atinsă
 încă o dată.
 </p><p>În timpul funcționării, SnapRAID analizează și curba de încălzire a fiecărui
 disc și estimează temperatura constantă pe termen lung pe care se așteaptă să o
 atingă dacă activitatea continuă. Estimarea este efectuată numai după
-ce temperatura discului a crescut de patru ori, asigurându-se că sunt disponibile
+ce temperatura discului a înregistrat patru creșteri, asigurându-se că sunt disponibile
 suficiente puncte de date pentru a stabili o tendință fiabilă.
 Această temperatură constantă prezisă este afișată între paranteze lângă
 valoarea curentă și ajută la evaluarea dacă răcirea sistemului este
@@ -1694,7 +1736,7 @@ cea mai scăzută temperatură a discului măsurată la începutul rulării ca r
 Pentru a afișa temperatura tuturor discurilor, utilizați opțiunea -A sau --stats.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-13" class="manual-title-level-2">
+<h2 id="sec7-14" class="manual-title-level-2">
 temp_sleep TIME_IN_MINUTES
 </h2>
 <p>Setează timpul de așteptare (standby), în minute, când limita de temperatură este
@@ -1702,7 +1744,7 @@ atinsă. În această perioadă, discurile rămân oprite. Valoarea implicită
 este 5 minute.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-14" class="manual-title-level-2">
+<h2 id="sec7-15" class="manual-title-level-2">
 pool DIR
 </h2>
 <p>Definește directorul de pooling unde este creată vizualizarea virtuală a matricei
@@ -1710,7 +1752,7 @@ de discuri utilizând comanda <b>pool</b>.
 </p><p>Directorul trebuie să existe deja.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-15" class="manual-title-level-2">
+<h2 id="sec7-16" class="manual-title-level-2">
 share UNC_DIR
 </h2>
 <p>Definește calea UNC Windows necesară pentru a accesa discurile de la distanță.
@@ -1724,7 +1766,7 @@ directorul și numele fișierului.
 </p><p>Această opțiune este necesară doar pentru Windows.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-16" class="manual-title-level-2">
+<h2 id="sec7-17" class="manual-title-level-2">
 smartctl DISK/PARITY OPTIONS...
 </h2>
 <p>Definește opțiuni smartctl personalizate pentru a obține atributele SMART pentru
@@ -1737,6 +1779,8 @@ PARITY este unul dintre numele de paritate: <b>parity</b>, <b>2-parity</b>, <b>3
 </p><p>În OPȚIUNILE specificate, șirul <b>%s</b> este înlocuit de
 numele dispozitivului. Pentru controlerele RAID, dispozitivul este
 probabil fix și este posibil să nu fie nevoie să utilizați <b>%s</b>.
+</p><p>De asemenea, puteți specifica un șir de opțiuni de informații personalizate
+utilizând eticheta <b>[info: ...]</b> pentru a înlocui opțiunea implicită <b>-a</b>.
 </p><p>Consultați documentația smartmontools pentru opțiuni posibile:
 </p><pre>
 <a href="https://www.smartmontools.org/wiki/Supported_RAID-Controllers">https://www.smartmontools.org/wiki/Supported_RAID-Controllers</a>
@@ -1744,32 +1788,37 @@ probabil fix și este posibil să nu fie nevoie să utilizați <b>%s</b>.
 </pre>
 <p>De exemplu:
 </p><pre>
+smartctl d1 [info: -H -i -c -A] -d sat %s
 smartctl parity -d sat %s
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-17" class="manual-title-level-2">
+<h2 id="sec7-18" class="manual-title-level-2">
 smartignore DISK/PARITY ATTR [ATTR...]
 </h2>
 <p>Ignoră atributul SMART specificat la calcularea probabilității
-de eșec a discului. Această opțiune este utilă dacă un disc raportează valori neobișnuite sau
+de eșec al discului. Această opțiune este utilă dacă un disc raportează valori neobișnuite sau
 înșelătoare pentru un anumit atribut.
 </p><p>DISK este același nume de disc specificat în opțiunea <b>data</b>.
 PARITY este unul dintre numele de paritate: <b>parity</b>, <b>2-parity</b>, <b>3-parity</b>,
 <b>4-parity</b>, <b>5-parity</b>, <b>6-parity</b> sau <b>z-parity</b>.
 Valoarea specială * poate fi utilizată pentru a ignora atributul pe toate discurile.
-</p><p>De exemplu, pentru a ignora atributul <b>Current Pending Sector Count</b> pe
-toate discurile:
+</p><p>Mai multe atribute pot fi specificate separate prin spații.
+Fiecare atribut poate fi specificat ca un număr de la 1 la 255 sau ca un
+nume insensibil la majuscule (de exemplu, <b>Current_Pending_Sector</b>).
+</p><p>De exemplu, pentru a ignora atributele <b>Current Pending Sector Count</b> și
+<b>Reallocated Sectors Count</b> pe toate discurile după numărul sau numele lor:
 </p><pre>
-smartignore * 197
+smartignore * 197 5
+smartignore * Current_Pending_Sector Reallocated_Sector_Ct
 </pre>
-<p>Pentru a-l ignora doar pe primul disc de paritate:
+<p>Pentru a le ignora doar pe primul disc de paritate:
 </p><pre>
-smartignore parity 197
+smartignore parity 197 5
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-18" class="manual-title-level-2">
+<h2 id="sec7-19" class="manual-title-level-2">
 Exemple
 </h2>
 <p>Un exemplu de configurare tipică pentru Unix este:
@@ -1782,7 +1831,7 @@ data d2 /mnt/disk2/
 data d3 /mnt/disk3/
 exclude /lost+found/
 exclude /tmp/
-smartctl d1 -d sat %s
+smartctl d1 [info: -H -i -c -A] -d sat %s
 smartctl d2 -d usbjmicron %s
 smartctl parity -d areca,1/1 /dev/sg0
 smartctl 2-parity -d areca,2/1 /dev/sg0
@@ -1798,7 +1847,7 @@ data d3 I:\array\
 exclude Thumbs.db
 exclude \$RECYCLE.BIN
 exclude \System Volume Information
-smartctl d1 -d sat %s
+smartctl d1 [info: -H -i -c -A] -d sat %s
 smartctl d2 -d usbjmicron %s
 smartctl parity -d areca,1/1 /dev/arcmsr0
 smartctl 2-parity -d areca,2/1 /dev/arcmsr0
@@ -1807,6 +1856,164 @@ smartctl 2-parity -d areca,2/1 /dev/arcmsr0
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec8" class="manual-title-level-1">
+Snapshot-uri (Snapshots)
+</h1>
+<p>Dacă opțiunea snapshot este activată în configurație, SnapRAID
+utilizează snapshot-urile sistemului de fișiere pentru a menține stabile datele citite
+în timpul unei operațiuni, chiar și atunci când fișierele de pe sistemele de fișiere live
+sunt modificate sau șterse ulterior.
+</p><p>Gestionarea snapshot-urilor este complet automată și transparentă.
+Puteți continua să utilizați SnapRAID exact ca înainte, cu protecția
+suplimentară oferită de snapshot-uri gestionate în întregime în
+background.
+</p><p>Acest lucru oferă două avantaje principale:
+</p><div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+Consistență
+</div><div class="manual-tag-description">
+Fișierele modificate pe sistemul de fișiere live în timpul unui sync sau scrub
+de lungă durată nu vor cauza nepotriviri de paritate sau operațiuni abandonate,
+deoarece fiecare sistem de fișiere cu snapshot rămâne neschimbat pe durata operațiunii.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+Recuperare
+</div><div class="manual-tag-description">
+Dacă un fișier este actualizat sau șters din sistemul de fișiere live,
+el rămâne păstrat în snapshot. Dacă se produce o defecțiune a discului
+înainte de rularea următorului sync, SnapRAID utilizează datele păstrate
+în snapshot pentru a reconstrui discul defect.
+În cazul unei defecțiuni a discului în timpul unui proces de sync activ,
+SnapRAID este, de asemenea, capabil să citească automat atât din snapshot-ul
+calculului anterior de paritate, cât și din cel curent.
+Acest lucru maximizează probabilitatea unei recuperări complete prin
+oferirea accesului la blocurile exacte de date necesare pentru a rezolva
+ecuațiile de paritate, chiar dacă acele blocuri au fost modificate
+sau șterse între sync-uri.
+Fără snapshot-uri, un fișier actualizat sau șters pe un disc sănătos
+are ca rezultat lipsa unor blocuri de date care pot fi necesare pentru
+a repara alte discuri defecte.
+</div>
+</div>
+</div>
+<p>Snapshot-urile sunt create doar pentru discurile de date și numai dacă sistemul de fișiere
+subiacent acceptă această funcționalitate. Discurile de paritate folosesc întotdeauna
+sistemul de fișiere live.
+</p><p>În prezent, acest lucru este acceptat pe Btrfs, Bcachefs și ZFS în Linux
+și pe NTFS în Windows.
+</p><p>Puteți amesteca discuri de date cu sisteme de fișiere diferite. Doar cele care
+acceptă snapshot-uri le vor utiliza, în timp ce celelalte discuri vor continua
+să funcționeze direct pe sistemul de fișiere live.
+</p><p>Crearea și ștergerea snapshot-urilor necesită privilegii administrative.
+Asigurați-vă că SnapRAID este rulat cu permisiunile necesare (de exemplu, sudo)
+atunci când snapshot-urile sunt activate.
+</p><div class="manual-section-level-2">
+<h2 id="sec8-1" class="manual-title-level-2">
+Comportamentul comenzilor cu snapshot-uri
+</h2>
+<p>Comenzile <b>sync</b> și <b>scrub</b> folosesc snapshot-uri pentru discurile de date ale căror
+sisteme de fișiere le acceptă. Pe un disc cu snapshot, comanda vede o imagine
+stabilă a sistemului de fișiere, neafectată de modificările concurente de pe sistemul
+de fișiere live.
+În timpul unui <b>sync</b>, un nou snapshot este creat în mod independent pentru fiecare
+sistem de fișiere de date acceptat. Aceste snapshot-uri oferă colectiv datele
+utilizate pentru calculul parității.
+În schimb, comanda <b>scrub</b> utilizează ultimul snapshot, cel
+creat în timpul celui mai recent sync, pentru a menține un punct de referință de încredere
+care se potrivește cu paritatea existentă.
+</p><p>Pentru comenzile <b>check</b> și <b>fix</b>, utilizarea ultimului snapshot
+depinde dacă anumite discuri sunt vizate folosind opțiunea
+-d, --filter-disk.
+</p><p>Un disc selectat în mod explicit prin -d („ținta” operațiunii)
+folosește întotdeauna sistemul de fișiere live. Pentru <b>fix</b>, acest lucru permite restaurarea
+datelor pe discul de înlocuire activ. Pentru <b>check</b>, permite simularea
+operațiunii <b>fix</b> în aceleași condiții.
+</p><p>Toate celelalte discuri de date (discurile de „referință”) vor fi accesate prin intermediul
+snapshot-urilor lor. Acest lucru asigură că, chiar dacă modificați fișiere
+pe discurile sănătoase în timp ce o recuperare este în curs, SnapRAID
+are o referință stabilă, înghețată pentru a rezolva ecuațiile de paritate.
+</p><p>Dacă nu este furnizată nicio opțiune -d, SnapRAID presupune că operațiunea se aplică
+întregii matrice, caz în care <b>check</b> și <b>fix</b> vor folosi exclusiv
+sistemele de fișiere live.
+</p><p>Toate celelalte comenzi operează exclusiv pe sistemul de fișiere live.
+</p></div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec9" class="manual-title-level-1">
+Ciclul de viață al snapshot-urilor (Snapshots Lifecycle)
+</h1>
+<p>SnapRAID gestionează trei snapshot-uri specifice, <b>stable</b>, <b>pending</b> și <b>scan</b>,
+într-un director ascuns la rădăcina fiecărui subvolum de date.
+În Btrfs, Bcachefs și NTFS se folosește directorul <b>.snapraid/</b>,
+în ZFS cel standard <b>.zfs/snapshot/</b>.
+</p><p>Snapshot-ul <b>stable</b> reprezintă starea ultimului
+<b>sync</b> finalizat cu succes, conținând datele exacte utilizate pentru
+a calcula paritatea curentă. Acesta servește ca sursă principală de date
+pentru comenzile <b>scrub</b>, <b>check</b> și <b>fix</b>.
+</p><p>Snapshot-ul <b>scan</b> este o imagine temporară creată la începutul
+unui <b>sync</b> pentru a oferi o stare înghețată pentru scanare și calculul parității.
+După scanarea și salvarea stării noi de conținut, acesta înlocuiește snapshot-ul
+<b>pending</b> anterior.
+</p><p>Snapshot-ul <b>pending</b> este imaginea utilizată de un <b>sync</b> întrerupt.
+După finalizarea cu succes a operațiunii, snapshot-ul <b>stable</b> anterior
+este șters, iar snapshot-ul <b>pending</b> este promovat pentru
+a-i lua locul ca nouă referință stabilă.
+</p><p>Dacă un <b>sync</b> este întrerupt, snapshot-ul <b>pending</b> este păstrat.
+Comenzile ulterioare <b>scrub</b>, <b>check</b> și <b>fix</b> vor folosi acest
+snapshot în așteptare, deoarece se potrivește cu starea sistemului de fișiere înregistrată în
+fișierul .content, chiar dacă paritatea este sincronizată doar parțial.
+</p><p>În cazul unei întreruperi a <b>sync</b>, comenzile <b>check</b> și <b>fix</b>
+citesc, de asemenea, din snapshot-ul <b>stable</b> pentru a recupera blocurile de date
+din fișierele care au fost actualizate sau șterse în timpul sync-ului.
+Acest lucru este posibil deoarece fișierul .content păstrează metadatele pentru
+toate fișierele modificate sau șterse pe parcursul procesului de sync.
+Aceste informații istorice sunt șterse numai după ce un sync se termină
+cu succes și versiunea finală a fișierului .content este salvată.
+</p><p>Dacă un <b>sync</b> este repornit după o întrerupere, snapshot-ul pending existent
+este șters și se creează unul nou pentru
+a captura starea curentă a sistemului de fișiere live.
+Cu toate acestea, dacă un <b>sync</b> este întrerupt, evitați modificarea, ștergerea,
+înlocuirea sau mutarea fișierelor până când un <b>sync</b> ulterior se finalizează
+cu succes. Paritatea poate conține în continuare blocuri calculate din
+snapshot-ul utilizat de sync-ul întrerupt. Un sync ulterior poate înlocui
+acel snapshot, făcând versiunile intermediare ale fișierelor indisponibile
+pentru recuperare.
+</p><div class="manual-section-level-2">
+<h2 id="sec9-1" class="manual-title-level-2">
+Copii de rezervă externe cu snapshot-uri de sistem de fișiere (External backups with filesystem snapshots)
+</h2>
+<p>Când snapshot-urile sistemului de fișiere sunt activate, SnapRAID accesează
+sau creează snapshot-uri la rădăcina fiecărui subvolum, volum sau set de
+date (dataset).
+</p><p>O modalitate simplă de a evita orice interferență cu instrumentele externe
+este de a configura discul <b>data</b> astfel încât să indice spre un subdirector
+obișnuit din cadrul subvolumului sau volumului (de exemplu
+<b>/mnt/subvol/data</b> în loc de <b>/mnt/subvol</b>). SnapRAID creează întotdeauna
+directorul de snapshot-uri la rădăcina subvolumului (de exemplu
+<b>/mnt/subvol/.snapraid/</b>), lăsând subdirectorul de date curat, astfel încât
+snapshot-urile să rămână în exterior și invizibile pentru instrumentele de
+backup care operează în interiorul său.
+</p><p>În caz contrar, dacă directorul <b>data</b> configurat este chiar rădăcina
+subvolumului sau a volumului, SnapRAID creează un director <b>.snapraid/</b>
+direct în interiorul acestuia (pe Btrfs, Bcachefs și NTFS). Deși SnapRAID
+exclude automat acest director din scanarea proprie, instrumentele externe
+de backup sau sincronizare îl vor întâlni. Dacă nu este exclus, acestea pot
+traversa snapshot-urile sau legăturile de directoare și pot copia întregul
+arbore de date înghețat, duplicând datele și epuizând spațiul de stocare al
+backup-ului. Configurați întotdeauna instrumentele externe de backup să
+excludă directorul <b>.snapraid/</b>.
+</p><p>Pe ZFS, snapshot-urile sunt expuse prin directorul virtual standard
+<b>.zfs/snapshot/</b> în loc de <b>.snapraid/</b>. În mod implicit (<b>snapdir=hidden</b>),
+ZFS ascunde acest director din listările de directoare, astfel încât
+instrumentele externe de backup nu îl vor parcurge. Dacă ați activat
+<b>snapdir=visible</b>, asigurați-vă că instrumentele de backup exclud
+directorul <b>.zfs/</b>.
+</p></div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec10" class="manual-title-level-1">
 Model (Pattern)
 </h1>
 <p>Modelele oferă o modalitate flexibilă de a filtra fișierele pentru includere sau
@@ -1818,28 +2025,29 @@ separatorului de directoare. Acest lucru îl face util pentru potrivirea numelor
 caractere variabile, păstrând în același timp modelul limitat la un singur nivel de director.
 </p><p>Asteriscul simplu <b>*</b> se potrivește cu orice secvență de caractere, dar, la fel ca
 semnul întrebării, nu trece niciodată de limitele directoarelor. Se oprește la
-slash-ul înainte, ceea ce îl face potrivit pentru potrivirea în cadrul unei singure
+bara oblică (/), ceea ce îl face potrivit pentru potrivirea în cadrul unei singure
 componente a căii. Acesta este comportamentul standard al metacaracterelor, familiar
 din shell globbing.
-</p><p>Asteriscul dublu <b>**</b> este mai puternic, se potrivește cu orice secvență de
-caractere, inclusiv separatori de directoare. Acest lucru permite modelelor să se potrivească
-pe mai multe niveluri de directoare. Când <b>**</b> apare inserat direct într-un
-model, se poate potrivi cu zero sau mai multe caractere, inclusiv slash-uri între
-textul literal înconjurător.
-</p><p>Cea mai importantă utilizare a lui <b>**</b> este în forma specială <b>/**/</b>. Aceasta se potrivește cu
-zero sau mai multe niveluri complete de directoare, făcând posibilă potrivirea fișierelor
-la orice adâncime într-un arbore de directoare fără a cunoaște structura exactă a căii.
-De exemplu, modelul <b>src/**/main.js</b> se potrivește cu <b>src/main.js</b> (sărind
-peste zero directoare), <b>src/ui/main.js</b> (sărind peste un director) și
-<b>src/ui/components/main.js</b> (sărind peste două directoare).
+</p><p>Metacaracterul asterisc dublu <b>**</b> se potrivește peste separatorii de
+directoare numai atunci când este adiacent unui separator de directoare
+(precedat sau urmat de o bară oblică). În această formă, se potrivește cu
+zero sau mai multe caractere pe mai multe niveluri de directoare. De exemplu,
+<b>foo/**/bar</b> se potrivește cu <b>foo/bar</b>, <b>foo/a/bar</b> și <b>foo/a/b/bar</b>;
+<b>**/build</b> se potrivește cu <b>build</b> și <b>foo/bar/build</b>; iar <b>src/**.js</b> se
+potrivește cu <b>src/main.js</b> și <b>src/ui/components/main.js</b>.
+Forma de sine stătătoare <b>/**/</b> nu este acceptată ca un model complet.
+</p><p>Când <b>**</b> nu este adiacent unei bare oblice, se comportă ca <b>*</b> și nu se
+potrivește cu separatorii de directoare. De exemplu, <b>**.jpg</b> se potrivește cu
+<b>photo.jpg</b> în directorul curent, dar nu se potrivește cu <b>dir/photo.jpg</b>.
+Folosiți <b>**/*.jpg</b> în acest scop.
 </p><p>Clasele de caractere care utilizează paranteze pătrate <b>[]</b> se potrivesc cu un singur caracter dintr-un
 set sau interval specificat. La fel ca și celelalte modele de un singur caracter, acestea
 nu se potrivesc cu separatorii de directoare. Clasele suportă intervale și negarea folosind
 un semn de exclamare.
 </p><p>Distincția fundamentală de reținut este că <b>*</b>, <b>?</b> și clasele de caractere
 respectă toate limitele directoarelor și se potrivesc doar în cadrul unei singure
-componente a căii, în timp ce <b>**</b> este singurul model care se poate potrivi peste
-separatorii de directoare.
+componente a căii, în timp ce <b>**</b> se poate potrivi peste separatorii de directoare
+numai atunci când este adiacent unei bare oblice.
 </p><p>Există patru tipuri diferite de modele:
 </p><div class="manual-option-list">
 <div class="manual-option-entry">
@@ -1927,6 +2135,25 @@ include /movies/
 include /musics/
 include /pictures/
 </pre>
+<p>Rețineți că excluderea unui director (folosind DIR/ sau /CALE/DIR/)
+împiedică SnapRAID să intre și să scaneze acel director. Prin urmare,
+nu este posibil să reincludeți un fișier sau un subdirector situat
+într-un director părinte exclus, deoarece scanerul nu îl parcurge niciodată.
+</p><p>De exemplu, următoarea configurație NU va include <b>file.dat</b> deoarece
+<b>/keep/</b> este eliminat înainte ca <b>file.dat</b> să poată fi examinat:
+</p><pre>
+# NU funcționează: /keep/ este omis complet
+include /keep/file.dat
+exclude /keep/
+</pre>
+<p>Pentru a exclude fișierele dintr-un director păstrând anumite fișiere
+specifice, excludeți modelul fișierelor din interiorul directorului,
+în loc să excludeți directorul în sine:
+</p><pre>
+# Funcționează: /keep/ este parcurs, dar celelalte fișiere din interior sunt excluse
+include /keep/file.dat
+exclude /keep/*
+</pre>
 <p>Pe linia de comandă, utilizând opțiunea -f, puteți utiliza doar modele <b>include</b>.
 De exemplu:
 </p><pre>
@@ -1938,7 +2165,7 @@ snapraid -f "*.mp3" check
 să le citați pentru a împiedica shell-ul să le extindă.
 </p></div>
 <div class="manual-section-level-1">
-<h1 id="sec9" class="manual-title-level-1">
+<h1 id="sec11" class="manual-title-level-1">
 Fișiere de Ignorat (Ignore File)
 </h1>
 <p>Pe lângă regulile globale din fișierul de configurare, puteți plasa fișiere
@@ -2004,17 +2231,19 @@ build/
 </pre>
 </div>
 <div class="manual-section-level-1">
-<h1 id="sec10" class="manual-title-level-1">
+<h1 id="sec12" class="manual-title-level-1">
 Conținut (Content)
 </h1>
 <p>SnapRAID stochează lista și sumele de control (checksums) ale fișierelor dvs. în fișierul de conținut.
 </p><p>Este un fișier binar care listează toate fișierele prezente în matricea dvs. de discuri,
 împreună cu toate sumele de control pentru a le verifica integritatea.
-</p><p>Acest fișier este citit și scris de comenzile <b>sync</b> și <b>scrub</b> și
-citit de comenzile <b>fix</b>, <b>check</b> și <b>status</b>.
+</p><p>Fișierul de conținut este citit și scris de comenzile <b>sync</b>, <b>scrub</b>,
+<b>touch</b> și <b>rehash</b>. Este citit de comenzile <b>status</b>, <b>diff</b>, <b>check</b>,
+<b>fix</b>, <b>list</b>, <b>dup</b>, <b>locate</b> și <b>pool</b>, și este complet ignorat
+de comenzile <b>smart</b>, <b>probe</b>, <b>up</b>, <b>down</b> și <b>devices</b>.
 </p></div>
 <div class="manual-section-level-1">
-<h1 id="sec11" class="manual-title-level-1">
+<h1 id="sec13" class="manual-title-level-1">
 Paritate (Parity)
 </h1>
 <p>SnapRAID stochează informațiile de paritate ale matricei dvs. în fișierele de paritate.
@@ -2024,7 +2253,7 @@ blocurilor definite în fișierul de <b>content</b>.
 doar citite de comenzile <b>scrub</b> și <b>check</b>.
 </p></div>
 <div class="manual-section-level-1">
-<h1 id="sec12" class="manual-title-level-1">
+<h1 id="sec14" class="manual-title-level-1">
 Codare (Encoding)
 </h1>
 <p>SnapRAID în Unix ignoră orice codare. Citește și stochează
@@ -2039,16 +2268,278 @@ redirecționați ieșirea consolei către un fișier, fișierul rezultat este î
 în format UTF-8.
 </p></div>
 <div class="manual-section-level-1">
-<h1 id="sec13" class="manual-title-level-1">
-Drept de Autor (Copyright)
+<h1 id="sec15" class="manual-title-level-1">
+Cod de ieșire (Exit Code)
 </h1>
-<p>Acest fișier este Copyright (C) 2025 Andrea Mazzoleni
+<p>SnapRAID se termină cu următoarele coduri de eroare:
+</p><div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+0
+</div><div class="manual-tag-description">
+Totul este OK.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+1
+</div><div class="manual-tag-description">
+Comanda a întâmpinat unele erori.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+2
+</div><div class="manual-tag-description">
+Comanda <b>diff</b> a constatat că totul este OK, dar este necesar un <b>sync</b>.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+3
+</div><div class="manual-tag-description">
+O comandă de dispozitiv de disc (<b>probe</b>, <b>smart</b>, <b>devices</b>, <b>up</b>,
+<b>down</b>) s-a finalizat, dar cel puțin un sistem de fișiere funcționează
+în mod degradat cu dispozitive lipsă.
+</div>
+</div>
+</div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec16" class="manual-title-level-1">
+Probleme Cunoscute (Known Issues)
+</h1>
+<div class="manual-section-level-2">
+<h2 id="sec16-1" class="manual-title-level-2">
+Limitele sistemului de fișiere
+</h2>
+<p>SnapRAID nu traversează limitele sistemului de fișiere, punctelor de montare
+sau subvolumelor în timpul scanării unui disc de date. Când este detectată
+o astfel de limită, SnapRAID raportează un AVERTISMENT și nu scanează dincolo de ea.
+</p><p>Fișierele situate dincolo de aceste limite nu sunt incluse pe discul de date
+și trebuie configurate separat dacă trebuie protejate.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-2" class="manual-title-level-2">
+Puncte de montare cu instantanee ale sistemului de fișiere
+</h2>
+<p>Când instantanee ale sistemului de fișiere sunt activate, punctele de montare
+imbricate și montările bind din interiorul unui disc de date nu sunt acceptate.
+</p><p>Punctele de montare fac parte din spațiul de nume de montare al sistemului
+activ și nu sunt păstrate în instantaneele sistemului de fișiere. În consecință,
+la scanarea unui instantaneu, un director ascuns de un punct de montare în
+sistemul de fișiere activ poate deveni vizibil.
+</p><p>Nu plasați puncte de montare imbricate sau montări bind în interiorul discurilor
+de date când instantaneele sistemului de fișiere sunt activate.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-3" class="manual-title-level-2">
+Configurații multiple cu instantanee ale sistemului de fișiere
+</h2>
+<p>Suportul pentru instantanee nu poate fi partajat în siguranță de mai multe
+configurații independente SnapRAID care utilizează același spațiu de nume
+pentru instantanee al sistemului de fișiere.
+</p><p>Pe Btrfs și Bcachefs, o singură configurație SnapRAID cu suportul pentru
+instantanee activat poate utiliza directoare de date din cadrul aceluiași
+subvolum. Pe ZFS, aceeași restricție se aplică unui dataset, iar pe NTFS
+unui volum.
+</p><p>Configurațiile multiple care partajează același spațiu de nume pentru instantanee
+folosesc aceleași instantanee <b>stable</b>, <b>pending</b> și <b>scan</b>. Rularea unei
+configurații poate astfel înlocui sau șterge instantaneele de recuperare
+necesare alteia.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-4" class="manual-title-level-2">
+Modificări ale fișierelor pe loc fără schimbarea marcajului temporal
+</h2>
+<p>SnapRAID detectează modificările fișierelor comparând dimensiunile fișierelor
+și marcajele temporale de modificare (mtime).
+</p><p>Dacă o aplicație modifică un fișier pe loc fără a-i modifica dimensiunea
+și fără a-i actualiza marcajul temporal de modificare, "diff" și "sync" nu
+vor detecta că fișierul s-a modificat, iar paritatea acestuia nu va fi
+actualizată.
+</p><p>Pentru a vă asigura că SnapRAID recunoaște astfel de modificări, actualizați
+marcajul temporal de modificare al fișierului (de exemplu, cu utilitarul
+"touch"). În caz contrar, diferența va fi detectată doar ca o neconcordanță
+de hash în timpul unui "scrub" sau "check" ulterior.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-5" class="manual-title-level-2">
+Potrivirea majusculelor/minusculelor non-ASCII în Windows
+</h2>
+<p>SnapRAID utilizează codificarea UTF-8 standard și previzibilă pe toate
+platformele, limitând potrivirea fără distincție între majuscule și minuscule
+la caracterele ASCII.
+</p><p>Sistemele de fișiere Windows suferă din cauza designului moștenit de a impune
+insensibilitatea la majuscule/minuscule asupra numelor de fișiere Unicode prin
+tabele arbitrare de conversie dependente de sistem. În consecință, Windows
+maschează realitatea sistemului de fișiere tratând secvențe de octeți Unicode
+complet diferite ca și cum ar fi același fișier.
+</p><p>De exemplu, <b>À.txt</b> și <b>à.txt</b> sunt nume Unicode distincte, însă Windows le
+tratează în mod ilogic ca fiind identice, în timp ce SnapRAID le păstrează
+distincția reală.
+</p><p>Această limitare este cauzată de gestionarea incoerentă a numelor de fișiere
+Unicode de către Windows și de insistența sa asupra aplicării de aliasuri fără
+distincție între majuscule și minuscule. Pentru a preveni discrepanțele apărute
+din conversia efectuată de Windows, specificați întotdeauna forma exactă a
+caracterelor non-ASCII în căile de configurare și filtre.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-6" class="manual-title-level-2">
+Recuperare cu fix parțial
+</h2>
+<p>Când <b>fix</b> este restricționat folosind <b>-S, --start</b> sau <b>-B, --count</b>,
+SnapRAID operează doar pe blocurile selectate și nu efectuează finalizarea
+la nivel de fișier sau carantina.
+</p><p>Dacă recuperarea produce date de tip „best-effort” despre care nu se poate
+dovedi că reprezintă conținutul curent, astfel de blocuri pot fi totuși
+scrise sub numele de fișier normal. Incertitudinea asociată cu aceste blocuri
+recuperate nu este păstrată după terminarea comenzii.
+</p><p>În consecință, un <b>fix</b> ulterior va trata aceste blocuri lizibile drept date
+de fișier valide și nu va încerca să le recupereze din nou. Acest lucru poate
+face ca o recuperare ulterioară să raporteze succes, lăsând în același timp date
+incomplete sau învechite în fișier.
+</p><p>Opțiunile <b>-S</b> și <b>-B</b> sunt destinate exclusiv recuperării manuale avansate,
+de obicei după ce un <b>fix</b> normal a eșuat. Dacă un <b>fix</b> parțial raportează
+date nerecuperabile, eliminați sau redenumiți fișierele afectate înainte de a
+încerca o nouă recuperare, sau verificați manual conținutul acestora.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-7" class="manual-title-level-2">
+Legături dure NTFS și căi excluse
+</h2>
+<p>Pe NTFS, intrările din director memorează în cache dimensiunea fișierului
+și marcajele temporale în mod independent pentru fiecare legătură dură.
+Când un fișier este modificat printr-o legătură, intrările din director ale
+celorlalte legături care indică spre același fișier pot păstra metadate
+învechite până când sunt accesate.
+</p><p>SnapRAID detectează și normalizează automat această stare ori de câte ori
+întâlnește cel puțin două legături dure către același fișier în timpul unei
+scanări. Cu toate acestea, dacă este scanată o singură legătură dură în
+timp ce celelalte sunt excluse prin filtre sau se află în afara căii
+discului de date, SnapRAID nu poate detecta coliziunea de inoduri și se
+bazează pe metadatele din cache ale singurei legături vizibile.
+</p><p>Prin urmare, modificările efectuate printr-o legătură dură exclusă sau
+externă pot trece neobservate de SnapRAID până când metadatele legăturii
+incluse sunt reîmprospătate de sistemul de operare (cum ar fi atunci când
+fișierul este accesat sau deschis prin acea cale).
+</p><p>Pentru a evita această limitare, evitați modificarea fișierelor protejate
+prin legături dure care sunt excluse din SnapRAID, sau asigurați-vă că toate
+legăturile dure către un fișier sunt incluse în scanare, astfel încât
+SnapRAID să le poată normaliza.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-8" class="manual-title-level-2">
+Recuperare după un sync multi-paritate întrerupt
+</h2>
+<p>Într-o matrice cu mai multe discuri de paritate, un <b>sync</b> întrerupt
+poate lăsa nivelurile de paritate temporar nesincronizate între ele.
+De exemplu, paritatea 1 ar putea conține deja date nou actualizate,
+în timp ce paritatea 2 conține încă datele vechi.
+</p><p>În timpul <b>check</b> sau <b>fix</b>, SnapRAID încearcă diferite combinații de
+paritate și validează datele reconstruite pe baza hash-urilor de bloc
+cunoscute (acoperind blocul complet, de obicei 256 KiB).
+</p><p>Dacă SnapRAID încearcă o reconstrucție folosind un amestec inconsistent
+de paritate veche și nouă, ecuațiile liniare RAID vor produce date
+incorecte. Pentru ca această combinație invalidă să fie acceptată în mod
+eronat, ecuațiile ar trebui să reconstruiască accidental cel puțin un
+bloc complet de 256 KiB atât de perfect încât hash-ul său să se
+potrivească, în timp ce alte blocuri nesincronizate din aceeași bandă
+sunt reconstruite cu date incorecte.
+</p><p>Acest scenariu nu depinde de o coliziune de hash; mai degrabă, ecuațiile
+de paritate mixtă în sine ar trebui să producă din întâmplare conținutul
+exact al blocului original de 256 KiB. Deși este matematic posibil în
+cazul datelor special concepute sau extrem de repetitive, este practic
+imposibil cu date reale.
+</p><p>Dacă toate discurile sunt integre, finalizarea <b>sync</b>-ului întrerupt
+înainte de a face alte modificări elimină această ambiguitate. Dacă un
+disc a cedat și este necesară recuperarea, evitați modificarea discurilor
+de date înainte de a rula <b>check</b> sau <b>fix</b>.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-9" class="manual-title-level-2">
+Nume rezervate de fișiere și directoare
+</h2>
+<p>SnapRAID rezervă anumite nume de fișiere, directoare și snapshot-uri pentru
+operațiunile sale interne. Nu utilizați aceste nume pentru datele utilizatorului:
+</p><div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+.snapraidignore
+</div><div class="manual-tag-description">
+Fișier local cu reguli de excludere.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+.snapraid
+</div><div class="manual-tag-description">
+Director container pentru snapshot-uri.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+snapraid-*
+</div><div class="manual-tag-description">
+Nume de snapshot-uri ZFS gestionate de SnapRAID.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+*.unrecoverable
+</div><div class="manual-tag-description">
+Fișiere deteriorate puse în carantină în timpul recuperării.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+CONTENT.tmp
+</div><div class="manual-tag-description">
+Fișier temporar pentru actualizările fișierului content.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+CONTENT.lock
+</div><div class="manual-tag-description">
+Fișier de blocare pentru fișierul content.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+PARITY.spaceholder
+</div><div class="manual-tag-description">
+Fișier temporar pentru rezervarea spațiului în timpul
+alocării parității pe Windows.
+</div>
+</div>
+</div>
+<p>Utilizarea acestor nume pentru date fără legătură poate face ca fișierele sau
+snapshot-urile să fie ignorate, interpretate eronat ca metadate, suprascrise,
+redenumite sau șterse.
+</p><p>Pe Windows, toate variantele majuscule/minuscule sunt de asemenea rezervate,
+chiar și în directoarele NTFS configurate pentru diferențierea majusculelor de
+minuscule (de exemplu, .SNAPRAIDIGNORE, .SnapRaid, CONTENT.TMP și CONTENT.Lock).
+</p></div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec17" class="manual-title-level-1">
+Traducere (Translation)
+</h1>
+<p>Acest document este o traducere automată a manualului în limba engleză.
+Consultați manualul în limba engleză pentru versiunea oficială.
 </p></div>
 <div class="manual-section-level-1">
-<h1 id="sec14" class="manual-title-level-1">
+<h1 id="sec18" class="manual-title-level-1">
+Drept de Autor (Copyright)
+</h1>
+<p>Acest fișier este Copyright (C) 2026 Andrea Mazzoleni
+</p></div>
+<div class="manual-section-level-1">
+<h1 id="sec19" class="manual-title-level-1">
 Vezi și (See Also)
 </h1>
-<p>snapraid_log(1), snapraidd(1)
+<p>snapraid_log(1), snapraidd(1), rsync(1)
 </p></div>
 
 

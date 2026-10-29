@@ -114,7 +114,7 @@
 
 <div class="manual-section-level-1">
 <h1 id="sec1" class="manual-title-level-1">
-Synopsis
+Składnia (Synopsis)
 </h1>
 <pre>
 snapraid [-c, --conf CONFIG]
@@ -142,7 +142,7 @@ snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec2" class="manual-title-level-1">
-Description
+Opis (Description)
 </h1>
 <p>SnapRAID to program do tworzenia kopii zapasowych przeznaczony
 dla macierzy dyskowych, przechowujący informacje parzystości
@@ -188,22 +188,36 @@ co oszczędza energię i zmniejsza hałas.
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec3" class="manual-title-level-1">
-Limitations
+Ograniczenia (Limitations)
 </h1>
-<p>SnapRAID to hybryda programu RAID i programu do tworzenia kopii zapasowych,
-której celem jest połączenie najlepszych zalet obu. Ma jednak pewne
-ograniczenia, które należy wziąć pod uwagę przed jego użyciem.
-</p><p>Głównym ograniczeniem jest to, że jeśli dysk ulegnie awarii, a Ty nie wykonałeś
-niedawno synchronizacji, możesz nie być w stanie w pełni odzyskać danych.
-Dokładniej, możesz nie być w stanie odzyskać danych o wielkości
-zmienionych lub usuniętych plików od czasu ostatniej operacji synchronizacji.
-Dzieje się tak, nawet jeśli zmienione lub usunięte pliki nie znajdują się na
-uszkodzonym dysku. Dlatego SnapRAID jest lepiej dostosowany do
-danych, które rzadko się zmieniają.
-</p><p>Z drugiej strony, nowo dodane pliki nie uniemożliwiają odzyskania już
-istniejących plików. Stracisz tylko ostatnio dodane pliki, jeśli
-znajdują się one na uszkodzonym dysku.
-</p><p>Inne ograniczenia SnapRAID to:
+<p>SnapRAID jest hybrydą pomiędzy RAID a programem do tworzenia kopii zapasowych, mającą na celu połączenie
+najlepszych zalet obu tych rozwiązań. Posiada jednak pewne ograniczenia, które należy
+wziąć pod uwagę przed jego użyciem.
+</p><p>Głównym ograniczeniem jest to, że w przypadku awarii dysku można odzyskać dane tylko do
+stanu z momentu ostatniej operacji <b>sync</b> (synchronizacji). Wszelkie dane dodane lub modyfikacje dokonane
+od ostatniej synchronizacji, które znajdują się na uszkodzonym dysku, zostaną utracone.
+</p><p>W związku z tym SnapRAID nadaje się głównie do danych, które rzadko się zmieniają.
+</p><p>W przypadku danych, które już istniały podczas ostatniej synchronizacji, niezawodność odzyskiwania zależy
+od tego, czy użyto opcji <b>snapshot</b> (migawki):
+</p><ul>
+<li>
+Z obsługą migawek (dostępną w systemach plików Btrfs, ZFS, Bcachefs i NTFS),
+SnapRAID może automatycznie utrzymywać niezależny, zamrożony punkt
+odniesienia dla każdego obsługiwanego systemu plików z danymi.
+Zapewnia to, że nawet jeśli zmodyfikujesz lub usuniesz pliki w aktywnym systemie plików
+w trakcie lub po synchronizacji, proces odzyskiwania pozostanie spójny i niezawodny.
+</li>
+</ul>
+<ul>
+<li>
+Bez obsługi migawek, usunięcie lub zmiana plików po operacji <b>sync</b>
+może uniemożliwić pełne odzyskanie danych z innych uszkodzonych dysków. Dzieje się tak,
+ponieważ parzystość nie odpowiada już zmodyfikowanym plikom, nawet jeśli
+pliki te nie znajdują się na uszkodzonym dysku. Z drugiej strony, nowo dodane
+pliki nie uniemożliwiają odzyskania już istniejących plików.
+</li>
+</ul>
+<p>Inne ograniczenia SnapRAID to:
 </p><ul>
 <li>
 W SnapRAID nadal masz oddzielne systemy plików dla każdego dysku.
@@ -225,13 +239,13 @@ awarii całej macierzy dysków.
 <li>
 Zapisywane są tylko nazwy plików, znaczniki czasu, dowiązania symboliczne
 i dowiązania twarde.
-Uprawnienia, właścicielstwo i rozszerzone atrybuty nie są zapisywane.
+Uprawnienia, właściciel (własność) i rozszerzone atrybuty nie są zapisywane.
 </li>
 </ul>
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec4" class="manual-title-level-1">
-Getting Started
+Pierwsze kroki (Getting Started)
 </h1>
 <p>Aby użyć SnapRAID, musisz najpierw wybrać jeden dysk w swojej macierzy
 dysków, który zostanie przeznaczony na informacje o <b>parzystości</b>. Z jednym dyskiem
@@ -307,7 +321,7 @@ uruchomieniu wznowi się w miejscu, w którym został przerwany.
 aktualizować informacje o parzystości, uruchamiając polecenie <b>sync</b>.
 </p><div class="manual-section-level-2">
 <h2 id="sec4-1" class="manual-title-level-2">
-Scrubbing
+Scrubbing (Scrubbing)
 </h2>
 <p>Aby okresowo sprawdzać dane i parzystość pod kątem błędów, możesz
 uruchomić polecenie <b>scrub</b>.
@@ -347,11 +361,11 @@ w wyniku <b>scrub</b>, ale powiązane bloki nie są oznaczane jako złe.
 </p></div>
 <div class="manual-section-level-2">
 <h2 id="sec4-2" class="manual-title-level-2">
-Pooling
+Łączenie w pulę (Pooling)
 </h2>
 <p>Uwaga: Funkcja łączenia w pulę opisana poniżej została zastąpiona przez
 narzędzie mergerfs, które jest obecnie zalecaną opcją dla użytkowników Linuksa
-w społeczności SnapRAID. Mergefs zapewnia bardziej elastyczny i wydajny
+w społeczności SnapRAID. Mergerfs zapewnia bardziej elastyczny i wydajny
 sposób łączenia wielu dysków w jeden ujednolicony punkt montowania,
 umożliwiając bezproblemowy dostęp do plików w całej macierzy bez polegania
 na dowiązaniach symbolicznych. Dobrze integruje się z SnapRAID w celu ochrony
@@ -420,7 +434,7 @@ fsutil behavior set SymlinkEvaluation L2L:1 R2R:1 L2R:1 R2L:1
 </div>
 <div class="manual-section-level-2">
 <h2 id="sec4-3" class="manual-title-level-2">
-Undeleting
+Cofanie usuwania (Undeleting)
 </h2>
 <p>SnapRAID działa bardziej jak program do tworzenia kopii zapasowych niż system RAID
 i może być użyty do przywrócenia lub odzyskania usuniętych plików do ich poprzedniego
@@ -445,7 +459,7 @@ snapraid fix -m
 </div>
 <div class="manual-section-level-2">
 <h2 id="sec4-4" class="manual-title-level-2">
-Recovering
+Odzyskiwanie (Recovering)
 </h2>
 <p>Najgorsze się wydarzyło i straciłeś jeden lub więcej dysków!
 </p><p>NIE PANIKUJ! Będziesz w stanie je odzyskać!
@@ -493,7 +507,7 @@ Uruchom je z dysku z wystarczającą ilością wolnego miejsca.
 </p><p>Teraz odzyskałeś wszystko, co jest możliwe do odzyskania. Jeśli niektóre pliki
 są częściowo lub całkowicie nie do odzyskania, zostaną one przemianowane
 poprzez dodanie rozszerzenia <b>.unrecoverable</b>.
-</p><p>Szczegółową listę wszystkich nie do odzyskania bloków znajdziesz w pliku fix.log,
+</p><p>Szczegółową listę wszystkich bloków nie do odzyskania znajdziesz w pliku fix.log,
 sprawdzając wszystkie linie zaczynające się od <b>unrecoverable:</b>.
 </p><p>Jeśli nie jesteś zadowolony z odzyskiwania, możesz spróbować ponownie
 tyle razy, ile chcesz.
@@ -534,27 +548,27 @@ snapraid sync
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec5" class="manual-title-level-1">
-Commands
+Polecenia (Commands)
 </h1>
 <p>SnapRAID udostępnia kilka prostych poleceń, które pozwalają na:
 </p><ul>
 <li>
-Wyświetlenie statusu macierzy -&gt; <b>status</b>
+Wyświetlenie stanu macierzy -&gt; <b>status</b>
 </li>
 <li>
-Kontrolę dysków -&gt; <b>smart</b>, <b>probe</b>, <b>up</b>, <b>down</b>
+Kontrola dysków -&gt; <b>smart</b>, <b>probe</b>, <b>up</b>, <b>down</b>
 </li>
 <li>
-Wykonanie kopii zapasowej/migawki -&gt; <b>sync</b>
+Utworzenie punktu kopii zapasowej/przywracania -&gt; <b>sync</b>
 </li>
 <li>
 Okresowe sprawdzanie danych -&gt; <b>scrub</b>
 </li>
 <li>
-Przywrócenie ostatniej kopii zapasowej/migawki -&gt; <b>fix</b>.
+Przywrócenie ostatniego punktu kopii zapasowej/przywracania -&gt; <b>fix</b>.
 </li>
 </ul>
-<p>Polecenia muszą być zapisane małymi literami.
+<p>Polecenia muszą być wpisywane małymi literami.
 </p><div class="manual-section-level-2">
 <h2 id="sec5-1" class="manual-title-level-2">
 status
@@ -702,9 +716,10 @@ zostały zmodyfikowane.
 <div class="manual-tag-name">
 moved
 </div><div class="manual-tag-description">
-Pliki przeniesione do innego katalogu na tym samym dysku.
-Są one identyfikowane przez tę samą nazwę, rozmiar, znacznik czasu
-i inode, ale inny katalog.
+Pliki przeniesione lub o zmienionej nazwie na tym samym dysku
+z zachowaniem tego samego i-węzła (inode). Są identyfikowane przez
+ten sam inode, rozmiar i znacznik czasu, ale inną ścieżkę. Nazwa
+pliku może być również inna.
 </div>
 </div>
 <div class="manual-tag-entry">
@@ -724,21 +739,20 @@ tylko nazwa.
 <div class="manual-tag-name">
 relocated
 </div><div class="manual-tag-description">
-Pliki przeniesione na ten sam lub inny dysk, gdzie
-oryginał zniknął.
-Są one identyfikowane przez posiadanie tej samej nazwy, rozmiaru
-i znacznika czasu.
-Jeśli podsekundowy znacznik czasu wynosi zero, pełna ścieżka
-musi być zgodna, aby plik został zidentyfikowany.
-W przeciwieństwie do plików 'moved' na tym samym dysku, pliki
-relokowane mają inny i-węzeł.
+Pliki przeniesione do innego katalogu lub na inny dysk,
+gdzie oryginalny plik zniknął, a inode nie został zachowany.
+Są identyfikowane przez posiadanie tej samej nazwy, rozmiaru i
+znacznika czasu. Jeśli podsekundowy znacznik czasu wynosi zero,
+pełna ścieżka musi być zgodna, aby plik został zidentyfikowany.
+W przeciwieństwie do plików 'moved', pliki relokowane wymagają,
+aby nazwa pliku pozostała taka sama.
 </div>
 </div>
 <div class="manual-tag-entry">
 <div class="manual-tag-name">
 restored
 </div><div class="manual-tag-description">
-Pliki o innym i-węźle, ale pasującym katalogu,
+Pliki o innym inode, ale pasującym katalogu,
 nazwie, rozmiarze i znaczniku czasu.
 Są to zazwyczaj pliki przywrócone po ich usunięciu.
 </div>
@@ -802,7 +816,7 @@ Po naprawie, przy następnym sprawdzeniu, zostaną one ponownie sprawdzone, a je
 Aby sprawdzić tylko złe bloki, możesz użyć polecenia <b>scrub -p bad</b>.
 </p><p>Zaleca się uruchamianie <b>scrub</b> tylko na zsynchronizowanej macierzy, aby uniknąć
 zgłaszania błędów spowodowanych przez niezsynchronizowane dane. Błędy te są rozpoznawane
-jako nie będące cichymi błędami, a bloki nie są oznaczane jako złe,
+jako niebędące cichymi błędami, a bloki nie są oznaczane jako złe,
 ale takie błędy są zgłaszane w wyniku polecenia.
 </p><p>Plik <b>content</b> jest modyfikowany w celu zaktualizowania czasu ostatniego sprawdzenia
 dla każdego bloku i oznaczenia złych bloków.
@@ -813,13 +827,12 @@ Pliki w macierzy NIE są modyfikowane.
 <h2 id="sec5-9" class="manual-title-level-2">
 fix
 </h2>
-<p>Naprawia wszystkie pliki i dane parzystości.
-</p><p>Wszystkie pliki i dane parzystości są porównywane ze stanem migawki
-zapisanym w ostatniej <b>sync</b>.
-Jeśli zostanie znaleziona różnica, jest ona przywracana do zapisanego stanu migawki.
-</p><p>OSTRZEŻENIE! Polecenie <b>fix</b> nie rozróżnia błędów od
-celowych modyfikacji. Bezwarunkowo przywraca stan pliku
-do ostatniej <b>sync</b>.
+<p>Naprawia wszystkie pliki oraz dane parzystości.
+</p><p>Wszystkie pliki i dane parzystości są porównywane ze stanem zapisanym podczas
+ostatniej operacji <b>sync</b>. W przypadku znalezienia różnicy, następuje przywrócenie stanu zapisanego.
+</p><p>UWAGA!
+Polecenie <b>fix</b> nie odróżnia błędów od celowych modyfikacji.
+Bezwzględnie przywraca stan plików do momentu ostatniej operacji <b>sync</b>.
 </p><p>Jeśli nie określono żadnej innej opcji, przetwarzana jest cała macierz.
 Użyj opcji filtra, aby wybrać podzbiór plików lub dysków do operacji.
 </p><p>Aby naprawić tylko bloki oznaczone jako złe podczas <b>sync</b> i <b>scrub</b>,
@@ -952,7 +965,7 @@ realokacji.
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec6" class="manual-title-level-1">
-Options
+Opcje (Options)
 </h1>
 <p>SnapRAID udostępnia następujące opcje:
 </p><div class="manual-option-list">
@@ -1138,10 +1151,10 @@ taki jak K, M lub G (np. --bw-limit 1G).
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
--t, --tail ROZMIAR
+-t, --tail SIZE
 </div><div class="manual-option-description">
-Ogranicza listę plików do tych, które nie używają więcej niż określony
-końcowy rozmiar dysków parzystości.
+Ogranicza listę plików do tych, które nie wykraczają poza określoną
+sekcję końcową (ogon) plików parzystości.
 Możesz użyć mnożników takich jak K, M, G lub T (np. --tail 1G).
 Opcja ta jest ważna tylko wtedy, gdy jest używana wraz z poleceniem
 <b>locate</b>.
@@ -1292,10 +1305,10 @@ NIE MASZ ochrony danych podczas operacji <b>sync</b>.
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
--W, --force-realloc-tail ROZMIAR
+-W, --force-realloc-tail SIZE
 </div><div class="manual-option-description">
 Działa jak -R, --force-realloc, ale ogranicza się do określonej części
-końcowej (ostatnie ROZMIAR bajtów) każdego pliku parzystości.
+końcowej (ostatnie SIZE bajtów) każdego pliku parzystości.
 Wymusza realokację (przeniesienie) wszelkich fragmentów/bloków plików
 obecnie przechowywanych w tej sekcji końcowej, pozwalając na ich
 umieszczenie w dowolnym miejscu w pliku (plikach) parzystości, gdzie
@@ -1333,7 +1346,7 @@ w trybie dołączania. Wystąpienia <b>%D</b> i <b>%T</b> w nazwie są
 zastępowane datą i czasem w formacie RRRRMMDD i
 GGMMSS. W plikach wsadowych Windows musisz podwoić
 znak <b>%</b>, np. result-%%D.log. Aby użyć <b>&gt;&gt;</b>, musisz
-ujęć nazwę w cudzysłów, np. <b>"&gt;&gt;result.log"</b>.
+ująć nazwę w cudzysłów, np. <b>"&gt;&gt;result.log"</b>.
 Aby wyprowadzić log do standardowego wyjścia lub standardowego błędu,
 możesz użyć odpowiednio <b>"&gt;&amp;1"</b> i <b>"&gt;&amp;2"</b>.
 Opisy tagów logu znajdziesz w pliku snapraid_log.txt lub na stronie podręcznika.
@@ -1363,7 +1376,8 @@ Jednak <b>check</b> i <b>fix</b> zawsze zatrzymują się przy pierwszym błędzi
 Zaczyna przetwarzanie od określonego
 numeru bloku. Może to być przydatne do ponownej próby sprawdzenia
 lub naprawy określonych bloków w przypadku uszkodzonego dysku.
-Ta opcja jest przeznaczona głównie do zaawansowanego ręcznego odzyskiwania.
+Ta opcja jest przeznaczona głównie do zaawansowanego ręcznego odzyskiwania
+i jest obsługiwana tylko przez <b>check</b> i <b>fix</b>.
 </div>
 </div>
 </div>
@@ -1373,7 +1387,8 @@ Ta opcja jest przeznaczona głównie do zaawansowanego ręcznego odzyskiwania.
 -B, --count BLKCOUNT
 </div><div class="manual-option-description">
 Przetwarza tylko określoną liczbę bloków.
-Ta opcja jest przeznaczona głównie do zaawansowanego ręcznego odzyskiwania.
+Ta opcja jest przeznaczona głównie do zaawansowanego ręcznego odzyskiwania
+i jest obsługiwana tylko przez <b>check</b> i <b>fix</b>.
 </div>
 </div>
 </div>
@@ -1439,7 +1454,7 @@ Wyświetla wersję programu.
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec7" class="manual-title-level-1">
-Configuration
+Konfiguracja (Configuration)
 </h1>
 <p>SnapRAID wymaga pliku konfiguracyjnego, aby wiedzieć, gdzie znajduje się Twoja macierz
 dysków i gdzie przechowywać informacje o parzystości.
@@ -1537,6 +1552,10 @@ być unikalna. DIR to punkt montowania dysku w
 systemie plików.
 </p><p>Możesz zmieniać punkt montowania w razie potrzeby, o ile
 zachowasz stałą nazwę NAME.
+</p><p>Jednak skonfigurowana ścieżka musi spójnie wskazywać na te same
+dane bazowe. Jeśli ścieżka zawiera dowiązania symboliczne,
+ich cele muszą pozostać stabilne. Zmiana takich dowiązań w celu
+przełączenia katalogu danych w locie jest nieobsługiwana.
 </p><p>Powinieneś użyć jednej opcji dla każdego dysku danych w macierzy.
 </p><p>Możesz później zmienić nazwę dysku, zmieniając bezpośrednio nazwę NAME
 w pliku konfiguracyjnym, a następnie uruchamiając polecenie <b>sync</b>.
@@ -1557,6 +1576,29 @@ dyski, ponieważ oczekuje się, że będą one zawsze w ruchu.
 </p></div>
 <div class="manual-section-level-2">
 <h2 id="sec7-7" class="manual-title-level-2">
+snapshot
+</h2>
+<p>Włącza używanie migawek systemu plików dla poleceń <b>sync</b>, <b>scrub</b>,
+<b>check</b> oraz <b>fix</b>.
+</p><p>Po włączeniu, SnapRAID tworzy migawkę w trybie tylko do odczytu dla każdego
+obsługiwanego systemu plików z danymi na początku operacji 'sync'. Zapewnia to
+stabilny obraz każdego systemu plików, zapobiegając sytuacji, w której późniejsze
+modyfikacje zmieniłyby dane użyte do obliczenia parzystości.
+</p><p>To znacznie usprawnia odzyskiwanie danych: jeśli plik zostanie usunięty z aktywnego systemu
+plików, pozostaje zachowany w migawce. Zapobiega to sytuacji, w której parzystość staje się "uszkodzona"
+dla tego bloku, zapewniając możliwość pomyślnego odzyskania danych,
+jeśli ulegnie awarii inny dysk.
+</p><p>Opcja ta dotyczy wyłącznie dysków z danymi sformatowanych w systemach plików
+Btrfs, Bcachefs lub ZFS w systemie Linux oraz NTFS w systemie Windows.
+Dyski parzystości lub dyski z danymi korzystające z innych systemów plików będą zawsze używać
+aktywnej wersji systemu plików.
+</p><p>Tworzenie i usuwanie migawek wymaga uprawnień administratora.
+Upewnij się, że SnapRAID jest uruchamiany z wymaganymi uprawnieniami (np. sudo), gdy
+opcja ta jest włączona.
+</p><p>Szczegółowe wyjaśnienie cyklu życia migawek znajduje się w sekcji SNAPSHOTS.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-8" class="manual-title-level-2">
 nohidden
 </h2>
 <p>Wyklucza wszystkie ukryte pliki i katalogi.
@@ -1564,7 +1606,7 @@ W systemie Unix ukryte pliki to te zaczynające się od <b>.</b>.
 W systemie Windows są to te z atrybutem ukrycia.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-8" class="manual-title-level-2">
+<h2 id="sec7-9" class="manual-title-level-2">
 exclude/include PATTERN
 </h2>
 <p>Definiuje wzorce plików lub katalogów do wykluczenia lub włączenia
@@ -1574,12 +1616,16 @@ Wszystkie wzorce są przetwarzane w określonej kolejności.
 jest wykluczony. Jeśli jest to <b>include</b>, plik jest włączony.
 Jeśli żaden wzorzec nie pasuje, plik jest wykluczony, jeśli ostatni określony
 wzorzec to <b>include</b>, lub włączony, jeśli ostatni określony wzorzec to <b>exclude</b>.
+</p><p>Należy pamiętać, że filtrowanie odbywa się hierarchicznie podczas
+przechodzenia katalogów. Jeśli katalog pasuje do reguły <b>exclude</b>, cały
+katalog jest pomijany (odrzucany), a wszelkie reguły <b>include</b> dla plików
+lub podkatalogów w nim zawartych nie będą oceniane.
 </p><p>Zobacz sekcję PATTERN, aby uzyskać więcej szczegółów na temat specyfikacji
 wzorców.
 </p><p>Ta opcja może być używana wielokrotnie.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-9" class="manual-title-level-2">
+<h2 id="sec7-10" class="manual-title-level-2">
 blocksize SIZE_IN_KIBIBYTES
 </h2>
 <p>Definiuje podstawowy rozmiar bloku w kibibajtach dla parzystości.
@@ -1603,7 +1649,7 @@ zmarnujesz 12,8 GB parzystości, co może skutkować
 12,8 GB mniejszą dostępną przestrzenią na dysku danych.
 </p><p>Możesz sprawdzić ilość zmarnowanego miejsca na każdym dysku za pomocą <b>status</b>.
 Jest to ilość miejsca, którą musisz pozostawić wolną na dyskach danych
-lub użyć dla plików nie włączonych do macierzy.
+lub użyć dla plików niewłączonych do macierzy.
 Jeśli ta wartość jest ujemna, oznacza to, że jesteś blisko wypełnienia
 parzystości i reprezentuje to przestrzeń, którą nadal możesz zmarnować.
 </p><p>Aby uniknąć tego problemu, możesz użyć większej partycji dla parzystości.
@@ -1620,7 +1666,7 @@ dysku 4 TB, co pozwala na około 460 000 plików na każdym dysku danych bez
 marnowania miejsca.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-10" class="manual-title-level-2">
+<h2 id="sec7-11" class="manual-title-level-2">
 hashsize SIZE_IN_BYTES
 </h2>
 <p>Definiuje rozmiar hasza w bajtach dla zapisanych bloków.
@@ -1655,7 +1701,7 @@ RAM = (8 * 4 * 10^12) * (1+8) / (512 * 2^10) = 0,51 GiB
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-11" class="manual-title-level-2">
+<h2 id="sec7-12" class="manual-title-level-2">
 autosave SIZE_IN_GIGABYTES
 </h2>
 <p>Automatycznie zapisuje stan podczas synchronizacji lub sprawdzania po przetworzeniu
@@ -1664,21 +1710,21 @@ Ta opcja jest przydatna, aby uniknąć ponownego uruchamiania długich poleceń 
 od zera, jeśli zostaną przerwane przez awarię maszyny lub inne zdarzenie.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-12" class="manual-title-level-2">
+<h2 id="sec7-13" class="manual-title-level-2">
 temp_limit TEMPERATURE_CELSIUS
 </h2>
 <p>Ustawia maksymalną dozwoloną temperaturę dysku w stopniach Celsjusza. Po określeniu,
 SnapRAID okresowo sprawdza temperaturę wszystkich dysków za pomocą
 narzędzia smartctl. Aktualne temperatury dysków są wyświetlane podczas
 działania SnapRAID. Jeśli którykolwiek dysk przekroczy ten limit, wszystkie operacje
-zostają zatrzymane, a dyski są zatrzymywane (przechodzą w stan gotowości) na czas
+zostają zatrzymane, a dyski są wyłączane (przechodzą w stan czuwania / uśpienia) na czas
 zdefiniowany przez opcję <b>temp_sleep</b>. Po okresie uśpienia, operacje
 są wznawiane, potencjalnie ponownie zatrzymując się, jeśli limit temperatury
 zostanie ponownie osiągnięty.
 </p><p>Podczas działania SnapRAID analizuje również krzywą nagrzewania każdego
 dysku i szacuje długoterminową stałą temperaturę, którą mają
 osiągnąć, jeśli aktywność będzie kontynuowana. Oszacowanie jest wykonywane tylko po
-czterokrotnym wzroście temperatury dysku, co zapewnia, że
+czterokrotnym zarejestrowaniu wzrostu temperatury dysku, co zapewnia, że
 dostępnych jest wystarczająco dużo punktów danych do ustalenia wiarygodnego trendu.
 Ta przewidywana stała temperatura jest pokazywana w nawiasach obok
 aktualnej wartości i pomaga ocenić, czy chłodzenie systemu jest
@@ -1693,14 +1739,14 @@ wykorzystuje najniższą temperaturę dysku zmierzoną na początku uruchomienia
 Aby wyświetlić temperaturę wszystkich dysków, użyj opcji -A lub --stats.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-13" class="manual-title-level-2">
+<h2 id="sec7-14" class="manual-title-level-2">
 temp_sleep TIME_IN_MINUTES
 </h2>
-<p>Ustawia czas gotowości, w minutach, po osiągnięciu limitu temperatury.
+<p>Ustawia czas wstrzymania (czuwania), w minutach, po osiągnięciu limitu temperatury.
 W tym okresie dyski pozostają zatrzymane. Domyślnie jest to 5 minut.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-14" class="manual-title-level-2">
+<h2 id="sec7-15" class="manual-title-level-2">
 pool DIR
 </h2>
 <p>Definiuje katalog puli, w którym tworzony jest wirtualny widok macierzy
@@ -1708,7 +1754,7 @@ dysków za pomocą polecenia <b>pool</b>.
 </p><p>Katalog musi już istnieć.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-15" class="manual-title-level-2">
+<h2 id="sec7-16" class="manual-title-level-2">
 share UNC_DIR
 </h2>
 <p>Definiuje ścieżkę UNC Windows wymaganą do zdalnego dostępu do dysków.
@@ -1722,7 +1768,7 @@ katalog i nazwę pliku.
 </p><p>Ta opcja jest wymagana tylko dla systemu Windows.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-16" class="manual-title-level-2">
+<h2 id="sec7-17" class="manual-title-level-2">
 smartctl DISK/PARITY OPTIONS...
 </h2>
 <p>Definiuje niestandardowe opcje smartctl do uzyskania atrybutów SMART dla
@@ -1735,6 +1781,8 @@ PARITY to jedna z nazw parzystości: <b>parity</b>, <b>2-parity</b>, <b>3-parity
 </p><p>W określonych OPCJACH ciąg <b>%s</b> jest zastępowany
 nazwą urządzenia. W przypadku kontrolerów RAID, urządzenie jest
 prawdopodobnie stałe i może nie być konieczne użycie <b>%s</b>.
+</p><p>Możesz również określić niestandardowy ciąg opcji informacyjnych za pomocą
+znacznika <b>[info: ...]</b>, aby zastąpić domyślną opcję <b>-a</b>.
 </p><p>Zapoznaj się z dokumentacją smartmontools, aby uzyskać możliwe opcje:
 </p><pre>
 <a href="https://www.smartmontools.org/wiki/Supported_RAID-Controllers">https://www.smartmontools.org/wiki/Supported_RAID-Controllers</a>
@@ -1742,11 +1790,12 @@ prawdopodobnie stałe i może nie być konieczne użycie <b>%s</b>.
 </pre>
 <p>Na przykład:
 </p><pre>
+smartctl d1 [info: -H -i -c -A] -d sat %s
 smartctl parity -d sat %s
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-17" class="manual-title-level-2">
+<h2 id="sec7-18" class="manual-title-level-2">
 smartignore DISK/PARITY ATTR [ATTR...]
 </h2>
 <p>Ignoruje określony atrybut SMART podczas obliczania prawdopodobieństwa
@@ -1756,18 +1805,22 @@ wprowadzające w błąd wartości dla określonego atrybutu.
 PARITY to jedna z nazw parzystości: <b>parity</b>, <b>2-parity</b>, <b>3-parity</b>,
 <b>4-parity</b>, <b>5-parity</b>, <b>6-parity</b> lub <b>z-parity</b>.
 Specjalna wartość * może być użyta do zignorowania atrybutu na wszystkich dyskach.
-</p><p>Na przykład, aby zignorować atrybut <b>Current Pending Sector Count</b> na
-wszystkich dyskach:
+</p><p>Można określić wiele atrybutów oddzielonych spacjami.
+Każdy atrybut można określić jako liczbę od 1 do 255 lub jako nazwę
+niewrażliwą na wielkość liter (np. <b>Current_Pending_Sector</b>).
+</p><p>Na przykład, aby zignorować atrybuty <b>Current Pending Sector Count</b> i
+<b>Reallocated Sectors Count</b> na wszystkich dyskach za pomocą ich numeru lub nazwy:
 </p><pre>
-smartignore * 197
+smartignore * 197 5
+smartignore * Current_Pending_Sector Reallocated_Sector_Ct
 </pre>
-<p>Aby zignorować go tylko na pierwszym dysku parzystości:
+<p>Aby zignorować je tylko na pierwszym dysku parzystości:
 </p><pre>
-smartignore parity 197
+smartignore parity 197 5
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-18" class="manual-title-level-2">
+<h2 id="sec7-19" class="manual-title-level-2">
 Examples
 </h2>
 <p>Przykład typowej konfiguracji dla systemu Unix:
@@ -1780,7 +1833,7 @@ data d2 /mnt/disk2/
 data d3 /mnt/disk3/
 exclude /lost+found/
 exclude /tmp/
-smartctl d1 -d sat %s
+smartctl d1 [info: -H -i -c -A] -d sat %s
 smartctl d2 -d usbjmicron %s
 smartctl parity -d areca,1/1 /dev/sg0
 smartctl 2-parity -d areca,2/1 /dev/sg0
@@ -1796,7 +1849,7 @@ data d3 I:\array\
 exclude Thumbs.db
 exclude \$RECYCLE.BIN
 exclude \System Volume Information
-smartctl d1 -d sat %s
+smartctl d1 [info: -H -i -c -A] -d sat %s
 smartctl d2 -d usbjmicron %s
 smartctl parity -d areca,1/1 /dev/arcmsr0
 smartctl 2-parity -d areca,2/1 /dev/arcmsr0
@@ -1805,7 +1858,165 @@ smartctl 2-parity -d areca,2/1 /dev/arcmsr0
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec8" class="manual-title-level-1">
-Pattern
+Migawki (Snapshots)
+</h1>
+<p>Jeśli opcja snapshot jest włączona w konfiguracji, SnapRAID
+używa migawek systemu plików, aby utrzymać stabilność danych odczytywanych
+podczas operacji, nawet jeśli pliki w aktywnych systemach plików zostaną
+później zmodyfikowane lub usunięte.
+</p><p>Zarządzanie migawkami jest całkowicie automatyczne i przejrzyste.
+Możesz nadal używać SnapRAID dokładnie tak jak dotychczas, z dodatkową
+ochroną zapewnianą przez migawki, która jest realizowana w całości w
+tle.
+</p><p>Zapewnia to dwie główne korzyści:
+</p><div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+Spójność
+</div><div class="manual-tag-description">
+Pliki zmodyfikowane w aktywnym systemie plików podczas długotrwałej
+operacji sync lub scrub nie spowodują niezgodności parzystości ani przerwania
+operacji, ponieważ każdy objęty migawką system plików pozostaje niezmieniony
+przez cały czas trwania operacji.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+Odzyskiwanie
+</div><div class="manual-tag-description">
+Jeśli plik zostanie zaktualizowany lub usunięty z aktywnego systemu plików,
+pozostaje zachowany w migawce. Jeśli awaria dysku nastąpi
+przed uruchomieniem kolejnej operacji sync, SnapRAID użyje danych zachowanych
+w migawce do odbudowania uszkodzonego dysku.
+W przypadku awarii dysku podczas aktywnego procesu sync,
+SnapRAID jest również w stanie automatycznie czytać zarówno z migawki
+poprzedniego obliczenia parzystości, jak i z bieżącej.
+Maksymalizuje to prawdopodobieństwo pełnego odzyskania danych poprzez
+zapewnienie dostępu do dokładnych bloków danych wymaganych do rozwiązania
+równań parzystości, nawet jeśli bloki te zostały zmodyfikowane
+lub usunięte pomiędzy operacjami sync.
+Bez migawek, zaktualizowany lub usunięty plik na sprawnym dysku
+skutkuje brakiem bloków danych, które mogą być wymagane do
+naprawy innych uszkodzonych dysków.
+</div>
+</div>
+</div>
+<p>Migawki są tworzone tylko dla dysków z danymi i tylko wtedy, gdy bazowy
+system plików obsługuje tę funkcjonalność. Dyski parzystości zawsze używają
+aktywnego systemu plików.
+</p><p>Obecnie jest to obsługiwane w systemach Btrfs, Bcachefs i ZFS w systemie Linux
+oraz NTFS w systemie Windows.
+</p><p>Można mieszać dyski z danymi o różnych systemach plików. Tylko te, które
+obsługują migawki, będą z nich korzystać, podczas gdy inne dyski będą nadal
+działać bezpośrednio na aktywnym systemie plików.
+</p><p>Tworzenie i usuwanie migawek wymaga uprawnień administratora.
+Upewnij się, że SnapRAID jest uruchamiany z wymaganymi uprawnieniami (np. sudo),
+gdy migawki są włączone.
+</p><div class="manual-section-level-2">
+<h2 id="sec8-1" class="manual-title-level-2">
+Zachowanie poleceń przy użyciu migawek
+</h2>
+<p>Polecenia <b>sync</b> oraz <b>scrub</b> używają migawek dla dysków z danymi, których
+systemy plików je obsługują. Na dysku objętym migawką polecenie widzi stabilny
+obraz systemu plików, na który nie mają wpływu równoczesne zmiany w aktywnym
+systemie plików.
+Podczas operacji <b>sync</b> nowa migawka jest tworzona niezależnie dla każdego
+obsługiwanego systemu plików z danymi. Migawki te łącznie dostarczają dane
+używane do obliczenia parzystości.
+W przeciwieństwie do tego, polecenie <b>scrub</b> wykorzystuje ostatnią migawkę, tę
+utworzoną podczas najnowszej synchronizacji, aby utrzymać wiarygodny punkt odniesienia
+odpowiadający istniejącej parzystości.
+</p><p>W przypadku poleceń <b>check</b> oraz <b>fix</b>, użycie ostatniej migawki
+zależy od tego, czy konkretne dyski są wskazywane za pomocą opcji
+-d, --filter-disk.
+</p><p>Dysk jawnie wybrany za pomocą opcji -d ("cel" operacji)
+zawsze używa aktywnego systemu plików. Dla <b>fix</b> pozwala to na przywrócenie
+danych na aktywny dysk zamienny. Dla <b>check</b> pozwala to na symulację
+operacji <b>fix</b> w tych samych warunkach.
+</p><p>Wszystkie inne dyski z danymi (dyski "referencyjne") będą dostępne za pośrednictwem
+swoich migawek. Zapewnia to, że nawet jeśli modyfikujesz pliki
+na sprawnych dyskach podczas trwania odzyskiwania danych, SnapRAID
+posiada stabilny, zamrożony punkt odniesienia do rozwiązania równań parzystości.
+</p><p>Jeśli nie podano opcji -d, SnapRAID zakłada, że operacja dotyczy
+całej macierzy. W takim przypadku <b>check</b> oraz <b>fix</b> będą używać wyłącznie
+aktywnych systemów plików.
+</p><p>Wszystkie inne polecenia działają wyłącznie na aktywnym systemie plików.
+</p></div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec9" class="manual-title-level-1">
+Cykl życia migawek (Snapshots Lifecycle)
+</h1>
+<p>SnapRAID zarządza trzema określonymi migawkami, <b>stable</b> (stabilną), <b>pending</b> (oczekującą) oraz <b>scan</b> (skanowania),
+w ukrytym katalogu w katalogu głównym każdego podwolumenu danych.
+W systemach Btrfs, Bcachefs i NTFS używany jest katalog <b>.snapraid/</b>,
+w systemie ZFS standardowy <b>.zfs/snapshot/</b>.
+</p><p>Migawka <b>stable</b> reprezentuje stan ostatniej
+pomyślnie zakończonej operacji <b>sync</b>, zawierając dokładne dane użyte do
+obliczenia bieżącej parzystości. Służy ona jako główne źródło danych
+dla poleceń <b>scrub</b>, <b>check</b> i <b>fix</b>.
+</p><p>Migawka <b>scan</b> to tymczasowy obraz tworzony na początku
+operacji <b>sync</b> w celu zapewnienia zamrożonego stanu do skanowania i obliczenia parzystości.
+Po zeskanowaniu i zapisaniu nowego stanu zawartości zastępuje ona poprzednią
+migawkę <b>pending</b>.
+</p><p>Migawka <b>pending</b> to obraz używany przez przerwaną operację <b>sync</b>.
+Po pomyślnym zakończeniu operacji poprzednia migawka <b>stable</b>
+jest usuwana, a migawka <b>pending</b> zostaje podniesiona do rangi
+nowej stabilnej referencji.
+</p><p>Jeśli operacja <b>sync</b> zostanie przerwana, migawka <b>pending</b> zostaje zachowana.
+Kolejne polecenia <b>scrub</b>, <b>check</b> i <b>fix</b> będą używać tej oczekującej migawki,
+ponieważ odpowiada ona stanowi systemu plików zapisanemu w pliku .content,
+nawet jeśli parzystość jest zsynchronizowana tylko częściowo.
+</p><p>W przypadku przerwania operacji <b>sync</b>, polecenia <b>check</b> i <b>fix</b>
+odczytują dane również z migawki <b>stable</b>, aby pobrać bloki danych
+z plików, które zostały zaktualizowane lub usunięte podczas synchronizacji.
+Jest to możliwe, ponieważ plik .content zachowuje metadane dla
+wszystkich zmodyfikowanych lub usuniętych plików przez cały proces sync.
+Te informacje historyczne są czyszczone dopiero po pomyślnym zakończeniu operacji sync
+i zapisaniu ostatecznej wersji pliku .content.
+</p><p>Jeśli operacja <b>sync</b> zostanie zrestartowana po przerwaniu, istniejąca
+oczekująca (pending) migawka jest usuwana, a tworzona jest nowa, aby
+uchwycić bieżący stan aktywnego systemu plików.
+Jeśli jednak operacja <b>sync</b> zostanie przerwana, należy unikać modyfikowania,
+usuwania, zastępowania lub przenoszenia plików do momentu pomyślnego ukończenia
+kolejnej operacji <b>sync</b>. Parzystość może nadal zawierać bloki obliczone na podstawie
+migawki użytej przez przerwaną synchronizację. Późniejsza synchronizacja może zastąpić
+tę migawkę, uniemożliwiając odzyskanie pośrednich wersji plików.
+</p><div class="manual-section-level-2">
+<h2 id="sec9-1" class="manual-title-level-2">
+Kopie zapasowe z migawkami systemu plików (External backups with filesystem snapshots)
+</h2>
+<p>Gdy migawki systemu plików są włączone, SnapRAID uzyskuje dostęp do migawek
+lub tworzy je w katalogu głównym każdego podwoluminu danych, woluminu lub
+zestawu danych (dataset).
+</p><p>Prostym sposobem na uniknięcie jakichkolwiek konfliktów z zewnętrznymi
+narzędziami jest wskazanie w konfiguracji <b>data</b> zwykłego podkatalogu
+wewnątrz podwoluminu lub woluminu (na przykład <b>/mnt/subvol/data</b> zamiast
+<b>/mnt/subvol</b>). SnapRAID zawsze tworzy katalog migawek w katalogu głównym
+podwoluminu (na przykład <b>/mnt/subvol/.snapraid/</b>), pozostawiając podkatalog
+danych czysty, dzięki czemu migawki pozostają na zewnątrz i są niewidoczne
+dla narzędzi do tworzenia kopii zapasowych działających w tym katalogu.
+</p><p>W przeciwnym razie, jeśli skonfigurowany katalog <b>data</b> jest sam w sobie
+katalogiem głównym podwoluminu lub woluminu, SnapRAID utworzy katalog
+<b>.snapraid/</b> bezpośrednio w nim (w systemach Btrfs, Bcachefs i NTFS).
+Chociaż SnapRAID automatycznie wyklucza ten katalog z własnego skanowania,
+zewnętrzne narzędzia do tworzenia kopii zapasowych lub synchronizacji
+plików napotkają go. Jeśli nie zostanie wykluczony, mogą wejść do migawek
+lub dowiązań katalogów i skopiować całe zamrożone drzewo danych, duplikując
+dane i wyczerpując przestrzeń dyskową kopii zapasowej. Zawsze konfiguruj
+zewnętrzne narzędzia do tworzenia kopii zapasowych tak, aby wykluczały
+katalog <b>.snapraid/</b>.
+</p><p>W systemie ZFS migawki są udostępniane za pośrednictwem standardowego
+katalogu wirtualnego <b>.zfs/snapshot/</b> zamiast <b>.snapraid/</b>. Domyślnie
+(<b>snapdir=hidden</b>) system ZFS ukrywa ten katalog na listach katalogów, więc
+zewnętrzne narzędzia do tworzenia kopii zapasowych go nie przeskanują. Jeśli
+włączono opcję <b>snapdir=visible</b>, upewnij się, że narzędzia do tworzenia kopii
+zapasowych wykluczają katalog <b>.zfs/</b>.
+</p></div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec10" class="manual-title-level-1">
+Wzorce (Pattern)
 </h1>
 <p>Wzorce zapewniają elastyczny sposób filtrowania plików do uwzględnienia lub
 wykluczenia. Używając znaków globbingowych, można zdefiniować reguły, które
@@ -1819,25 +2030,25 @@ znak zapytania, nigdy nie przekracza granic katalogów. Zatrzymuje się na
 ukośniku, co czyni ją odpowiednią do dopasowywania w obrębie jednego
 składnika ścieżki. Jest to standardowe zachowanie symboli wieloznacznych znane
 z globbingu powłoki (shell).
-</p><p>Podwójna gwiazdka <b>**</b> jest potężniejsza, dopasowuje dowolną sekwencję
-znaków, w tym separatory katalogów. Pozwala to wzorcom dopasowywać się
-na wielu poziomach katalogów. Gdy <b>**</b> pojawia się bezpośrednio wewnątrz
-wzorca, może dopasować zero lub więcej znaków, w tym ukośniki między
-otaczającym tekstem dosłownym.
-</p><p>Najważniejszym zastosowaniem <b>**</b> jest specjalna forma <b>/**/</b>. Dopasowuje ona
-zero lub więcej pełnych poziomów katalogów, umożliwiając dopasowanie plików
-na dowolnej głębokości w drzewie katalogów bez znajomości dokładnej struktury ścieżki.
-Na przykład wzorzec <b>src/**/main.js</b> pasuje do <b>src/main.js</b> (pomijając
-zero katalogów), <b>src/ui/main.js</b> (pomijając jeden katalog) oraz
-<b>src/ui/components/main.js</b> (pomijając dwa katalogi).
+</p><p>Symbol wieloznaczny podwójnej gwiazdki <b>**</b> dopasowuje się poprzez separatory
+katalogów tylko wtedy, gdy sąsiaduje z separatorem katalogów (jest poprzedzony
+lub zakończony ukośnikiem). W tej formie dopasowuje zero lub więcej znaków
+na wielu poziomach katalogów. Na przykład <b>foo/**/bar</b> dopasowuje <b>foo/bar</b>,
+<b>foo/a/bar</b> oraz <b>foo/a/b/bar</b>; <b>**/build</b> dopasowuje <b>build</b> oraz
+<b>foo/bar/build</b>; a <b>src/**.js</b> dopasowuje <b>src/main.js</b> oraz
+<b>src/ui/components/main.js</b>.
+Samodzielna forma <b>/**/</b> nie jest akceptowana jako kompletny wzorzec.
+</p><p>Gdy <b>**</b> nie sąsiaduje z ukośnikiem, zachowuje się jak <b>*</b> i nie dopasowuje
+separatorów katalogów. Na przykład <b>**.jpg</b> dopasowuje <b>photo.jpg</b> w bieżącym
+katalogu, ale nie pasuje do <b>dir/photo.jpg</b>. W tym celu należy użyć <b>**/*.jpg</b>.
 </p><p>Klasy znaków używające nawiasów kwadratowych <b>[]</b> dopasowują pojedynczy znak z
 określonego zestawu lub zakresu. Podobnie jak inne wzorce pojedynczych znaków,
 nie pasują one do separatorów katalogów. Klasy obsługują zakresy i negację za pomocą
 wykrzyknika.
 </p><p>Podstawową różnicą, o której należy pamiętać, jest to, że <b>*</b>, <b>?</b> i klasy znaków
 wszystkie respektują granice katalogów i dopasowują się tylko w obrębie jednego
-składnika ścieżki, podczas gdy <b>**</b> jest jedynym wzorcem, który może dopasowywać się poprzez
-separatory katalogów.
+składnika ścieżki, podczas gdy <b>**</b> może dopasowywać się poprzez separatory
+katalogów tylko wtedy, gdy sąsiaduje z ukośnikiem.
 </p><p>Istnieją cztery różne typy wzorców:
 </p><div class="manual-option-list">
 <div class="manual-option-entry">
@@ -1886,7 +2097,7 @@ Katalogi systemowe Windows, połączenia, punkty montowania i inne
 specjalne katalogi Windows są traktowane jako pliki, co oznacza, że aby je
 wykluczyć, musisz użyć reguły pliku, a nie katalogu.
 </p><p>Jeśli nazwa pliku zawiera znak <b>*</b>, <b>?</b>, <b>[</b>,
-lub <b>]</b>, musisz go uciec, aby uniknąć interpretacji jako
+lub <b>]</b>, musisz go zamaskować (poprzedzić znakiem ucieczki), aby uniknąć interpretacji jako
 znaku globbing. W systemie Unix znakiem ucieczki jest <b>\</b>; w systemie Windows jest to <b>^</b>.
 Gdy wzorzec znajduje się w wierszu poleceń, musisz podwoić znak ucieczki,
 aby uniknąć interpretacji przez powłokę poleceń.
@@ -1925,6 +2136,26 @@ include /movies/
 include /musics/
 include /pictures/
 </pre>
+<p>Należy pamiętać, że wykluczenie katalogu (za pomocą DIR/ lub /PATH/DIR/)
+uniemożliwia programowi SnapRAID wejście i skanowanie tego katalogu.
+W konsekwencji nie jest możliwe ponowne włączenie pliku lub podkatalogu
+znajdującego się w wykluczonym katalogu nadrzędnym, ponieważ skaner nigdy
+do niego nie przechodzi.
+</p><p>Na przykład poniższa konfiguracja NIE uwzględni pliku <b>file.dat</b>,
+ponieważ katalog <b>/keep/</b> zostanie odrzucony, zanim <b>file.dat</b> będzie
+mógł zostać sprawdzony:
+</p><pre>
+# NIE działa zgodnie z oczekiwaniami: /keep/ jest całkowicie pomijany
+include /keep/file.dat
+exclude /keep/
+</pre>
+<p>Aby wykluczyć pliki wewnątrz katalogu, zachowując wybrane, należy dopasować
+wzorzec plików wewnątrz katalogu, zamiast wykluczać sam katalog:
+</p><pre>
+# Działa: /keep/ jest przeszukiwany, ale pozostałe pliki są wykluczane
+include /keep/file.dat
+exclude /keep/*
+</pre>
 <p>W wierszu poleceń, używając opcji -f, możesz użyć tylko wzorców <b>include</b>.
 Na przykład:
 </p><pre>
@@ -1936,8 +2167,8 @@ snapraid -f "*.mp3" check
 je cytować, aby zapobiec ich rozszerzeniu przez powłokę.
 </p></div>
 <div class="manual-section-level-1">
-<h1 id="sec9" class="manual-title-level-1">
-Ignore File
+<h1 id="sec11" class="manual-title-level-1">
+Plik ignorowania (Ignore File)
 </h1>
 <p>Oprócz reguł globalnych w pliku konfiguracyjnym, możesz umieścić pliki
 <b>.snapraidignore</b> w dowolnym katalogu w macierzy, aby zdefiniować
@@ -2002,18 +2233,21 @@ build/
 </pre>
 </div>
 <div class="manual-section-level-1">
-<h1 id="sec10" class="manual-title-level-1">
-Content
+<h1 id="sec12" class="manual-title-level-1">
+Zawartość (Content)
 </h1>
 <p>SnapRAID przechowuje listę i sumy kontrolne Twoich plików w pliku zawartości.
 </p><p>Jest to plik binarny, który zawiera listę wszystkich plików obecnych w Twojej macierzy dysków,
 wraz ze wszystkimi sumami kontrolnymi w celu weryfikacji ich integralności.
-</p><p>Ten plik jest odczytywany i zapisywany przez polecenia <b>sync</b> i <b>scrub</b>
-oraz odczytywany przez polecenia <b>fix</b>, <b>check</b> i <b>status</b>.
+</p><p>Plik zawartości jest odczytywany i zapisywany przez polecenia <b>sync</b>,
+<b>scrub</b>, <b>touch</b> i <b>rehash</b>. Jest odczytywany przez polecenia <b>status</b>,
+<b>diff</b>, <b>check</b>, <b>fix</b>, <b>list</b>, <b>dup</b>, <b>locate</b> i <b>pool</b>, oraz jest
+całkowicie ignorowany przez polecenia <b>smart</b>, <b>probe</b>, <b>up</b>, <b>down</b>
+i <b>devices</b>.
 </p></div>
 <div class="manual-section-level-1">
-<h1 id="sec11" class="manual-title-level-1">
-Parity
+<h1 id="sec13" class="manual-title-level-1">
+Parzystość (Parity)
 </h1>
 <p>SnapRAID przechowuje informacje o parzystości Twojej macierzy w plikach
 parzystości.
@@ -2023,8 +2257,8 @@ bloków zdefiniowanych w pliku <b>content</b>.
 oraz tylko odczytywane przez polecenia <b>scrub</b> i <b>check</b>.
 </p></div>
 <div class="manual-section-level-1">
-<h1 id="sec12" class="manual-title-level-1">
-Encoding
+<h1 id="sec14" class="manual-title-level-1">
+Kodowanie (Encoding)
 </h1>
 <p>SnapRAID w systemie Unix ignoruje wszelkie kodowanie. Odczytuje i przechowuje
 nazwy plików z tym samym kodowaniem używanym przez system plików.
@@ -2036,6 +2270,281 @@ czcionki TrueType, takiej jak <b>Lucida Console</b>, jako czcionki konsoli.
 Dotyczy to tylko drukowanych nazw plików; jeśli
 przekierujesz wyjście konsoli do pliku, wynikowy plik jest zawsze
 w formacie UTF-8.
+</p></div>
+<div class="manual-section-level-1">
+<h1 id="sec15" class="manual-title-level-1">
+Kod wyjścia (Exit Code)
+</h1>
+<p>SnapRAID kończy działanie z następującymi kodami błędów:
+</p><div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+0
+</div><div class="manual-tag-description">
+Wszystko w porządku.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+1
+</div><div class="manual-tag-description">
+Polecenie napotkało błędy.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+2
+</div><div class="manual-tag-description">
+Polecenie <b>diff</b> wykazało, że wszystko jest w porządku, ale wymagane jest <b>sync</b>.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+3
+</div><div class="manual-tag-description">
+Polecenie urządzenia dyskowego (<b>probe</b>, <b>smart</b>, <b>devices</b>, <b>up</b>,
+<b>down</b>) zostało zakończone, ale co najmniej jeden system plików działa
+w trybie zdegradowanym z brakującymi urządzeniami.
+</div>
+</div>
+</div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec16" class="manual-title-level-1">
+Znane problemy (Known Issues)
+</h1>
+<div class="manual-section-level-2">
+<h2 id="sec16-1" class="manual-title-level-2">
+Granice systemu plików
+</h2>
+<p>SnapRAID nie przekracza granic systemów plików, punktów montowania ani
+podwolumenów podczas skanowania dysku z danymi. Po wykryciu takiej granicy
+SnapRAID zgłasza OSTRZEŻENIE i nie skanuje dalej.
+</p><p>Pliki znajdujące się poza takimi granicami nie są uwzględniane na dysku
+z danymi i muszą zostać skonfigurowane oddzielnie, jeśli mają być chronione.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-2" class="manual-title-level-2">
+Punkty montowania z migawkami systemu plików
+</h2>
+<p>Gdy migawki systemu plików są włączone, zagnieżdżone punkty montowania oraz
+montowania bind wewnątrz dysku z danymi nie są obsługiwane.
+</p><p>Punkty montowania są częścią przestrzeni nazw montowania działającego
+systemu i nie są zachowywane w migawkach systemu plików. W związku z tym
+podczas skanowania migawki katalog ukryty przez punkt montowania w aktywnym
+systemie plików może stać się widoczny.
+</p><p>Nie umieszczaj zagnieżdżonych punktów montowania ani montowań bind wewnątrz
+dysków z danymi, gdy migawki systemu plików są włączone.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-3" class="manual-title-level-2">
+Wiele konfiguracji z migawkami systemu plików
+</h2>
+<p>Obsługa migawek nie może być bezpiecznie współdzielona przez wiele
+niezależnych konfiguracji SnapRAID korzystających z tej samej przestrzeni
+nazw migawek systemu plików.
+</p><p>W systemach Btrfs i Bcachefs tylko jedna konfiguracja SnapRAID z włączoną
+obsługą migawek może używać katalogów danych w obrębie tego samego
+podwolumenu. W systemie ZFS to samo ograniczenie dotyczy datasetu, a w NTFS
+woluminu.
+</p><p>Wiele konfiguracji współdzielących tę samą przestrzeń nazw migawek używa tych
+samych migawek <b>stable</b>, <b>pending</b> oraz <b>scan</b>. Uruchomienie jednej
+konfiguracji może zatem zastąpić lub usunąć migawki odzyskiwania wymagane
+przez inną.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-4" class="manual-title-level-2">
+Modyfikacje plików w miejscu bez zmiany znacznika czasu
+</h2>
+<p>SnapRAID wykrywa modyfikacje plików, porównując rozmiary plików oraz
+znaczniki czasu modyfikacji (mtime).
+</p><p>Jeśli aplikacja modyfikuje plik w miejscu bez zmiany jego rozmiaru ani
+aktualizacji znacznika czasu modyfikacji, polecenia "diff" i "sync" nie
+wykryją zmiany pliku, a jego parzystość nie zostanie zaktualizowana.
+</p><p>Aby SnapRAID rozpoznał takie zmiany, zaktualizuj znacznik czasu modyfikacji
+pliku (na przykład za pomocą narzędzia "touch"). W przeciwnym razie różnica
+zostanie wykryta dopiero jako niezgodność skrótu podczas kolejnego "scrub"
+lub "check".
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-5" class="manual-title-level-2">
+Dopasowywanie wielkości liter znaków spoza ASCII w systemie Windows
+</h2>
+<p>SnapRAID używa standardowego, przewidywalnego kodowania UTF-8 na wszystkich
+platformach, ograniczając dopasowywanie bez uwzględniania wielkości liter do
+znaków ASCII.
+</p><p>Systemy plików Windows cierpią z powodu przestarzałego projektu narzucania
+braku rozróżniania wielkości liter w nazwach plików Unicode za pomocą
+arbitralnych, zależnych od systemu tabel składania znaków (folding tables).
+W rezultacie Windows zaciera rzeczywistość systemu plików, traktując zupełnie
+różne sekwencje bajtów Unicode tak, jakby były tym samym plikiem.
+</p><p>Na przykład <b>À.txt</b> i <b>à.txt</b> to odrębne nazwy Unicode, a jednak Windows
+nielogicznie traktuje je jako identyczne, podczas gdy SnapRAID zachowuje ich
+rzeczywiste rozróżnienie.
+</p><p>Ograniczenie to wynika z niespójnej obsługi nazw plików Unicode przez system
+Windows oraz jego uporczywego stosowania aliasów bez uwzględniania wielkości
+liter. Aby zapobiec rozbieżnościom wynikającym ze składania znaków przez
+Windows, zawsze podawaj dokładną wielkość liter w przypadku znaków spoza ASCII
+w ścieżkach konfiguracyjnych i filtrach.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-6" class="manual-title-level-2">
+Odzyskiwanie za pomocą częściowego fix
+</h2>
+<p>Gdy polecenie <b>fix</b> jest ograniczone za pomocą <b>-S, --start</b> lub <b>-B, --count</b>,
+SnapRAID działa tylko na wybranych blokach i nie przeprowadza finalizacji
+na poziomie plików ani kwarantanny.
+</p><p>Jeśli odzyskiwanie da dane typu best-effort, co do których nie można udowodnić,
+że reprezentują bieżącą zawartość, takie bloki mogą nadal zostać zapisane pod
+zwykłą nazwą pliku. Niepewność związana z tymi odzyskanymi blokami nie jest
+zachowywana po zakończeniu polecenia.
+</p><p>W rezultacie późniejsze wykonanie <b>fix</b> potraktuje te czytelne bloki jako
+prawidłowe dane pliku i nie podejmie ponownej próby ich odzyskania. Może to
+spowodować, że późniejsze odzyskiwanie zgłosi sukces, pozostawiając w pliku
+niekompletne lub nieaktualne dane.
+</p><p>Opcje <b>-S</b> i <b>-B</b> są przeznaczone wyłącznie do zaawansowanego odzyskiwania
+ręcznego, zazwyczaj po niepowodzeniu normalnego <b>fix</b>. Jeśli częściowy <b>fix</b>
+zgłosi dane niemożliwe do odzyskania, przed podjęciem kolejnej próby odzyskiwania
+należy usunąć lub zmienić nazwę plików, których to dotyczy, albo ręcznie zweryfikować
+ich zawartość.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-7" class="manual-title-level-2">
+Twarde dowiązania NTFS i wykluczone ścieżki
+</h2>
+<p>W systemie plików NTFS wpisy katalogowe niezależnie buforują rozmiar pliku
+i znaczniki czasu dla każdego twardego dowiązania. Gdy plik zostanie
+zmodyfikowany za pośrednictwem jednego dowiązania, wpisy katalogowe innych
+dowiązań wskazujących ten sam plik mogą zachowywać nieaktualne metadane
+do momentu uzyskania do nich dostępu.
+</p><p>SnapRAID automatycznie wykrywa i normalizuje ten stan, gdy podczas skanowania
+napotka co najmniej dwa twarde dowiązania do tego samego pliku. Jeśli jednak
+zeskanowane zostanie tylko jedno twarde dowiązanie, podczas gdy pozostałe są
+wykluczone przez filtry lub znajdują się poza ścieżką dysku danych, SnapRAID
+nie może wykryć kolizji i-węzłów (inode) i polega na buforowanych metadanych
+jedynego widocznego dowiązania.
+</p><p>W konsekwencji modyfikacje dokonane za pośrednictwem wykluczonego lub
+zewnętrznego twardego dowiązania mogą pozostać niezauważone przez SnapRAID,
+dopóki metadane uwzględnionego dowiązania nie zostaną odświeżone przez system
+operacyjny (na przykład po uzyskaniu dostępu do pliku lub otwarciu go
+przez tę ścieżkę).
+</p><p>Aby uniknąć tego ograniczenia, należy unikać modyfikowania chronionych plików
+za pośrednictwem twardych dowiązań wykluczonych ze SnapRAID lub upewnić się,
+że wszystkie twarde dowiązania do danego pliku są uwzględnione w skanowaniu,
+aby SnapRAID mógł je znormalizować.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-8" class="manual-title-level-2">
+Odzyskiwanie po przerwanym sync z wieloma parzystościami
+</h2>
+<p>W macierzy z wieloma dyskami parzystości przerwane polecenie <b>sync</b> może
+pozostawić różne poziomy parzystości chwilowo niezsynchronizowane ze sobą.
+Na przykład parzystość 1 może już zawierać nowo zaktualizowane dane,
+podczas gdy parzystość 2 nadal zawiera stare dane.
+</p><p>Podczas wykonywania <b>check</b> lub <b>fix</b> SnapRAID sprawdza różne kombinacje
+parzystości i weryfikuje zrekonstruowane dane z wykorzystaniem znanych
+skrótów bloków (obejmujących cały blok, zazwyczaj 256 KiB).
+</p><p>Jeśli SnapRAID podejmie próbę rekonstrukcji z użyciem niespójnej
+mieszanki starej i nowej parzystości, liniowe równania RAID dadzą
+nieprawidłowe dane. Aby taka niepoprawna kombinacja została omyłkowo
+zaakceptowana, równania musiałyby przypadkowo zrekonstruować co najmniej
+jeden pełny blok 256 KiB tak idealnie, aby jego skrót się zgadzał,
+podczas gdy inne niezsynchronizowane bloki w tym samym pasku zostaną
+zrekonstruowane z błędnymi danymi.
+</p><p>Scenariusz ten nie zależy od kolizji skrótów; wymagałby raczej, aby same
+równania mieszanej parzystości przypadkowo odtworzyły dokładną,
+oryginalną zawartość 256-KiB bloku. Choć jest to matematycznie możliwe
+w przypadku specjalnie spreparowanych lub silnie powtarzalnych danych,
+jest to praktycznie niemożliwe w przypadku rzeczywistych danych.
+</p><p>Jeśli wszystkie dyski są sprawne, dokończenie przerwanego <b>sync</b> przed
+wprowadzeniem dalszych zmian usuwa tę niejednoznaczność. Jeśli nastąpiła
+awaria dysku i konieczne jest odzyskanie danych, należy unikać modyfikacji
+dysków danych przed uruchomieniem <b>check</b> lub <b>fix</b>.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-9" class="manual-title-level-2">
+Zastrzeżone nazwy plików i katalogów
+</h2>
+<p>SnapRAID rezerwuje niektóre nazwy plików, katalogów i migawek do swoich
+wewnętrznych operacji. Nie używaj tych nazw dla danych użytkownika:
+</p><div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+.snapraidignore
+</div><div class="manual-tag-description">
+Lokalny plik reguł wykluczeń.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+.snapraid
+</div><div class="manual-tag-description">
+Katalog kontenera migawek.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+snapraid-*
+</div><div class="manual-tag-description">
+Nazwy migawek ZFS zarządzanych przez SnapRAID.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+*.unrecoverable
+</div><div class="manual-tag-description">
+Uszkodzone pliki objęte kwarantanną podczas odzyskiwania.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+CONTENT.tmp
+</div><div class="manual-tag-description">
+Plik tymczasowy do aktualizacji pliku content.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+CONTENT.lock
+</div><div class="manual-tag-description">
+Plik blokady pliku content.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+PARITY.spaceholder
+</div><div class="manual-tag-description">
+Tymczasowy plik rezerwacji miejsca podczas alokacji
+parzystości w systemie Windows.
+</div>
+</div>
+</div>
+<p>Użycie tych nazw dla niepowiązanych danych może spowodować, że pliki lub
+migawki zostaną zignorowane, błędnie zinterpretowane jako metadane,
+nadpisane, przemianowane lub usunięte.
+</p><p>W systemie Windows wszystkie warianty wielkości liter są również zastrzeżone,
+nawet w katalogach NTFS skonfigurowanych do rozróżniania wielkości liter
+(na przykład .SNAPRAIDIGNORE, .SnapRaid, CONTENT.TMP i CONTENT.Lock).
+</p></div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec17" class="manual-title-level-1">
+Tłumaczenie (Translation)
+</h1>
+<p>Ten dokument jest automatycznym tłumaczeniem angielskiej instrukcji.
+Wersję oficjalną stanowi oryginalny podręcznik w języku angielskim.
+</p></div>
+<div class="manual-section-level-1">
+<h1 id="sec18" class="manual-title-level-1">
+Prawa autorskie (Copyright)
+</h1>
+<p>Ten plik jest chroniony prawem autorskim (C) 2026 Andrea Mazzoleni
+</p></div>
+<div class="manual-section-level-1">
+<h1 id="sec19" class="manual-title-level-1">
+Zobacz również (See Also)
+</h1>
+<p>snapraid_log(1), snapraidd(1), rsync(1)
 </p></div>
 
 

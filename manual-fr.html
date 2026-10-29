@@ -118,25 +118,26 @@ Synopsis
 </h1>
 <pre>
 snapraid [-c, --conf CONFIG]
-&nbsp;&nbsp;&nbsp;&nbsp;[-f, --filter MOTIF] [-d, --filter-disk NOM]
+&nbsp;&nbsp;&nbsp;&nbsp;[-f, --filter PATTERN] [-d, --filter-disk NAME]
 &nbsp;&nbsp;&nbsp;&nbsp;[-m, --filter-missing] [-e, --filter-error]
-&nbsp;&nbsp;&nbsp;&nbsp;[-a, --audit-only] [-h, --pre-hash] [-i, --import DOSSIER]
-&nbsp;&nbsp;&nbsp;&nbsp;[-p, --plan PERC|mauvais|nouveau|complet]
-&nbsp;&nbsp;&nbsp;&nbsp;[-o, --older-than JOURS] [-l, --log FICHIER]
-&nbsp;&nbsp;&nbsp;&nbsp;[-s, --spin-down-on-error] [-w, --bw-limit DÉBIT]
+&nbsp;&nbsp;&nbsp;&nbsp;[-a, --audit-only] [-h, --pre-hash] [-i, --import DIR]
+&nbsp;&nbsp;&nbsp;&nbsp;[-p, --plan PERC|bad|new|full]
+&nbsp;&nbsp;&nbsp;&nbsp;[-o, --older-than DAYS] [-l, --log FILE]
+&nbsp;&nbsp;&nbsp;&nbsp;[-s, --spin-down-on-error] [-w, --bw-limit RATE]
+&nbsp;&nbsp;&nbsp;&nbsp;[-t, --tail]
 &nbsp;&nbsp;&nbsp;&nbsp;[-Z, --force-zero] [-E, --force-empty]
 &nbsp;&nbsp;&nbsp;&nbsp;[-U, --force-uuid] [-D, --force-device]
 &nbsp;&nbsp;&nbsp;&nbsp;[-N, --force-nocopy] [-F, --force-full]
 &nbsp;&nbsp;&nbsp;&nbsp;[-R, --force-realloc] [-W, --force-realloc-tail]
 &nbsp;&nbsp;&nbsp;&nbsp;[-S, --start BLKSTART] [-B, --count BLKCOUNT]
-&nbsp;&nbsp;&nbsp;&nbsp;[-L, --error-limit NOMBRE]
+&nbsp;&nbsp;&nbsp;&nbsp;[-L, --error-limit NUMBER]
 &nbsp;&nbsp;&nbsp;&nbsp;[-A, --stats]
 &nbsp;&nbsp;&nbsp;&nbsp;[-v, --verbose] [-q, --quiet]
 &nbsp;&nbsp;&nbsp;&nbsp;status|smart|probe|up|down|diff|sync|scrub|fix|check
 &nbsp;&nbsp;&nbsp;&nbsp;|list|dup|pool|devices|touch|rehash|locate
 </pre>
 <pre>
-snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENU]
+snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 </pre>
 </div>
 <div class="manual-section-level-1">
@@ -190,22 +191,34 @@ Pour accéder à un fichier, un seul disque doit tourner, ce qui
 <h1 id="sec3" class="manual-title-level-1">
 Limitations
 </h1>
-<p>SnapRAID est un hybride entre un programme RAID et un programme de sauvegarde,
-visant à combiner les meilleurs avantages des deux. Cependant, il a quelques
-limitations que vous devriez considérer avant de l'utiliser.
-</p><p>La principale limitation est que si un disque tombe en panne et que vous
-n'avez pas synchronisé récemment, vous pourriez ne pas être en mesure de
-récupérer complètement.
-Plus précisément, vous pourriez ne pas être en mesure de récupérer jusqu'à
-la taille des fichiers modifiés ou supprimés depuis la dernière opération
-de synchronisation.
-Cela se produit même si les fichiers modifiés ou supprimés ne se trouvent
-pas sur le disque défaillant. C'est pourquoi SnapRAID est mieux adapté
-aux données qui changent rarement.
-</p><p>D'un autre côté, les fichiers nouvellement ajoutés n'empêchent pas
-la récupération des fichiers déjà existants. Vous ne perdrez que les
-fichiers récemment ajoutés s'ils se trouvent sur le disque défaillant.
-</p><p>Les autres limitations de SnapRAID sont :
+<p>SnapRAID est un hybride entre un RAID et un programme de sauvegarde, visant à combiner
+les meilleurs avantages des deux. Cependant, il présente certaines limitations que vous devriez
+prendre en compte avant de l'utiliser.
+</p><p>La principale limitation est que si un disque tombe en panne, vous ne pouvez récupérer les données que jusqu'à
+l'état du dernier processus <b>sync</b>. Toutes les données ajoutées ou modifications effectuées
+depuis la dernière synchronisation situées sur le disque défectueux seront perdues.
+</p><p>Par conséquent, SnapRAID est principalement adapté aux données qui changent rarement.
+</p><p>Pour les données qui existaient déjà lors de la dernière synchronisation, la fiabilité de la récupération dépend
+de l'utilisation ou non de l'option <b>snapshot</b> :
+</p><ul>
+<li>
+Avec la prise en charge des instantanés (disponible sur Btrfs, ZFS, Bcachefs et NTFS),
+SnapRAID peut maintenir automatiquement une référence figée
+indépendante de chaque système de fichiers de données pris en charge.
+Cela garantit que même si vous modifiez ou supprimez des fichiers sur votre système de fichiers actif
+pendant ou après une synchronisation, le processus de récupération reste cohérent et fiable.
+</li>
+</ul>
+<ul>
+<li>
+Sans la prise en charge des instantanés, la suppression ou la modification de fichiers après un <b>sync</b>
+peut empêcher la récupération complète d'autres disques en panne. Cela se produit
+parce que la parité ne correspond plus aux fichiers modifiés, même si
+ces fichiers ne se trouvent pas sur le disque défectueux. D'un autre côté, les fichiers nouvellement ajoutés
+n'empêchent pas la récupération des fichiers déjà existants.
+</li>
+</ul>
+<p>Les autres limitations de SnapRAID sont :
 </p><ul>
 <li>
 Avec SnapRAID, vous avez toujours des systèmes de fichiers séparés
@@ -228,14 +241,14 @@ récupérer d'une défaillance complète de toute la baie de disques.
 </li>
 <li>
 Seuls les noms de fichiers, les horodatages, les liens symboliques
-et les liens matériels sont sauvegardés. Les permissions, la
+et les liens physiques sont sauvegardés. Les permissions, la
 propriété et les attributs étendus ne sont pas sauvegardés.
 </li>
 </ul>
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec4" class="manual-title-level-1">
-Démarrer
+Démarrer (Getting Started)
 </h1>
 <p>Pour utiliser SnapRAID, vous devez d'abord sélectionner un disque
 dans votre baie de disques pour le dédier aux informations de <b>parité</b>.
@@ -345,7 +358,7 @@ snapraid -e fix
 </pre>
 <p>Lors du prochain <b>scrub</b>, les erreurs disparaîtront du rapport
 <b>status</b> si elles sont réellement corrigées. Pour accélérer,
-vous pouvez utiliser -p mauvais pour nettoyer uniquement les blocs
+vous pouvez utiliser -p bad pour nettoyer uniquement les blocs
 marqués comme mauvais.
 </p><pre>
 snapraid -p bad scrub
@@ -361,7 +374,7 @@ Mise en commun (Pooling)
 </h2>
 <p>Note : La fonctionnalité de mise en commun décrite ci-dessous a été
 remplacée par l'outil mergerfs, qui est désormais l'option recommandée
-pour les utilisateurs Linux de la communauté SnapRAID. Mergefs offre
+pour les utilisateurs Linux de la communauté SnapRAID. Mergerfs offre
 un moyen plus flexible et efficace de regrouper plusieurs disques
 dans un seul point de montage unifié, permettant un accès transparent
 aux fichiers sur toute votre baie sans dépendre de liens symboliques.
@@ -447,11 +460,11 @@ qu'un système RAID, et il peut être utilisé pour restaurer
 ou récupérer des fichiers dans leur état précédent à l'aide
 de l'option -f, --filter :
 </p><pre>
-snapraid fix -f FICHIER
+snapraid fix -f FILE
 </pre>
 <p>ou pour un répertoire :
 </p><pre>
-snapraid fix -f DOSSIER/
+snapraid fix -f DIR/
 </pre>
 <p>Vous pouvez également l'utiliser pour récupérer uniquement les
 fichiers accidentellement supprimés à l'intérieur d'un
@@ -459,7 +472,7 @@ répertoire en utilisant l'option -m, --filter-missing,
 qui ne restaure que les fichiers manquants, laissant tous
 les autres intacts.
 </p><pre>
-snapraid fix -m -f DOSSIER/
+snapraid fix -m -f DIR/
 </pre>
 <p>Ou pour récupérer tous les fichiers supprimés sur tous les
 lecteurs avec :
@@ -469,7 +482,7 @@ snapraid fix -m
 </div>
 <div class="manual-section-level-2">
 <h2 id="sec4-4" class="manual-title-level-2">
-Récupération
+Récupération (Recovering)
 </h2>
 <p>Le pire est arrivé, et vous avez perdu un ou plusieurs disques !
 </p><p>NE PANIQUEZ PAS ! Vous pourrez les récupérer !
@@ -508,9 +521,9 @@ leurs options de configuration.
 <p>Exécutez la commande fix, en stockant le journal dans un fichier
 externe avec :
 </p><pre>
-snapraid -d NOM -l fix.log fix
+snapraid -d NAME -l fix.log fix
 </pre>
-<p>Où NOM est le nom du disque, tel que <b>d1</b> dans notre exemple précédent.
+<p>Où NAME est le nom du disque, tel que <b>d1</b> dans notre exemple précédent.
 Si le disque à récupérer est un disque de parité, utilisez les noms
 <b>parity</b>, <b>2-parity</b>, etc.
 Si vous avez plusieurs disques défaillants, utilisez plusieurs
@@ -542,9 +555,9 @@ la commande <b>fix</b> !
 <p>Par précaution, vous pouvez maintenant exécuter une commande <b>check</b>
 pour vous assurer que tout est correct sur le disque récupéré.
 </p><pre>
-snapraid -d NOM -a check
+snapraid -d NAME -a check
 </pre>
-<p>Où NOM est le nom du disque, tel que <b>d1</b> dans notre exemple précédent.
+<p>Où NAME est le nom du disque, tel que <b>d1</b> dans notre exemple précédent.
 </p><p>Les options -d et -a indiquent à SnapRAID de vérifier uniquement le
 disque spécifié et d'ignorer toutes les données de parité.
 </p><p>Cette commande prendra beaucoup de temps, mais si vous n'êtes pas
@@ -565,24 +578,24 @@ snapraid sync
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec5" class="manual-title-level-1">
-Commandes
+Commandes (Commands)
 </h1>
 <p>SnapRAID fournit quelques commandes simples qui vous permettent de :
 </p><ul>
 <li>
-Afficher l'état de la baie de disques -&gt; <b>status</b>
+Afficher l'état de la grappe -&gt; <b>status</b>
 </li>
 <li>
 Contrôler les disques -&gt; <b>smart</b>, <b>probe</b>, <b>up</b>, <b>down</b>
 </li>
 <li>
-Faire une sauvegarde/instantané -&gt; <b>sync</b>
+Créer un point de sauvegarde/récupération -&gt; <b>sync</b>
 </li>
 <li>
 Vérifier périodiquement les données -&gt; <b>scrub</b>
 </li>
 <li>
-Restaurer la dernière sauvegarde/instantané -&gt; <b>fix</b>.
+Restaurer le dernier point de sauvegarde/récupération -&gt; <b>fix</b>.
 </li>
 </ul>
 <p>Les commandes doivent être écrites en minuscules.
@@ -645,7 +658,7 @@ Le journal d'auto-test du périphérique contient des erreurs.
 </div>
 </div>
 </div>
-<p>Si l'option -v, --verbose est spécifiée, une analyse statistique
+<p>Si l'option <b>-v, --verbose</b> est spécifiée, une analyse statistique
 plus approfondie est fournie. Cette analyse peut vous aider à
 décider si vous avez besoin de plus ou moins de parité.
 </p><p>Cette commande utilise l'outil <b>smartctl</b> et équivaut à exécuter
@@ -739,10 +752,10 @@ signifiant qu'ils ont été modifiés.
 <div class="manual-tag-name">
 moved
 </div><div class="manual-tag-description">
-Fichiers déplacés vers un répertoire différent sur le
-même disque. Ils sont identifiés par le même nom, la
-même taille, le même horodatage et le même inode, mais
-un répertoire différent.
+Fichiers déplacés ou renommés sur le même disque tout en
+conservant le même inode. Ils sont identifiés par le fait d'avoir
+le même inode, la même taille et le même horodatage, mais un
+chemin différent. Le nom du fichier peut également être différent.
 </div>
 </div>
 <div class="manual-tag-entry">
@@ -761,14 +774,13 @@ doit correspondre pour être identifié, pas seulement le nom.
 <div class="manual-tag-name">
 relocated
 </div><div class="manual-tag-description">
-Fichiers déplacés sur le même disque ou sur un disque
-différent où l'original a disparu.
-Ils sont identifiés par le fait qu'ils ont le même nom, la même
-taille et le même horodatage.
-Si l'horodatage à la sous-seconde est nul, le chemin complet
-doit correspondre pour être identifié.
-Contrairement aux fichiers 'moved' sur le même disque, les
-fichiers relocalisés ont un inode différent.
+Fichiers déplacés vers un répertoire différent ou un autre
+disque où le fichier original a disparu et l'inode n'est pas conservé.
+Ils sont identifiés par le fait d'avoir le même nom, la même taille
+et le même horodatage. Si l'horodatage à la sous-seconde est nul, le
+chemin complet doit correspondre pour être identifié. Contrairement aux
+fichiers 'moved', les fichiers relocalisés nécessitent que le nom du
+fichier reste le même.
 </div>
 </div>
 <div class="manual-tag-entry">
@@ -859,13 +871,13 @@ Les fichiers dans la baie NE SONT PAS modifiés.
 <h2 id="sec5-9" class="manual-title-level-2">
 fix
 </h2>
-<p>Corrige tous les fichiers et les données de parité.
-</p><p>Tous les fichiers et les données de parité sont comparés à l'état
-de l'instantané enregistré lors du dernier <b>sync</b>.
-Si une différence est trouvée, elle est rétablie à l'instantané stocké.
-</p><p>AVERTISSEMENT ! La commande <b>fix</b> ne fait pas de distinction entre
-les erreurs et les modifications intentionnelles. Elle rétablit
-inconditionnellement l'état du fichier au dernier <b>sync</b>.
+<p>Répare tous les fichiers et les données de parité.
+</p><p>Tous les fichiers et les données de parité sont comparés à l'état sauvegardé lors
+du dernier <b>sync</b>. Si une différence est trouvée, elle est restaurée à l'état enregistré.
+</p><p>AVERTISSEMENT !
+La commande <b>fix</b> ne fait pas de différence entre les erreurs et
+les modifications intentionnelles. Elle rétablit inconditionnellement l'état des fichiers
+tel qu'il était lors du dernier <b>sync</b>.
 </p><p>Si aucune autre option n'est spécifiée, l'intégralité de la baie est traitée.
 Utilisez les options de filtre pour sélectionner un sous-ensemble de
 fichiers ou de disques sur lesquels opérer.
@@ -1025,12 +1037,12 @@ répertoire que <b>snapraid.exe</b>.
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
--f, --filter MOTIF
+-f, --filter PATTERN
 </div><div class="manual-option-description">
 Filtre les fichiers à traiter dans <b>check</b> et <b>fix</b>.
 Seuls les fichiers correspondant au motif spécifié sont traités.
 Cette option peut être utilisée plusieurs fois.
-Voir la section MOTIF pour plus de détails sur les
+Voir la section PATTERN pour plus de détails sur les
 spécifications de motifs.
 Sous Unix, assurez-vous que les caractères de globbing sont
 entre guillemets s'ils sont utilisés.
@@ -1043,7 +1055,7 @@ traitent toujours l'intégralité de la baie.
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
--d, --filter-disk NOM
+-d, --filter-disk NAME
 </div><div class="manual-option-description">
 Filtre les disques à traiter dans <b>check</b>, <b>fix</b>, <b>up</b> et <b>down</b>.
 Vous devez spécifier un nom de disque tel que défini dans le fichier
@@ -1111,10 +1123,10 @@ Cette option ne peut être utilisée qu'avec <b>scrub</b>.
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
--o, --older-than JOURS
+-o, --older-than DAYS
 </div><div class="manual-option-description">
 Sélectionne la partie la plus ancienne de la baie à traiter dans <b>scrub</b>.
-JOURS est l'âge minimum en jours pour qu'un bloc soit nettoyé ;
+DAYS est l'âge minimum en jours pour qu'un bloc soit nettoyé ;
 la valeur par défaut est 10.
 Les blocs marqués comme mauvais sont toujours nettoyés,
 quelle que soit cette option.
@@ -1168,7 +1180,7 @@ Cette option ne peut être utilisée qu'avec <b>sync</b>.
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
--i, --import DOSSIER
+-i, --import DIR
 </div><div class="manual-option-description">
 Importe à partir du répertoire spécifié tous les fichiers supprimés
 de la baie après le dernier <b>sync</b>.
@@ -1198,18 +1210,18 @@ même lorsqu'une commande échoue.
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
--w, --bw-limit DÉBIT
+-w, --bw-limit RATE
 </div><div class="manual-option-description">
 Applique une limite de bande passante globale pour tous les disques.
-Le DÉBIT est le nombre d'octets par seconde. Vous pouvez spécifier
-un multiplicateur tel que K, M ou G (par exemple, --bw-limit 1G).
+Le RATE est le nombre d'octets par seconde. Vous pouvez spécifier
+un multiplicateur tel que K, M, G ou T (par exemple, --bw-limit 1G).
 </div>
 </div>
 </div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
--t, --tail TAILLE
+-t, --tail SIZE
 </div><div class="manual-option-description">
 Limite la liste des fichiers à ceux n'utilisant pas plus que la
 taille de queue spécifiée des disques de parité.
@@ -1376,10 +1388,10 @@ Vous N'AVEZ AUCUNE protection des données pendant l'opération <b>sync</b>.
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
--W, --force-realloc-tail TAILLE
+-W, --force-realloc-tail SIZE
 </div><div class="manual-option-description">
-Fonctionne comme -R, --force-realloc, maar limité à la partie terminale
-spécifiée (les derniers TAILLE octets) de chaque fichier de parité.
+Fonctionne comme -R, --force-realloc, mais limité à la partie terminale
+spécifiée (les derniers SIZE octets) de chaque fichier de parité.
 Force la réallocation (déplacement) de tout fragment/bloc de fichier
 actuellement stocké dans cette section terminale, leur permettant d'être
 placés n'importe où dans le(s) fichier(s) de parité où de l'espace libre
@@ -1404,7 +1416,7 @@ pour les fichiers affectés.
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
--l, --log FICHIER
+-l, --log FILE
 </div><div class="manual-option-description">
 Écrit un journal détaillé dans le fichier spécifié.
 Si cette option n'est pas spécifiée, les erreurs inattendues
@@ -1430,7 +1442,7 @@ pour les descriptions des balises de journal.
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
--L, --error-limit NOMBRE
+-L, --error-limit NUMBER
 </div><div class="manual-option-description">
 Définit une nouvelle limite d'erreurs avant d'arrêter l'exécution.
 Par défaut, SnapRAID s'arrête s'il rencontre plus de 100
@@ -1451,7 +1463,8 @@ Cependant, <b>check</b> et <b>fix</b> s'arrêtent toujours à la première erreu
 Commence le traitement à partir du numéro de bloc spécifié.
 Cela peut être utile pour réessayer de vérifier ou de corriger
 des blocs spécifiques en cas de disque endommagé.
-Cette option est principalement destinée à la récupération manuelle avancée.
+Cette option est principalement destinée à la récupération manuelle avancée
+et n'est prise en charge que par <b>check</b> et <b>fix</b>.
 </div>
 </div>
 </div>
@@ -1461,14 +1474,15 @@ Cette option est principalement destinée à la récupération manuelle avancée
 -B, --count BLKCOUNT
 </div><div class="manual-option-description">
 Ne traite que le nombre de blocs spécifié.
-Cette option est principalement destinée à la récupération manuelle avancée.
+Cette option est principalement destinée à la récupération manuelle avancée
+et n'est prise en charge que par <b>check</b> et <b>fix</b>.
 </div>
 </div>
 </div>
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
--C, --gen-conf CONTENU
+-C, --gen-conf CONTENT
 </div><div class="manual-option-description">
 Génère un fichier de configuration factice à partir d'un
 fichier de contenu existant.
@@ -1538,7 +1552,7 @@ répertoire que <b>snapraid.exe</b>.
 </p><p>Il doit contenir les options suivantes (sensibles à la casse) :
 </p><div class="manual-section-level-2">
 <h2 id="sec7-1" class="manual-title-level-2">
-parity FICHIER [,FICHIER] ...
+parity FILE [,FILE] ...
 </h2>
 <p>Définit les fichiers à utiliser pour stocker les informations de parité.
 La parité permet une protection contre une seule défaillance
@@ -1558,7 +1572,7 @@ ne deviennent pas fragmentés, améliorant les performances.
 </p></div>
 <div class="manual-section-level-2">
 <h2 id="sec7-2" class="manual-title-level-2">
-(2,3,4,5,6)-parity FICHIER [,FICHIER] ...
+(2,3,4,5,6)-parity FILE [,FILE] ...
 </h2>
 <p>Définit les fichiers à utiliser pour stocker les informations de parité
 supplémentaires.
@@ -1588,7 +1602,7 @@ de parité précédents.
 </p></div>
 <div class="manual-section-level-2">
 <h2 id="sec7-3" class="manual-title-level-2">
-z-parity FICHIER [,FICHIER] ...
+z-parity FILE [,FILE] ...
 </h2>
 <p>Définit un fichier et un format alternatifs pour stocker la triple parité.
 </p><p>Cette option est une alternative à <b>3-parity</b>, principalement destinée
@@ -1606,7 +1620,7 @@ et en utilisant <b>fix</b> pour le recréer.
 </p></div>
 <div class="manual-section-level-2">
 <h2 id="sec7-4" class="manual-title-level-2">
-content FICHIER
+content FILE
 </h2>
 <p>Définit le fichier à utiliser pour stocker la liste et les sommes de
 contrôle de tous les fichiers présents dans votre baie de disques.
@@ -1621,17 +1635,22 @@ utilisé plus un. L'utilisation de copies supplémentaires ne nuit pas.
 </p></div>
 <div class="manual-section-level-2">
 <h2 id="sec7-5" class="manual-title-level-2">
-data NOM DOSSIER
+data NAME DIR
 </h2>
 <p>Définit le nom et le point de montage des disques de données dans
-la baie. NOM est utilisé pour identifier le disque et doit
-être unique. DOSSIER est le point de montage du disque dans le
+la baie. NAME est utilisé pour identifier le disque et doit
+être unique. DIR est le point de montage du disque dans le
 système de fichiers.
 </p><p>Vous pouvez modifier le point de montage au besoin, tant que
-vous gardez le NOM fixe.
+vous gardez le NAME fixe.
+</p><p>Cependant, le chemin configuré doit pointer de manière cohérente vers
+les mêmes données sous-jacentes. Si le chemin contient des liens
+symboliques, leurs cibles doivent rester stables. La modification de ces
+liens symboliques pour changer le répertoire de données à la volée n'est
+pas prise en charge.
 </p><p>Vous devriez utiliser une option pour chaque disque de données
 de la baie.
-</p><p>Vous pouvez renommer un disque plus tard en changeant le NOM directement
+</p><p>Vous pouvez renommer un disque plus tard en changeant le NAME directement
 dans le fichier de configuration, puis en exécutant une commande <b>sync</b>.
 Dans le cas d'un renommage, l'association est faite en utilisant l'UUID
 stocké des disques.
@@ -1650,6 +1669,30 @@ comme le disque de démarrage.
 </p></div>
 <div class="manual-section-level-2">
 <h2 id="sec7-7" class="manual-title-level-2">
+snapshot
+</h2>
+<p>Active l'utilisation des instantanés du système de fichiers pour les commandes <b>sync</b>, <b>scrub</b>,
+<b>check</b> et <b>fix</b>.
+</p><p>Lorsqu'elle est activée, SnapRAID crée un instantané en lecture seule de chaque
+système de fichiers de données pris en charge au début d'un 'sync'. Cela fournit une
+vue stable de chaque système de fichiers, empêchant les modifications ultérieures
+de modifier les données utilisées pour le calcul de la parité.
+</p><p>Cela améliore considérablement la récupération : si un fichier est supprimé du système de fichiers actif,
+il reste préservé dans l'instantané. Cela évite que la parité ne devienne "rompue"
+pour ce bloc, garantissant que vous pouvez toujours récupérer les données avec succès
+si un autre disque tombe en panne.
+</p><p>Cette option s'applique exclusivement aux disques de données formatés avec les
+systèmes de fichiers Btrfs, Bcachefs ou ZFS sous Linux et NTFS sous Windows.
+Les disques de parité, ou les disques de données utilisant d'autres systèmes de fichiers, utiliseront toujours
+la version active du système de fichiers.
+</p><p>La création et la suppression d'instantanés nécessitent des privilèges d'administration.
+Assurez-vous que SnapRAID est exécuté avec les autorisations nécessaires (par exemple, sudo) lorsque
+cette option est activée.
+</p><p>Consultez la section SNAPSHOTS pour une explication détaillée du cycle de vie
+des instantanés.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-8" class="manual-title-level-2">
 nohidden
 </h2>
 <p>Exclut tous les fichiers et répertoires cachés.
@@ -1657,8 +1700,8 @@ Sous Unix, les fichiers cachés sont ceux commençant par <b>.</b>.
 Sous Windows, ce sont ceux avec l'attribut caché.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-8" class="manual-title-level-2">
-exclude/include MOTIF
+<h2 id="sec7-9" class="manual-title-level-2">
+exclude/include PATTERN
 </h2>
 <p>Définit les motifs de fichiers ou de répertoires à exclure ou à inclure
 dans le processus de synchronisation.
@@ -1668,13 +1711,18 @@ est exclu. S'il s'agit d'un <b>include</b> (inclure), le fichier est inclus.
 Si aucun motif ne correspond, le fichier est exclu si le dernier motif
 spécifié est un <b>include</b>, ou inclus si le dernier motif
 spécifié est un <b>exclude</b>.
-</p><p>Voir la section MOTIF pour plus de détails sur les
+</p><p>Notez que le filtrage s'effectue de manière hiérarchique lors du
+parcours des répertoires. Si un répertoire correspond à une règle
+<b>exclude</b>, l'ensemble du répertoire est ignoré (élagué), et aucune règle
+<b>include</b> pour les fichiers ou sous-répertoires qu'il contient ne sera
+évaluée.
+</p><p>Voir la section PATTERN pour plus de détails sur les
 spécifications de motifs.
 </p><p>Cette option peut être utilisée plusieurs fois.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-9" class="manual-title-level-2">
-blocksize TAILLE_EN_KIBIOCTETS
+<h2 id="sec7-10" class="manual-title-level-2">
+blocksize SIZE_IN_KIBIBYTES
 </h2>
 <p>Définit la taille de bloc de base en kibioctets pour la parité.
 Un kibioctet est de 1024 octets.
@@ -1721,8 +1769,8 @@ pour un disque de 4 To, ce qui permet environ 460 000 fichiers sur
 chaque disque de données sans aucun espace gaspillé.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-10" class="manual-title-level-2">
-hashsize TAILLE_EN_OCTETS
+<h2 id="sec7-11" class="manual-title-level-2">
+hashsize SIZE_IN_BYTES
 </h2>
 <p>Définit la taille du hachage en octets pour les blocs enregistrés.
 </p><p>La taille de hachage par défaut est de 16 octets (128 bits),
@@ -1732,7 +1780,7 @@ fortement recommandé de ne pas modifier cette valeur. Pour modifier
 cette valeur à l'avenir, vous devrez recréer l'intégralité de la parité !
 </p><p>Une raison d'utiliser une taille de hachage différente est si votre
 système a une mémoire limitée. En règle générale, SnapRAID nécessite
-généralement 1 Gio de RAM pour chaque 16 To de données dans la baie.
+1 Gio de RAM pour chaque 16 To de données dans la baie.
 </p><p>Plus précisément, pour stocker les hachages des données, SnapRAID
 nécessite environ TS*(1+HS)/BS octets de RAM,
 où TS est la taille totale en octets de votre baie de disques, BS est la
@@ -1757,8 +1805,8 @@ RAM = (8 * 4 * 10^12) * (1+8) / (512 * 2^10) = 0,51 Gio
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-11" class="manual-title-level-2">
-autosave TAILLE_EN_GIGAOCTETS
+<h2 id="sec7-12" class="manual-title-level-2">
+autosave SIZE_IN_GIGABYTES
 </h2>
 <p>Enregistre automatiquement l'état lors de la synchronisation ou du
 nettoyage après la quantité spécifiée de Go traités.
@@ -1767,8 +1815,8 @@ Cette option est utile pour éviter de redémarrer de longues commandes
 de la machine ou tout autre événement.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-12" class="manual-title-level-2">
-temp_limit TEMPÉRATURE_CELSIUS
+<h2 id="sec7-13" class="manual-title-level-2">
+temp_limit TEMPERATURE_CELSIUS
 </h2>
 <p>Définit la température maximale autorisée du disque en Celsius.
 Lorsqu'elle est spécifiée, SnapRAID vérifie périodiquement la
@@ -1798,27 +1846,27 @@ accessible, il utilise la température de disque la plus basse mesurée
 au début de l'exécution comme référence de secours.
 </p><p>Normalement, SnapRAID n'affiche que la température du disque le plus chaud.
 Pour afficher la température de tous les disques, utilisez l'option
--A ou --stats.
+<b>-A, --stats</b>.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-13" class="manual-title-level-2">
-temp_sleep TEMPS_EN_MINUTES
+<h2 id="sec7-14" class="manual-title-level-2">
+temp_sleep TIME_IN_MINUTES
 </h2>
 <p>Définit le temps de veille, en minutes, lorsque la limite de température
 est atteinte. Pendant cette période, les disques restent arrêtés.
 La valeur par défaut est de 5 minutes.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-14" class="manual-title-level-2">
-pool DOSSIER
+<h2 id="sec7-15" class="manual-title-level-2">
+pool DIR
 </h2>
 <p>Définit le répertoire de mise en commun où la vue virtuelle de la
 baie de disques est créée à l'aide de la commande <b>pool</b>.
 </p><p>Le répertoire doit déjà exister.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-15" class="manual-title-level-2">
-share CHEMIN_UNC
+<h2 id="sec7-16" class="manual-title-level-2">
+share UNC_DIR
 </h2>
 <p>Définit le chemin UNC Windows requis pour accéder aux disques à distance.
 </p><p>Si cette option est spécifiée, les liens symboliques créés dans le
@@ -1832,8 +1880,8 @@ et en ajoutant enfin le répertoire et le nom du fichier.
 </p><p>Cette option est requise uniquement pour Windows.
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-16" class="manual-title-level-2">
-smartctl DISQUE/PARITÉ OPTIONS...
+<h2 id="sec7-17" class="manual-title-level-2">
+smartctl DISK/PARITY OPTIONS...
 </h2>
 <p>Définit les options smartctl personnalisées pour obtenir les attributs
 SMART de chaque disque. Cela peut être nécessaire pour les contrôleurs
@@ -1841,12 +1889,15 @@ RAID et certains disques USB qui ne peuvent pas être détectés
 automatiquement. Le placeholder %s est remplacé par le nom du
 périphérique, mais il est facultatif pour les périphériques fixes
 comme les contrôleurs RAID.
-</p><p>DISQUE est le même nom de disque spécifié dans l'option <b>data</b>.
-PARITÉ est l'un des noms de parité : <b>parity</b>, <b>2-parity</b>, <b>3-parity</b>,
+</p><p>DISK est le même nom de disque spécifié dans l'option <b>data</b>.
+PARITY est l'un des noms de parité : <b>parity</b>, <b>2-parity</b>, <b>3-parity</b>,
 <b>4-parity</b>, <b>5-parity</b>, <b>6-parity</b> ou <b>z-parity</b>.
 </p><p>Dans les OPTIONS spécifiées, la chaîne <b>%s</b> est remplacée par le
 nom du périphérique. Pour les contrôleurs RAID, le périphérique est
 probablement fixe, et vous n'aurez peut-être pas besoin d'utiliser <b>%s</b>.
+</p><p>Vous pouvez également spécifier une chaîne d'options d'information
+personnalisée à l'aide de la balise <b>[info: ...]</b> pour remplacer
+l'option <b>-a</b> par défaut.
 </p><p>Consultez la documentation smartmontools pour les options possibles :
 </p><pre>
 <a href="https://www.smartmontools.org/wiki/Supported_RAID-Controllers">https://www.smartmontools.org/wiki/Supported_RAID-Controllers</a>
@@ -1854,34 +1905,39 @@ probablement fixe, et vous n'aurez peut-être pas besoin d'utiliser <b>%s</b>.
 </pre>
 <p>Par exemple :
 </p><pre>
+smartctl d1 [info: -H -i -c -A] -d sat %s
 smartctl parity -d sat %s
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-17" class="manual-title-level-2">
-smartignore DISQUE/PARITÉ ATTR [ATTR...]
+<h2 id="sec7-18" class="manual-title-level-2">
+smartignore DISK/PARITY ATTR [ATTR...]
 </h2>
 <p>Ignore l'attribut SMART spécifié lors du calcul de la probabilité
 de défaillance du disque. Cette option est utile si un disque signale
 des valeurs inhabituelles ou trompeuses pour un attribut particulier.
-</p><p>DISQUE est le même nom de disque spécifié dans l'option <b>data</b>.
-PARITÉ est l'un des noms de parité : <b>parity</b>, <b>2-parity</b>, <b>3-parity</b>,
+</p><p>DISK est le même nom de disque spécifié dans l'option <b>data</b>.
+PARITY est l'un des noms de parité : <b>parity</b>, <b>2-parity</b>, <b>3-parity</b>,
 <b>4-parity</b>, <b>5-parity</b>, <b>6-parity</b> ou <b>z-parity</b>.
 La valeur spéciale * peut être utilisée pour ignorer l'attribut
 sur tous les disques.
-</p><p>Par exemple, pour ignorer l'attribut <b>Current Pending Sector Count</b>
-sur tous les disques :
+</p><p>Plusieurs attributs peuvent être spécifiés séparés par des espaces.
+Chaque attribut peut être spécifié sous forme de nombre de 1 à 255, ou sous
+forme de nom insensible à la casse (par exemple <b>Current_Pending_Sector</b>).
+</p><p>Par exemple, pour ignorer les attributs <b>Current Pending Sector Count</b> et
+<b>Reallocated Sectors Count</b> sur tous les disques par leur numéro ou leur nom :
 </p><pre>
-smartignore * 197
+smartignore * 197 5
+smartignore * Current_Pending_Sector Reallocated_Sector_Ct
 </pre>
-<p>Pour l'ignorer uniquement sur le premier disque de parité :
+<p>Pour les ignorer uniquement sur le premier disque de parité :
 </p><pre>
-smartignore parity 197
+smartignore parity 197 5
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-18" class="manual-title-level-2">
-Exemples
+<h2 id="sec7-19" class="manual-title-level-2">
+Exemples (Examples)
 </h2>
 <p>Un exemple de configuration typique pour Unix est :
 </p><pre>
@@ -1893,7 +1949,7 @@ data d2 /mnt/disk2/
 data d3 /mnt/disk3/
 exclude /lost+found/
 exclude /tmp/
-smartctl d1 -d sat %s
+smartctl d1 [info: -H -i -c -A] -d sat %s
 smartctl d2 -d usbjmicron %s
 smartctl parity -d areca,1/1 /dev/sg0
 smartctl 2-parity -d areca,2/1 /dev/sg0
@@ -1909,7 +1965,7 @@ data d3 I:\array\
 exclude Thumbs.db
 exclude \$RECYCLE.BIN
 exclude \System Volume Information
-smartctl d1 -d sat %s
+smartctl d1 [info: -H -i -c -A] -d sat %s
 smartctl d2 -d usbjmicron %s
 smartctl parity -d areca,1/1 /dev/arcmsr0
 smartctl 2-parity -d areca,2/1 /dev/arcmsr0
@@ -1918,6 +1974,165 @@ smartctl 2-parity -d areca,2/1 /dev/arcmsr0
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec8" class="manual-title-level-1">
+Snapshots
+</h1>
+<p>Si l'option snapshot est activée dans la configuration, SnapRAID
+utilise les instantanés du système de fichiers pour maintenir stables les données
+lues pendant une opération, même si des fichiers sur les systèmes de fichiers actifs
+sont ultérieurement modifiés ou supprimés.
+</p><p>La gestion des instantanés est entièrement automatique et transparente.
+Vous pouvez continuer à utiliser SnapRAID exactement comme avant, avec la
+protection supplémentaire fournie par les instantanés gérés entièrement en
+arrière-plan.
+</p><p>Cela offre deux avantages principaux :
+</p><div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+Cohérence
+</div><div class="manual-tag-description">
+Les fichiers modifiés sur le système de fichiers actif pendant un sync ou un scrub
+de longue durée ne provoqueront pas de déséquilibres de parité ni d'opérations abandonnées,
+car chaque système de fichiers avec instantané reste inchangé pendant toute
+la durée de l'opération.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+Récupération
+</div><div class="manual-tag-description">
+Si un fichier est mis à jour ou supprimé du système de fichiers actif,
+il reste préservé dans l'instantané. Si une panne de disque survient
+avant l'exécution du prochain sync, SnapRAID utilise les données préservées
+dans l'instantané pour reconstruire le disque défaillant.
+En cas de panne de disque pendant un processus de sync actif,
+SnapRAID est également capable de lire automatiquement à la fois l'instantané
+du calcul de parité précédent et celui en cours.
+Cela maximise la probabilité d'une récupération complète en
+fournissant un accès aux blocs de données exacts requis pour résoudre
+les équations de parité, même si ces blocs ont été modifiés
+ou supprimés entre les syncs.
+Sans instantanés, un fichier mis à jour ou supprimé sur un disque sain
+entraîne des blocs de données manquants qui pourraient être nécessaires pour
+réparer d'autres disques défaillants.
+</div>
+</div>
+</div>
+<p>Les instantanés sont créés uniquement pour les disques de données et uniquement si le système de fichiers
+sous-jacent prend en charge cette fonctionnalité. Les disques de parité utilisent toujours
+le système de fichiers actif.
+</p><p>Actuellement, cela est pris en charge sur Btrfs, Bcachefs et ZFS sous Linux
+et sur NTFS sous Windows.
+</p><p>Vous pouvez mélanger des disques de données avec différents systèmes de fichiers. Seuls ceux qui
+prennent en charge les instantanés les utiliseront, tandis que les autres disques continueront
+à fonctionner directement sur le système de fichiers actif.
+</p><p>La création et la suppression d'instantanés nécessitent des privilèges d'administration.
+Assurez-vous que SnapRAID est exécuté avec les autorisations nécessaires (par exemple, sudo)
+lorsque les instantanés sont activés.
+</p><div class="manual-section-level-2">
+<h2 id="sec8-1" class="manual-title-level-2">
+Comportement des commandes avec les instantanés (Command Behavior with Snapshots)
+</h2>
+<p>Les commandes <b>sync</b> et <b>scrub</b> utilisent des instantanés pour les disques de données dont
+les systèmes de fichiers les prennent en charge. Sur un disque avec instantané, la commande
+voit une image stable du système de fichiers non affectée par les modifications simultanées
+sur le système de fichiers actif.
+Pendant un <b>sync</b>, un nouvel instantané est créé indépendamment pour chaque système
+de fichiers de données pris en charge. Ces instantanés fournissent collectivement les
+données utilisées pour le calcul de la parité.
+En contrepartie, la commande <b>scrub</b> utilise le dernier instantané, celui
+créé lors du sync le plus récent, pour maintenir un point de référence fiable
+qui correspond à la parité existante.
+</p><p>Pour les commandes <b>check</b> et <b>fix</b>, l'utilisation du dernier instantané
+dépend du ciblage ou non de disques spécifiques à l'aide de l'option
+-d, --filter-disk.
+</p><p>Un disque explicitement sélectionné via -d (la "cible" de l'opération)
+utilise toujours le système de fichiers actif. Pour <b>fix</b>, cela permet de restaurer
+les données sur le disque de remplacement actif. Pour <b>check</b>, cela permet de simuler
+l'opération <b>fix</b> dans les mêmes conditions.
+</p><p>Tous les autres disques de données (les disques de "référence") seront accessibles via
+leurs instantanés. Cela garantit que même si vous modifiez des fichiers
+sur vos disques sains pendant qu'une récupération est en cours, SnapRAID
+dispose d'une référence stable et figée pour résoudre les équations de parité.
+</p><p>Si aucune option -d n'est fournie, SnapRAID suppose que l'opération s'applique
+à l'ensemble de la grappe, dans ce cas, <b>check</b> et <b>fix</b> utiliseront exclusivement
+les systèmes de fichiers actifs.
+</p><p>Toutes les autres commandes fonctionnent exclusivement sur le système de fichiers actif.
+</p></div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec9" class="manual-title-level-1">
+Cycle de vie des instantanés (Snapshots Lifecycle)
+</h1>
+<p>SnapRAID gère trois instantanés spécifiques, <b>stable</b>, <b>pending</b> et <b>scan</b>,
+dans un répertoire caché à la racine de chaque sous-volume de données.
+Dans Btrfs, Bcachefs et NTFS, le répertoire <b>.snapraid/</b> est utilisé,
+dans ZFS, le répertoire standard <b>.zfs/snapshot/</b>.
+</p><p>L'instantané <b>stable</b> représente l'état du dernier
+<b>sync</b> terminé avec succès, contenant les données exactes utilisées pour
+calculer la parité actuelle. Il sert de source de données principale
+pour les commandes <b>scrub</b>, <b>check</b> et <b>fix</b>.
+</p><p>L'instantané <b>scan</b> est une image temporaire créée au début
+d'un <b>sync</b> pour fournir un état figé pour le balayage et le calcul de la parité.
+Après le balayage et l'enregistrement du nouvel état du contenu, il remplace l'instantané
+<b>pending</b> précédent.
+</p><p>L'instantané <b>pending</b> est l'image utilisée par un <b>sync</b> interrompu.
+Une fois l'opération terminée avec succès, l'instantané <b>stable</b> précédent
+est supprimé, et l'instantané <b>pending</b> est promu pour
+prendre sa place en tant que nouvelle référence stable.
+</p><p>Si un <b>sync</b> est interrompu, l'instantané <b>pending</b> est préservé.
+Les commandes ultérieures <b>scrub</b>, <b>check</b> et <b>fix</b> utiliseront cet
+instantané en attente car il correspond à l'état du système de fichiers enregistré dans
+le fichier .content, même si la parité n'est que partiellement synchronisée.
+</p><p>En cas d'interruption de <b>sync</b>, les commandes <b>check</b> et <b>fix</b>
+lisent également à partir de l'instantané <b>stable</b> pour récupérer les blocs de données
+des fichiers qui ont été mis à jour ou supprimés pendant le sync.
+Cela est possible car le fichier .content conserve les métadonnées de
+tous les fichiers modifiés ou supprimés tout au long du processus de sync.
+Ces informations historiques ne sont effacées qu'une fois qu'un sync se termine
+avec succès et que la version finale du fichier .content est enregistrée.
+</p><p>Si un <b>sync</b> est redémarré après une interruption, l'instantané pending existant
+est supprimé et un nouveau est créé pour
+capturer l'état actuel du système de fichiers actif.
+Cependant, si un <b>sync</b> est interrompu, évitez de modifier, supprimer,
+remplacer ou déplacer des fichiers jusqu'à ce qu'un <b>sync</b> ultérieur se termine
+avec succès. La parité peut encore contenir des blocs calculés à partir de
+l'instantané utilisé par le sync interrompu. Un sync ultérieur peut remplacer
+cet instantané, rendant les versions intermédiaires des fichiers indisponibles
+pour la récupération.
+</p><div class="manual-section-level-2">
+<h2 id="sec9-1" class="manual-title-level-2">
+Sauvegardes externes avec les instantanés de système de fichiers (External backups with filesystem snapshots)
+</h2>
+<p>Lorsque les instantanés de système de fichiers sont activés, SnapRAID accède
+aux instantanés ou les crée à la racine de chaque sous-volume, volume ou
+jeu de données (dataset).
+</p><p>Un moyen simple d'éviter toute interférence avec les outils externes
+consiste à faire pointer la configuration <b>data</b> vers un sous-répertoire
+ordinaire au sein du sous-volume ou du volume (par exemple
+<b>/mnt/subvol/data</b> au lieu de <b>/mnt/subvol</b>). SnapRAID crée toujours le
+répertoire d'instantanés à la racine du sous-volume (par exemple
+<b>/mnt/subvol/.snapraid/</b>), laissant le sous-répertoire de données propre de
+sorte que les instantanés restent à l'extérieur et invisibles pour les
+outils de sauvegarde opérant à l'intérieur.
+</p><p>Sinon, si votre répertoire <b>data</b> configuré est lui-même la racine du
+sous-volume ou du volume, SnapRAID crée un répertoire <b>.snapraid/</b>
+directement à l'intérieur (sur Btrfs, Bcachefs et NTFS). Bien que SnapRAID
+exclue automatiquement ce répertoire de ses propres analyses, les outils
+de sauvegarde externes ou les synchroniseurs de fichiers le rencontreront.
+S'il n'est pas exclu, ils peuvent traverser les instantanés ou les liens de
+répertoires et copier l'ensemble de l'arborescence figée, dupliquant les
+données et risquant d'épuiser l'espace de sauvegarde. Configurez toujours
+les outils de sauvegarde externes pour exclure le répertoire <b>.snapraid/</b>.
+</p><p>Sur ZFS, les instantanés sont exposés via le répertoire virtuel standard
+<b>.zfs/snapshot/</b> plutôt que <b>.snapraid/</b>. Par défaut (<b>snapdir=hidden</b>), ZFS
+masque ce répertoire des listes de fichiers, de sorte que les outils de
+sauvegarde externes ne le parcourront pas. Si vous avez activé
+<b>snapdir=visible</b>, veillez à ce que vos outils de sauvegarde excluent le
+répertoire <b>.zfs/</b>.
+</p></div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec10" class="manual-title-level-1">
 Motif (Pattern)
 </h1>
 <p>Les motifs offrent un moyen flexible de filtrer les fichiers à inclure ou
@@ -1932,25 +2147,26 @@ point d'interrogation, elle ne traverse jamais les frontières des répertoires.
 barre oblique, ce qui la rend adaptée à la recherche de correspondances au sein d'un seul
 composant de chemin. Il s'agit du comportement standard des jokers familier du
 "globbing" shell.
-</p><p>La double étoile <b>**</b> est plus puissante, elle correspond à n'importe quelle séquence de
-caractères, y compris les séparateurs de répertoires. Cela permet aux motifs de correspondre
-sur plusieurs niveaux de répertoires. Lorsque <b>**</b> apparaît directement intégré dans
-un motif, il peut correspondre à zéro ou plusieurs caractères, y compris les barres obliques entre
-le texte littéral environnant.
-</p><p>L'utilisation la plus importante de <b>**</b> est sous la forme spéciale <b>/**/</b>. Celle-ci correspond à
-zéro ou plusieurs niveaux de répertoires complets, ce qui permet de faire correspondre des fichiers
-à n'importe quelle profondeur dans une arborescence de répertoires sans connaître la structure exacte du chemin.
-Par exemple, le motif <b>src/**/main.js</b> correspond à <b>src/main.js</b> (saut de
-zéro répertoire), <b>src/ui/main.js</b> (saut d'un répertoire), et
-<b>src/ui/components/main.js</b> (saut de deux répertoires).
+</p><p>Le caractère générique double étoile <b>**</b> ne correspond à travers les
+séparateurs de répertoires que lorsqu'il est adjacent à un séparateur de
+répertoires (précédé ou suivi d'une barre oblique). Sous cette forme, il
+correspond à zéro ou plusieurs caractères sur plusieurs niveaux de
+répertoires. Par exemple, <b>foo/**/bar</b> correspond à <b>foo/bar</b>, <b>foo/a/bar</b>
+et <b>foo/a/b/bar</b> ; <b>**/build</b> correspond à <b>build</b> et <b>foo/bar/build</b> ; et
+<b>src/**.js</b> correspond à <b>src/main.js</b> et <b>src/ui/components/main.js</b>.
+La forme autonome <b>/**/</b> n'est pas acceptée comme un motif complet.
+</p><p>Lorsque <b>**</b> n'est pas adjacent à une barre oblique, il se comporte comme <b>*</b>
+et ne correspond pas aux séparateurs de répertoires. Par exemple, <b>**.jpg</b>
+correspond à <b>photo.jpg</b> dans le répertoire actuel, mais ne correspond pas à
+<b>dir/photo.jpg</b>. Utilisez <b>**/*.jpg</b> à cette fin.
 </p><p>Les classes de caractères utilisant des crochets <b>[]</b> correspondent à un seul caractère d'un
 ensemble ou d'une plage spécifiés. Comme les autres motifs à caractère unique, elles
 ne correspondent pas aux séparateurs de répertoires. Les classes supportent les plages et la négation à l'aide
 d'un point d'exclamation.
 </p><p>La distinction fondamentale à retenir est que <b>*</b>, <b>?</b> et les classes de caractères
 respectent tous les limites des répertoires et ne correspondent qu'au sein d'un seul
-composant de chemin, alors que <b>**</b> est le seul motif qui peut correspondre à travers
-les séparateurs de répertoires.
+composant de chemin, alors que <b>**</b> ne peut correspondre à travers les séparateurs
+de répertoires que lorsqu'il est adjacent à une barre oblique.
 </p><p>Il existe quatre types de motifs différents :
 </p><div class="manual-option-list">
 <div class="manual-option-entry">
@@ -2044,6 +2260,25 @@ include /movies/
 include /musics/
 include /pictures/
 </pre>
+<p>Notez que l'exclusion d'un répertoire (en utilisant DIR/ ou /CHEMIN/DIR/)
+empêche SnapRAID d'entrer et de parcourir ce répertoire. Par conséquent,
+il n'est pas possible de réinclure un fichier ou un sous-répertoire situé
+dans un répertoire parent exclu, car le scanner ne le parcourt jamais.
+</p><p>Par exemple, la configuration suivante n'inclura PAS <b>file.dat</b> car
+<b>/keep/</b> est élagué avant que <b>file.dat</b> ne puisse être examiné :
+</p><pre>
+# Ne fonctionne PAS : /keep/ est entièrement ignoré
+include /keep/file.dat
+exclude /keep/
+</pre>
+<p>Pour exclure les fichiers d'un répertoire tout en conservant certains
+fichiers spécifiques, appliquez le motif d'exclusion aux fichiers du
+répertoire plutôt que d'exclure le répertoire lui-même :
+</p><pre>
+# Fonctionne : /keep/ est parcouru, mais les autres fichiers qu'il contient sont exclus
+include /keep/file.dat
+exclude /keep/*
+</pre>
 <p>Sur la ligne de commande, en utilisant l'option -f, vous ne pouvez
 utiliser que des motifs <b>include</b>. Par exemple :
 </p><pre>
@@ -2057,8 +2292,8 @@ ligne de commande, vous devez les mettre entre guillemets pour empêcher
 le shell de les développer.
 </p></div>
 <div class="manual-section-level-1">
-<h1 id="sec9" class="manual-title-level-1">
-Ignorer des Fichiers (Ignore Files)
+<h1 id="sec11" class="manual-title-level-1">
+Ignorer des Fichiers (Ignore File)
 </h1>
 <p>En plus des règles globales du fichier de configuration, vous pouvez
 placer des fichiers <b>.snapraidignore</b> dans n'importe quel répertoire de la grappe
@@ -2123,7 +2358,7 @@ build/
 </pre>
 </div>
 <div class="manual-section-level-1">
-<h1 id="sec10" class="manual-title-level-1">
+<h1 id="sec12" class="manual-title-level-1">
 Contenu (Content)
 </h1>
 <p>SnapRAID stocke la liste et les sommes de contrôle de vos fichiers
@@ -2131,11 +2366,13 @@ dans le fichier de contenu.
 </p><p>Il s'agit d'un fichier binaire qui répertorie tous les fichiers
 présents dans votre baie de disques, ainsi que toutes les sommes
 de contrôle pour vérifier leur intégrité.
-</p><p>Ce fichier est lu et écrit par les commandes <b>sync</b> et <b>scrub</b> et
-lu par les commandes <b>fix</b>, <b>check</b> et <b>status</b>.
+</p><p>Le fichier de contenu est lu et écrit par les commandes <b>sync</b>, <b>scrub</b>,
+<b>touch</b> et <b>rehash</b>. Il est lu par les commandes <b>status</b>, <b>diff</b>,
+<b>check</b>, <b>fix</b>, <b>list</b>, <b>dup</b>, <b>locate</b> et <b>pool</b>, et il est complètement
+ignoré par les commandes <b>smart</b>, <b>probe</b>, <b>up</b>, <b>down</b> et <b>devices</b>.
 </p></div>
 <div class="manual-section-level-1">
-<h1 id="sec11" class="manual-title-level-1">
+<h1 id="sec13" class="manual-title-level-1">
 Parité (Parity)
 </h1>
 <p>SnapRAID stocke les informations de parité de votre baie dans
@@ -2146,8 +2383,8 @@ blocs définis dans le fichier <b>content</b>.
 lus uniquement par les commandes <b>scrub</b> et <b>check</b>.
 </p></div>
 <div class="manual-section-level-1">
-<h1 id="sec12" class="manual-title-level-1">
-Encodage
+<h1 id="sec14" class="manual-title-level-1">
+Encodage (Encoding)
 </h1>
 <p>SnapRAID sous Unix ignore tout encodage. Il lit et stocke les
 noms de fichiers avec le même encodage utilisé par le système
@@ -2163,16 +2400,285 @@ redirigez la sortie de la console vers un fichier, le fichier
 résultant est toujours au format UTF-8.
 </p></div>
 <div class="manual-section-level-1">
-<h1 id="sec13" class="manual-title-level-1">
-Droits d'auteur (Copyright)
+<h1 id="sec15" class="manual-title-level-1">
+Code de sortie (Exit Code)
 </h1>
-<p>Ce fichier est Copyright (C) 2025 Andrea Mazzoleni
+<p>SnapRAID se termine avec les codes d'erreur suivants :
+</p><div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+0
+</div><div class="manual-tag-description">
+Tout est OK.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+1
+</div><div class="manual-tag-description">
+La commande a rencontré des erreurs.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+2
+</div><div class="manual-tag-description">
+La commande <b>diff</b> a trouvé que tout est OK, mais un <b>sync</b> est requis.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+3
+</div><div class="manual-tag-description">
+Une commande de disque (<b>probe</b>, <b>smart</b>, <b>devices</b>, <b>up</b>, <b>down</b>) s'est
+terminée, mais au moins un système de fichiers fonctionne en mode dégradé
+avec des périphériques manquants.
+</div>
+</div>
+</div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec16" class="manual-title-level-1">
+Problèmes connus (Known Issues)
+</h1>
+<div class="manual-section-level-2">
+<h2 id="sec16-1" class="manual-title-level-2">
+Limites du système de fichiers
+</h2>
+<p>SnapRAID ne franchit pas les limites de système de fichiers, de point de
+montage ou de sous-volume lors de l'analyse d'un disque de données.
+Lorsqu'une telle limite est détectée, SnapRAID signale un AVERTISSEMENT
+et n'analyse pas au-delà.
+</p><p>Les fichiers situés au-delà de ces limites ne sont pas inclus dans le disque
+de données et doivent être configurés séparément s'ils doivent être protégés.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-2" class="manual-title-level-2">
+Points de montage avec instantanés du système de fichiers
+</h2>
+<p>Lorsque les instantanés du système de fichiers sont activés, les points de
+montage imbriqués et les montages bind à l'intérieur d'un disque de données
+ne sont pas pris en charge.
+</p><p>Les points de montage font partie de l'espace de noms de montage du système
+en direct et ne sont pas conservés dans les instantanés du système de
+fichiers. Par conséquent, lors de l'analyse d'un instantané, un répertoire
+masqué par un point de montage dans le système de fichiers en direct peut
+devenir visible.
+</p><p>Ne placez pas de points de montage imbriqués ou de montages bind dans les
+disques de données lorsque les instantanés du système de fichiers sont
+activés.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-3" class="manual-title-level-2">
+Plusieurs configurations avec instantanés du système de fichiers
+</h2>
+<p>La prise en charge des instantanés ne peut pas être partagée en toute
+sécurité par plusieurs configurations SnapRAID indépendantes utilisant le
+même espace de noms d'instantanés du système de fichiers.
+</p><p>Sur Btrfs et Bcachefs, une seule configuration SnapRAID avec prise en charge
+des instantanés activée peut utiliser des répertoires de données au sein du
+même sous-volume. Sur ZFS, la même restriction s'applique à un dataset, et
+sur NTFS à un volume.
+</p><p>Plusieurs configurations partageant le même espace de noms d'instantanés
+utilisent les mêmes instantanés <b>stable</b>, <b>pending</b> et <b>scan</b>. L'exécution
+d'une configuration peut donc remplacer ou supprimer les instantanés de
+récupération requis par une autre.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-4" class="manual-title-level-2">
+Modifications de fichiers sur place sans changement d'horodatage
+</h2>
+<p>SnapRAID détecte les modifications de fichiers en comparant la taille des
+fichiers et les horodatages de modification (mtime).
+</p><p>Si une application modifie un fichier sur place sans modifier sa taille ni
+mettre à jour son horodatage de modification, "diff" et "sync" ne détecteront
+pas que le fichier a changé et sa parité ne sera pas mise à jour.
+</p><p>Pour vous assurer que SnapRAID reconnaît ces modifications, mettez à jour
+l'horodatage de modification du fichier (par exemple avec l'utilitaire
+"touch"). Sinon, la différence ne sera détectée que sous la forme d'une
+non-concordance de hachage lors d'un "scrub" ou "check" ultérieur.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-5" class="manual-title-level-2">
+Correspondance de casse non-ASCII sous Windows
+</h2>
+<p>SnapRAID utilise un encodage UTF-8 standard et prévisible sur toutes les
+plates-formes, limitant la correspondance insensible à la casse aux caractères
+ASCII.
+</p><p>Les systèmes de fichiers Windows souffrent d'une conception héritée du passé
+qui impose l'insensibilité à la casse sur les noms de fichiers Unicode via des
+tables de correspondance arbitraires et dépendantes du système. Par conséquent,
+Windows masque la réalité du système de fichiers en traitant des séquences d'octets
+Unicode complètement différentes comme s'il s'agissait du même fichier.
+</p><p>Par exemple, <b>À.txt</b> et <b>à.txt</b> sont des noms Unicode distincts, pourtant Windows
+les traite illogiquement comme identiques, tandis que SnapRAID préserve leur
+véritable distinction.
+</p><p>Cette limitation est causée par la gestion incohérente des noms de fichiers
+Unicode par Windows et son insistance sur l'aliasement insensible à la casse.
+Pour éviter les écarts causés par le repliement de casse de Windows, spécifiez
+toujours la casse exacte de tous les caractères non-ASCII dans les chemins de
+configuration et les filtres.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-6" class="manual-title-level-2">
+Récupération avec fix partiel
+</h2>
+<p>Lorsque <b>fix</b> est restreint avec <b>-S, --start</b> ou <b>-B, --count</b>,
+SnapRAID opère uniquement sur les blocs sélectionnés et n'effectue
+pas de finalisation au niveau du fichier ni de mise en quarantaine.
+</p><p>Si la récupération produit des données au mieux (best-effort) qui ne
+peuvent pas être certifiées comme représentant le contenu actuel, ces
+blocs peuvent tout de même être écrits sous le nom de fichier normal.
+L'incertitude associée à ces blocs récupérés n'est pas conservée après
+la fin de l'exécution de la commande.
+</p><p>Par conséquent, un <b>fix</b> ultérieur considérera ces blocs lisibles comme des
+données de fichier valides et ne tentera pas de les récupérer à nouveau.
+Cela peut conduire une récupération ultérieure à signaler un succès tout en
+laissant des données incomplètes ou obsolètes dans le fichier.
+</p><p>Les options <b>-S</b> et <b>-B</b> ne sont destinées qu'à une récupération manuelle
+avancée, généralement après l'échec d'un <b>fix</b> normal. Si un <b>fix</b> partiel
+signale des données irrécupérables, supprimez ou renommez les fichiers
+concernés avant de tenter une nouvelle récupération, ou vérifiez manuellement
+leur contenu.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-7" class="manual-title-level-2">
+Liens matériels NTFS et chemins exclus
+</h2>
+<p>Sur NTFS, les entrées de répertoire mettent en cache la taille du fichier
+et les horodatages indépendamment pour chaque lien matériel. Lorsqu'un
+fichier est modifié via un lien, les entrées de répertoire des autres liens
+pointant vers le même fichier peuvent conserver des métadonnées obsolètes
+jusqu'à ce qu'on y accède.
+</p><p>SnapRAID détecte et normalise automatiquement cette condition chaque fois
+qu'au moins deux liens matériels vers le même fichier sont rencontrés lors
+d'une analyse. Cependant, si un seul lien matériel est analysé alors que
+les autres sont exclus par des filtres ou résident en dehors du chemin du
+disque de données, SnapRAID ne peut pas détecter la collision d'inodes et
+s'appuie sur les métadonnées en cache du seul lien visible.
+</p><p>Par conséquent, les modifications apportées via un lien matériel exclu ou
+externe peuvent passer inaperçues pour SnapRAID jusqu'à ce que les
+métadonnées du lien inclus soient actualisées par le système d'exploitation
+(par exemple lorsque le fichier est accédé ou ouvert via ce chemin).
+</p><p>Pour éviter cette limitation, évitez de modifier les fichiers protégés
+via des liens matériels exclus de SnapRAID, ou assurez-vous que tous les
+liens matériels vers un fichier sont inclus dans l'analyse afin que
+SnapRAID puisse les normaliser.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-8" class="manual-title-level-2">
+Récupération après un sync multi-parité interrompu
+</h2>
+<p>Dans une grappe avec plusieurs disques de parité, un <b>sync</b> interrompu
+peut laisser les niveaux de parité temporairement désynchronisés entre
+eux. Par exemple, la parité 1 peut déjà contenir les données nouvellement
+mises à jour, tandis que la parité 2 contient encore les anciennes données.
+</p><p>Lors d'un <b>check</b> ou d'un <b>fix</b>, SnapRAID teste différentes combinaisons
+de parités et valide les données reconstruites par rapport aux hachages
+de bloc connus (qui couvrent l'intégralité du bloc, généralement 256 Kio).
+</p><p>Si SnapRAID tente une reconstruction en utilisant un mélange incohérent
+d'ancienne et de nouvelle parité, les équations linéaires du RAID
+produiront des données incorrectes. Pour qu'une telle combinaison
+invalide soit acceptée par erreur, il faudrait que les équations
+reconstruisent accidentellement au moins un bloc complet de 256 Kio
+de manière si parfaite que son hachage corresponde, tandis que d'autres
+blocs non synchronisés de la même bande sont reconstruits avec des données
+erronées.
+</p><p>Ce scénario ne dépend pas d'une collision de hachage ; il faudrait plutôt
+que les équations de parité mixte produisent elles-mêmes par coïncidence
+le contenu exact du bloc original de 256 Kio. Bien que mathématiquement
+envisageable avec des données spécialement conçues ou très répétitives,
+c'est pratiquement impossible avec des données réelles.
+</p><p>Si tous les disques sont sains, achever le <b>sync</b> interrompu avant
+d'apporter d'autres modifications élimine cette ambiguïté. Si un disque
+est tombé en panne et qu'une récupération est requise, évitez de modifier
+les disques de données avant d'exécuter <b>check</b> ou <b>fix</b>.
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-9" class="manual-title-level-2">
+Noms de fichiers et de répertoires réservés
+</h2>
+<p>SnapRAID réserve certains noms de fichiers, répertoires et instantanés pour son
+fonctionnement interne. N'utilisez pas ces noms pour des données utilisateur :
+</p><div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+.snapraidignore
+</div><div class="manual-tag-description">
+Fichier local de règles d'exclusion.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+.snapraid
+</div><div class="manual-tag-description">
+Répertoire conteneur d'instantanés.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+snapraid-*
+</div><div class="manual-tag-description">
+Noms d'instantanés ZFS gérés par SnapRAID.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+*.unrecoverable
+</div><div class="manual-tag-description">
+Fichiers endommagés mis en quarantaine lors de la
+récupération.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+CONTENT.tmp
+</div><div class="manual-tag-description">
+Fichier temporaire pour les mises à jour du fichier content.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+CONTENT.lock
+</div><div class="manual-tag-description">
+Fichier de verrouillage du fichier content.
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+PARITY.spaceholder
+</div><div class="manual-tag-description">
+Fichier temporaire réservant de l'espace lors de
+l'allocation de parité sous Windows.
+</div>
+</div>
+</div>
+<p>L'utilisation de ces noms pour des données non liées peut entraîner l'ignorance,
+une mauvaise interprétation en tant que métadonnées, l'écrasement, le renommage
+ou la suppression de fichiers ou d'instantanés.
+</p><p>Sous Windows, toutes les variantes de casse sont également réservées, même
+dans les répertoires NTFS configurés pour respecter la casse (par exemple,
+.SNAPRAIDIGNORE, .SnapRaid, CONTENT.TMP et CONTENT.Lock).
+</p></div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec17" class="manual-title-level-1">
+Traduction (Translation)
+</h1>
+<p>Ce document est une traduction automatique du manuel en anglais.
+Veuillez vous référer au manuel en anglais pour la version officielle.
 </p></div>
 <div class="manual-section-level-1">
-<h1 id="sec14" class="manual-title-level-1">
+<h1 id="sec18" class="manual-title-level-1">
+Droits d'auteur (Copyright)
+</h1>
+<p>Ce fichier est Copyright (C) 2026 Andrea Mazzoleni
+</p></div>
+<div class="manual-section-level-1">
+<h1 id="sec19" class="manual-title-level-1">
 Voir aussi (See Also)
 </h1>
-<p>snapraid_log(1), snapraidd(1)
+<p>snapraid_log(1), snapraidd(1), rsync(1)
 </p></div>
 
 

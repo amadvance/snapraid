@@ -114,7 +114,7 @@
 
 <div class="manual-section-level-1">
 <h1 id="sec1" class="manual-title-level-1">
-Synopsis
+概要 (Synopsis)
 </h1>
 <pre>
 snapraid [-c, --conf CONFIG]
@@ -142,7 +142,7 @@ snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec2" class="manual-title-level-1">
-Description
+説明 (Description)
 </h1>
 <p>SnapRAIDは、ディスクアレイ用のバックアッププログラムで、最大6台のディスク障害が発生した場合の
 データ復旧のためにパリティ情報を保存します。
@@ -185,19 +185,35 @@ SnapRAIDはデータをロックしません。いつでも再フォーマット
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec3" class="manual-title-level-1">
-Limitations
+制限事項 (Limitations)
 </h1>
 <p>SnapRAIDはRAIDとバックアッププログラムのハイブリッドであり、両方の利点を組み合わせることを
-目指しています。ただし、使用する前に考慮すべきいくつかの制限があります。
-</p><p>主な制限は、ディスクが故障し、最近 <b>sync</b> を実行していない場合、完全に復旧できない
-可能性があることです。
-より具体的には、最後の <b>sync</b> 操作以降に変更または削除されたファイルのサイズまでのデータが
-復旧できない可能性があります。
-これは、変更または削除されたファイルが故障したディスク上にない場合でも発生します。
-このため、SnapRAIDは**めったに変更されない**データに適しています。
-</p><p>一方で、新しく追加されたファイルは、既に存在するファイルの復旧を妨げません。
-新しく追加されたファイルが故障したディスク上にある場合にのみ、それらのファイルが失われます。
-</p><p>その他のSnapRAIDの制限は次のとおりです。
+目指しています。ただし、使用する前に考慮すべきいくつかの制限事項があります。
+</p><p>主な制限事項は、ディスクが故障した場合、最後の <b>sync</b>（同期）処理の状態までしか
+データを復元できないことです。最後の同期以降に追加されたデータや、故障したディスク上で行われた
+変更はすべて失われます。
+</p><p>そのため、SnapRAIDは主にデータの変更がほとんどない環境に適しています。
+</p><p>最後の同期時にすでに存在していたデータについて、復元の信頼性は <b>snapshot</b>（スナップショット）
+オプションが使用されているかどうかによって異なります。
+</p><ul>
+<li>
+スナップショットサポートがある場合（Btrfs、ZFS、Bcachefs、およびNTFSで利用可能）：
+SnapRAIDはサポートされている各データファイルシステムの独立した凍結されたリファレンスを
+自動的に維持できます。
+これにより、同期中または同期後にライブファイルシステム上のファイルを変更または削除した場合でも、
+復元プロセスの整合性と信頼性が保たれます。
+</li>
+</ul>
+<ul>
+<li>
+スナップショットサポートがない場合：
+<b>sync</b> 後にファイルを削除または変更すると、他の故障したディスクの完全な復元が妨げられる
+可能性があります。これは、変更されたファイルが故障したディスク上にない場合でも、
+パリティが変更後のファイルと一致しなくなるために発生します。一方で、新しく追加されたファイルが
+すでに存在するファイルの復元を妨げることはありません。
+</li>
+</ul>
+<p>その他のSnapRAIDの制限は次のとおりです。
 </p><ul>
 <li>
 SnapRAIDでは、各ディスクに対して**個別のファイルシステム**が保持されます。
@@ -223,7 +239,7 @@ SnapRAIDは**限られた数のディスク障害**からのみデータを復�
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec4" class="manual-title-level-1">
-Getting Started
+はじめに (Getting Started)
 </h1>
 <p>SnapRAIDを使用するには、まずディスクアレイ内の1つのディスクを <b>parity</b> 情報専用に
 選択する必要があります。パリティ用に1つのディスクを使用すると、RAID5と同様に、単一のディスク障害から
@@ -290,7 +306,7 @@ snapraid sync
 更新できます。
 </p><div class="manual-section-level-2">
 <h2 id="sec4-1" class="manual-title-level-2">
-Scrubbing
+スクラブ (Scrubbing)
 </h2>
 <p>データとパリティのエラーを定期的にチェックするには、<b>scrub</b> コマンドを
 実行できます。
@@ -331,11 +347,11 @@ snapraid -p bad scrub
 </p></div>
 <div class="manual-section-level-2">
 <h2 id="sec4-2" class="manual-title-level-2">
-Pooling
+プーリング (Pooling)
 </h2>
 <p>注: ここで説明するプーリング機能は、**mergerfs** ツールに取って代わられました。
 mergerfs は、SnapRAIDコミュニティのLinuxユーザーに推奨されるオプションです。
-Mergefs は、複数のドライブを単一の統合されたマウントポイントにプールするための、
+Mergerfs は、複数のドライブを単一の統合されたマウントポイントにプールするための、
 より柔軟で効率的な方法を提供し、シンボリックリンクに頼ることなくアレイ全体の
 ファイルにシームレスにアクセスできます。これは、パリティ保護のためにSnapRAIDと
 うまく統合されており、OpenMediaVault (OMV) やカスタムNAS構成などのセットアップで
@@ -404,7 +420,7 @@ fsutil behavior set SymlinkEvaluation L2L:1 R2R:1 L2R:1 R2L:1
 </div>
 <div class="manual-section-level-2">
 <h2 id="sec4-3" class="manual-title-level-2">
-Undeleting
+削除取り消し (Undeleting)
 </h2>
 <p>SnapRAIDはRAIDシステムよりもバックアッププログラムのように機能し、
 -f, --filter オプションを使用してファイルを以前の状態に復元または削除解除するために
@@ -429,7 +445,7 @@ snapraid fix -m
 </div>
 <div class="manual-section-level-2">
 <h2 id="sec4-4" class="manual-title-level-2">
-Recovering
+回復 (Recovering)
 </h2>
 <p>最悪の事態が発生し、1台以上のディスクを失いました！
 </p><p>**パニックにならないでください！** 復旧できます！
@@ -514,27 +530,27 @@ snapraid sync
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec5" class="manual-title-level-1">
-Commands
+コマンド (Commands)
 </h1>
-<p>SnapRAIDは、次のことを可能にするいくつかの簡単なコマンドを提供します。
+<p>SnapRAIDは、以下の操作を行ういくつかのシンプルなコマンドを提供します。
 </p><ul>
 <li>
-アレイの状態の概要を出力 -&gt; <b>status</b>
+アレイの状態を表示する -&gt; <b>status</b>
 </li>
 <li>
-ディスクの制御 -&gt; <b>smart</b>、<b>probe</b>、<b>up</b>、<b>down</b>
+ディスクを制御する -&gt; <b>smart</b>、<b>probe</b>、<b>up</b>、<b>down</b>
 </li>
 <li>
-バックアップ/スナップショットの作成 -&gt; <b>sync</b>
+バックアップ／復元ポイントを作成する -&gt; <b>sync</b>
 </li>
 <li>
-データの定期的なチェック -&gt; <b>scrub</b>
+データを定期的にチェックする -&gt; <b>scrub</b>
 </li>
 <li>
-最後のバックアップ/スナップショットの復元 -&gt; <b>fix</b>。
+最後のバックアップ／復元ポイントを復元する -&gt; <b>fix</b>
 </li>
 </ul>
-<p>コマンドは**小文字**で記述する必要があります。
+<p>コマンドは小文字で入力する必要があります。
 </p><div class="manual-section-level-2">
 <h2 id="sec5-1" class="manual-title-level-2">
 status
@@ -699,9 +715,10 @@ updated
 <div class="manual-tag-name">
 moved
 </div><div class="manual-tag-description">
-同じディスク上の異なるディレクトリに移動されたファイル。
-同じ名前、サイズ、タイムスタンプ、およびinodeを持ちますが、ディレクトリが
-異なることで識別されます。
+同じinodeを保持したまま、同じディスク上で移動または
+名前変更されたファイル。同じinode、サイズ、およびタイムスタンプを
+持ちますが、パスが異なることで識別されます。ファイル名が異なって
+いても構いません。
 </div>
 </div>
 <div class="manual-tag-entry">
@@ -720,14 +737,12 @@ copied
 <div class="manual-tag-name">
 relocated
 </div><div class="manual-tag-description">
-オリジナルが消失した、同じディスクまたは別のディ
-スクに移動されたファイル。
-これらは、同じ名前、サイズ、およびタイムスタンプを持つこと
-によって識別されます。
-サブ秒のタイムスタンプがゼロの場合、識別するにはフルパスが
-一致する必要があります。
-同じディスク上の 'moved' ファイルとは異なり、再配置された
-ファイルは異なる inode を持ちます。
+元のファイルが消失し、inodeが保持されていない、
+別のディレクトリまたはディスクに移動されたファイル。
+これらは、同じ名前、サイズ、およびタイムスタンプを持つことに
+よって識別されます。サブ秒のタイムスタンプがゼロの場合、
+識別するにはフルパスが一致する必要があります。'moved' ファイルとは
+異なり、再配置されたファイルはファイル名が同一である必要があります。
 </div>
 </div>
 <div class="manual-tag-entry">
@@ -815,12 +830,12 @@ full - すべてをスクラブします。
 <h2 id="sec5-9" class="manual-title-level-2">
 fix
 </h2>
-<p>すべてのファイルとパリティデータを修正します。
-</p><p>すべてのファイルとパリティデータは、最後の <b>sync</b> で保存されたスナップショット状態と
-比較されます。
-違いが見つかった場合、保存されたスナップショットに**元に戻されます**。
-</p><p>**警告！** <b>fix</b> コマンドは、エラーと意図的な変更を区別しません。
-ファイルの_状態を_最後の <b>sync</b> に**無条件に元に戻します**。
+<p>すべてのファイルとパリティデータを修復（復元）します。
+</p><p>すべてのファイルとパリティデータが、最後の <b>sync</b> で保存された状態と比較されます。
+差異が見つかった場合、保存されていた状態に巻き戻されます。
+</p><p>警告！
+<b>fix</b> コマンドは、エラーと意図的な変更を区別しません。
+ファイルの変更状態を無条件で最後の <b>sync</b> の状態に戻します。
 </p><p>他のオプションが指定されていない場合、アレイ全体が処理されます。
 フィルタオプションを使用して、操作するファイルまたはディスクのサブセットを
 選択します。
@@ -965,7 +980,7 @@ locate
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec6" class="manual-title-level-1">
-Options
+オプション (Options)
 </h1>
 <p>SnapRAIDには、次のオプションがあります。
 </p><div class="manual-option-list">
@@ -1143,7 +1158,7 @@ DAYS は、ブロックがスクラブされるための最小経過日数であ
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
--t, --tail サイズ
+-t, --tail SIZE
 </div><div class="manual-option-description">
 ファイルリストを、パリティディスクの指定された末尾サイズ以下を
 使用しているものに制限します。
@@ -1282,7 +1297,7 @@ SnapRAIDが一部のディスクがUUIDを変更したことを検出した場�
 <div class="manual-option-list">
 <div class="manual-option-entry">
 <div class="manual-option-name">
--W, --force-realloc-tail サイズ
+-W, --force-realloc-tail SIZE
 </div><div class="manual-option-description">
 -R, --force-realloc と同様に動作しますが、各パリティファイルの
 指定された末尾部分（最後の「サイズ」バイト）に制限されます。
@@ -1349,7 +1364,8 @@ locate -t, --tail を使用して、影響を受けるファイルを事前に
 指定されたブロック番号から処理を開始します。
 これは、破損したディスクの場合に特定のブロックを再試行してチェックまたは修正するのに
 役立ちます。
-このオプションは、主に高度な手動復旧を目的としています。
+このオプションは、主に高度な手動復旧を目的としており、<b>check</b> と <b>fix</b> でのみ
+サポートされています。
 </div>
 </div>
 </div>
@@ -1359,7 +1375,8 @@ locate -t, --tail を使用して、影響を受けるファイルを事前に
 -B, --count BLKCOUNT
 </div><div class="manual-option-description">
 指定された数のブロックのみを処理します。
-このオプションは、主に高度な手動復旧を目的としています。
+このオプションは、主に高度な手動復旧を目的としており、<b>check</b> と <b>fix</b> でのみ
+サポートされています。
 </div>
 </div>
 </div>
@@ -1420,7 +1437,7 @@ locate -t, --tail を使用して、影響を受けるファイルを事前に
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec7" class="manual-title-level-1">
-Configuration
+設定 (Configuration)
 </h1>
 <p>SnapRAIDは、ディスクアレイの場所とパリティ情報の保存場所を知るために、構成ファイルを
 必要とします。
@@ -1510,6 +1527,10 @@ data NAME DIR
 NAME はディスクを識別するために使用され、**一意である**必要があります。
 DIR はファイルシステム内のディスクの**マウントポイント**です。
 </p><p>NAME を固定したままにしておけば、必要に応じてマウントポイントを変更できます。
+</p><p>ただし、設定されたパスは常に同じ基礎データに解決される必要があります。
+パスにシンボリックリンクが含まれている場合、そのリンク先は固定されている
+必要があります。シンボリックリンクの参照先を変更して実行時にデータ
+ディレクトリを切り替えることはサポートされていません。
 </p><p>アレイ内のデータディスクごとに1つのオプションを使用する必要があります。
 </p><p>構成ファイルで直接 NAME を変更してから <b>sync</b> コマンドを実行することで、
 後でディスクの名前を変更できます。
@@ -1528,6 +1549,26 @@ extra NAME DIR
 </p></div>
 <div class="manual-section-level-2">
 <h2 id="sec7-7" class="manual-title-level-2">
+snapshot
+</h2>
+<p><b>sync</b>、<b>scrub</b>、<b>check</b>、および <b>fix</b> コマンドでファイルシステムスナップショットの
+使用を有効にします。
+</p><p>有効にすると、SnapRAIDは <b>sync</b> の開始時にサポートされている各データファイルシステムの
+読み取り専用スナップショットを作成します。これにより各ファイルシステムの安定したビューが
+提供され、後からの変更によってパリティ計算に使用されるデータが変わるのを防ぎます。
+</p><p>これにより復元が大幅に向上します。ライブファイルシステムからファイルが削除されても、
+スナップショット内に保存され続けます。これにより、そのブロックのパリティが「破損」するのを防ぎ、
+別のディスクが故障した場合でもデータを正常に復元できるようになります。
+</p><p>このオプションは、LinuxのBtrfs、Bcachefs、ZFS、およびWindowsのNTFSでフォーマットされた
+データディスクにのみ適用されます。
+パリティディスク、または他のファイルシステムを使用しているデータディスクは、常にファイルシステムの
+ライブバージョンを使用します。
+</p><p>スナップショットの作成と削除には管理者権限が必要です。
+このオプションが有効な場合は、SnapRAIDが必要な権限（例：sudo）で実行されていることを確認してください。
+</p><p>スナップショットのライフサイクルの詳細な説明については、SNAPSHOTSのセクションを参照してください。
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec7-8" class="manual-title-level-2">
 nohidden
 </h2>
 <p>すべての隠しファイルとディレクトリを除外します。
@@ -1535,7 +1576,7 @@ Unixでは、隠しファイルは <b>.</b> で始まるファイルです。
 Windowsでは、隠し属性を持つファイルです。
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-8" class="manual-title-level-2">
+<h2 id="sec7-9" class="manual-title-level-2">
 exclude/include PATTERN
 </h2>
 <p>syncプロセスで除外または含めるファイルまたはディレクトリのパターンを定義します。
@@ -1544,11 +1585,14 @@ exclude/include PATTERN
 <b>include</b> の場合、ファイルは含まれます。
 パターンが一致しない場合、最後に指定されたパターンが <b>include</b> の場合はファイルは除外され、
 <b>exclude</b> の場合は含まれます。
+</p><p>フィルタリングはディレクトリの走査時に階層的に実行されることに注意してください。
+ディレクトリが <b>exclude</b> ルールに一致した場合、そのディレクトリ全体がスキップ（プルーニング）され、
+その内部にあるファイルやサブディレクトリに対する <b>include</b> ルールは評価されません。
 </p><p>パターン仕様の詳細については、PATTERNセクションを参照してください。
 </p><p>このオプションは複数回使用できます。
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-9" class="manual-title-level-2">
+<h2 id="sec7-10" class="manual-title-level-2">
 blocksize SIZE_IN_KIBIBYTES
 </h2>
 <p>パリティの基本ブロックサイズをキビバイト単位で定義します。
@@ -1585,7 +1629,7 @@ mkfs.ext4 -m 0 -T largefile4 DEVICE
 浪費スペースなしで各データディスクで約460,000ファイルが可能になります。
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-10" class="manual-title-level-2">
+<h2 id="sec7-11" class="manual-title-level-2">
 hashsize SIZE_IN_BYTES
 </h2>
 <p>保存されたブロックのハッシュサイズをバイト単位で定義します。
@@ -1595,28 +1639,28 @@ hashsize SIZE_IN_BYTES
 </p><p>異なるハッシュサイズを使用する理由の1つは、システムのメモリが制限されている場合です。
 経験則として、SnapRAIDは通常、アレイ内のデータ16 TBごとに1 GiBのRAMを必要とします。
 </p><p>具体的には、データのハッシュを保存するために、SnapRAIDは
-約 $TS \cdot (1 + HS) / BS$ バイトのRAMを必要とします。
+約 TS*(1+HS)/BS バイトのRAMを必要とします。
 ここで、TSはディスクアレイの合計サイズ（バイト）、BSはブロックサイズ（バイト）、HSはハッシュサイズ（バイト）です。
 </p><p>たとえば、4 TBのディスク8台、ブロックサイズ256 KiB（1 KiB = 1024バイト）、
 ハッシュサイズ16の場合：
 </p><pre>
-RAM = $(8 \cdot 4 \cdot 10^{12}) \cdot (1 + 16) / (256 \cdot 2^{10}) = 1.93 \text{ GiB}$
+RAM = (8 * 4 * 10^12) * (1+16) / (256 * 2^10) = 1.93 GiB
 </pre>
 <p>ハッシュサイズを8に切り替えると：
 </p><pre>
-RAM = $(8 \cdot 4 \cdot 10^{12}) \cdot (1 + 8) / (256 \cdot 2^{10}) = 1.02 \text{ GiB}$
+RAM = (8 * 4 * 10^12) * (1+8) / (256 * 2^10) = 1.02 GiB
 </pre>
 <p>ブロックサイズを512に切り替えると：
 </p><pre>
-RAM = $(8 \cdot 4 \cdot 10^{12}) \cdot (1 + 16) / (512 \cdot 2^{10}) = 0.96 \text{ GiB}$
+RAM = (8 * 4 * 10^12) * (1+16) / (512 * 2^10) = 0.96 GiB
 </pre>
 <p>ハッシュサイズを8、ブロックサイズを512の両方に切り替えると：
 </p><pre>
-RAM = $(8 \cdot 4 \cdot 10^{12}) \cdot (1 + 8) / (512 \cdot 2^{10}) = 0.51 \text{ GiB}$
+RAM = (8 * 4 * 10^12) * (1+8) / (512 * 2^10) = 0.51 GiB
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-11" class="manual-title-level-2">
+<h2 id="sec7-12" class="manual-title-level-2">
 autosave SIZE_IN_GIGABYTES
 </h2>
 <p>処理された指定されたGB量後に、同期またはスクラビング時に状態を自動的に保存します。
@@ -1624,7 +1668,7 @@ autosave SIZE_IN_GIGABYTES
 長い <b>sync</b> コマンドを最初から再起動するのを避けるのに役立ちます。
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-12" class="manual-title-level-2">
+<h2 id="sec7-13" class="manual-title-level-2">
 temp_limit TEMPERATURE_CELSIUS
 </h2>
 <p>許容される最大ディスク温度を摂氏で設定します。指定されている場合、
@@ -1650,14 +1694,14 @@ SnapRAIDの動作には影響しません。プログラムの動作は、実際
 すべてのディスクの温度を表示するには、-A または --stats オプションを使用します。
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-13" class="manual-title-level-2">
+<h2 id="sec7-14" class="manual-title-level-2">
 temp_sleep TIME_IN_MINUTES
 </h2>
 <p>温度制限に達したときのスタンバイ時間（分単位）を設定します。この期間中、ディスクは
 スピンダウンしたままです。デフォルトは5分です。
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-14" class="manual-title-level-2">
+<h2 id="sec7-15" class="manual-title-level-2">
 pool DIR
 </h2>
 <p><b>pool</b> コマンドを使用してディスクアレイの仮想ビューが作成されるプーリングディレクトリを
@@ -1665,7 +1709,7 @@ pool DIR
 </p><p>ディレクトリは既に存在している必要があります。
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-15" class="manual-title-level-2">
+<h2 id="sec7-16" class="manual-title-level-2">
 share UNC_DIR
 </h2>
 <p>ディスクにリモートでアクセスするために必要なWindows UNCパスを定義します。
@@ -1678,7 +1722,7 @@ share UNC_DIR
 </p><p>このオプションはWindowsでのみ必要です。
 </p></div>
 <div class="manual-section-level-2">
-<h2 id="sec7-16" class="manual-title-level-2">
+<h2 id="sec7-17" class="manual-title-level-2">
 smartctl DISK/PARITY OPTIONS...
 </h2>
 <p>各ディスクのSMART属性を取得するためのカスタムsmartctlオプションを定義します。
@@ -1691,6 +1735,8 @@ PARITY はパリティ名のいずれかです：<b>parity</b>、<b>2-parity</b>
 </p><p>指定された OPTIONS で、<b>%s</b> 文字列はデバイス名に置き換えられます。
 RAIDコントローラーの場合、デバイスは固定されている可能性が高いため、
 <b>%s</b> を使用する必要はないかもしれません。
+</p><p>デフォルトの <b>-a</b> オプションを置き換えるために、<b>[info: ...]</b> タグを使用して
+カスタム情報オプション文字列を指定することもできます。
 </p><p>使用可能なオプションについては、smartmontoolsのドキュメントを参照してください。
 </p><pre>
 <a href="https://www.smartmontools.org/wiki/Supported_RAID-Controllers">https://www.smartmontools.org/wiki/Supported_RAID-Controllers</a>
@@ -1698,11 +1744,12 @@ RAIDコントローラーの場合、デバイスは固定されている可能�
 </pre>
 <p>例：
 </p><pre>
+smartctl d1 [info: -H -i -c -A] -d sat %s
 smartctl parity -d sat %s
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-17" class="manual-title-level-2">
+<h2 id="sec7-18" class="manual-title-level-2">
 smartignore DISK/PARITY ATTR [ATTR...]
 </h2>
 <p>ディスク障害の確率を計算するときに、指定されたSMART属性を無視します。
@@ -1712,18 +1759,23 @@ smartignore DISK/PARITY ATTR [ATTR...]
 PARITY はパリティ名のいずれかです：<b>parity</b>、<b>2-parity</b>、<b>3-parity</b>、
 <b>4-parity</b>、<b>5-parity</b>、<b>6-parity</b>、または <b>z-parity</b>。
 特殊な値 <b>*</b> は、すべてのディスクで属性を無視するために使用できます。
-</p><p>例として、すべてのディスクで <b>Current Pending Sector Count</b> 属性を無視するには：
+</p><p>複数の属性をスペースで区切って指定できます。
+各属性は1から255までの数値、または大文字と小文字を区别しない名前
+(例: <b>Current_Pending_Sector</b>)として指定できます。
+</p><p>例として、すべてのディスクで <b>Current Pending Sector Count</b> と
+<b>Reallocated Sectors Count</b> 属性を番号または名前で無視するには：
 </p><pre>
-smartignore * 197
+smartignore * 197 5
+smartignore * Current_Pending_Sector Reallocated_Sector_Ct
 </pre>
 <p>最初のパリティディスクでのみ無視するには：
 </p><pre>
-smartignore parity 197
+smartignore parity 197 5
 </pre>
 </div>
 <div class="manual-section-level-2">
-<h2 id="sec7-18" class="manual-title-level-2">
-Examples
+<h2 id="sec7-19" class="manual-title-level-2">
+例 (Examples)
 </h2>
 <p>Unixの一般的な構成の例は次のとおりです。
 </p><pre>
@@ -1735,7 +1787,7 @@ data d2 /mnt/disk2/
 data d3 /mnt/disk3/
 exclude /lost+found/
 exclude /tmp/
-smartctl d1 -d sat %s
+smartctl d1 [info: -H -i -c -A] -d sat %s
 smartctl d2 -d usbjmicron %s
 smartctl parity -d areca,1/1 /dev/sg0
 smartctl 2-parity -d areca,2/1 /dev/sg0
@@ -1751,7 +1803,7 @@ data d3 I:\array\
 exclude Thumbs.db
 exclude \$RECYCLE.BIN
 exclude \System Volume Information
-smartctl d1 -d sat %s
+smartctl d1 [info: -H -i -c -A] -d sat %s
 smartctl d2 -d usbjmicron %s
 smartctl parity -d areca,1/1 /dev/arcmsr0
 smartctl 2-parity -d areca,2/1 /dev/arcmsr0
@@ -1760,7 +1812,148 @@ smartctl 2-parity -d areca,2/1 /dev/arcmsr0
 </div>
 <div class="manual-section-level-1">
 <h1 id="sec8" class="manual-title-level-1">
-Pattern
+スナップショット (Snapshots)
+</h1>
+<p>設定でスナップショットオプションが有効になっている場合、SnapRAIDは
+ファイルシステムのスナップショットを使用して、操作中に読み取られるデータを安定に保ちます。
+これは、ライブファイルシステム上のファイルが後から変更または削除された場合でも同様です。
+</p><p>スナップショットの管理は完全に自動かつ透過的です。
+バックグラウンドで完全に処理されるスナップショットによる追加の保護を受けながら、
+これまでとまったく同じようにSnapRAIDを使用し続けることができます。
+</p><p>これには主に2つのメリットがあります。
+</p><div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+整合性
+</div><div class="manual-tag-description">
+長時間かかるsyncやscrubの実行中にライブファイルシステム上でファイルが変更されても、
+スナップショットされた各ファイルシステムは操作中変更されないため、
+パリティの不一致や処理の中断は発生しません。
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+復元
+</div><div class="manual-tag-description">
+ライブファイルシステムからファイルが更新または削除されても、スナップショット内に保存され続けます。
+次のsyncが実行される前にディスク故障が発生した場合、SnapRAIDはスナップショットに保存されている
+データを使用して、故障したディスクを再構築します。
+アクティブなsync処理中にディスクが故障した場合、SnapRAIDは前のパリティ計算の
+スナップショットと現在のスナップショットの両方から自動的に読み取ることも可能です。
+これにより、同期の間にブロックが変更または削除されていた場合でも、パリティ方程式を解くために
+必要な正確なデータブロックへのアクセスが提供され、完全な復元の可能性が最大化されます。
+スナップショットがない場合、正常なディスク上の更新または削除されたファイルはデータブロックの欠損を
+招き、他の故障したディスクを修復するために必要となるブロックが失われる可能性があります。
+</div>
+</div>
+</div>
+<p>スナップショットはデータディスクに対してのみ、かつ基礎となるファイルシステムがその機能をサポートして
+いる場合にのみ作成されます。パリティディスクは常にライブファイルシステムを使用します。
+</p><p>現在、これはLinuxのBtrfs、Bcachefs、ZFS、およびWindowsのNTFSでサポートされています。
+</p><p>異なるファイルシステムを持つデータディスクを混在させることができます。スナップショットをサポートして
+いるディスクのみがそれを利用し、他のディスクはライブファイルシステム上で直接動作し続けます。
+</p><p>スナップショットの作成と削除には管理者権限が必要です。
+スナップショットが有効な場合は、SnapRAIDが必要な権限（例：sudo）で実行されていることを確認してください。
+</p><div class="manual-section-level-2">
+<h2 id="sec8-1" class="manual-title-level-2">
+スナップショット使用時のコマンドの挙動 (Command Behavior with Snapshots)
+</h2>
+<p><b>sync</b> および <b>scrub</b> コマンドは、ファイルシステムがサポートしているデータディスクに対して
+スナップショットを使用します。スナップショットされたディスクでは、コマンドはライブファイルシステムへの
+同時変更の影響を受けない安定したファイルシステムイメージを参照します。
+<b>sync</b> の実行中、サポートされている各データファイルシステムに対して独立して新しいスナップショットが
+作成されます。これらのスナップショットは全体としてパリティ計算に使用されるデータを提供します。
+対照的に、<b>scrub</b> コマンドは、既存のパリティと一致する信頼できる参照ポイントを維持するために、
+最も直近の同期中に作成された最後のスナップショットを利用します。
+</p><p><b>check</b> および <b>fix</b> コマンドの場合、最後のスナップショットの使用は、
+-d, --filter-disk オプションを使用して特定のディスクがターゲットに指定されているかどうかによって異なります。
+</p><div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-d を介して明示的に選択されたディスク（操作の「ターゲット」）は、常にライブファイルシステムを使用します。
+</div><div class="manual-option-description">
+</div>
+</div>
+</div>
+<p><b>fix</b> の場合、これによりアクティブな交換ディスクにデータを復元できます。
+<b>check</b> の場合、同じ条件下で <b>fix</b> 操作をシミュレートできます。
+</p><p>他のすべてのデータディスク（「参照」ディスク）は、それぞれのスナップショットを介してアクセスされます。
+これにより、復旧の進行中に正常なディスク上のファイルを変更している場合でも、SnapRAIDは
+パリティ方程式を解くための安定した凍結された参照を持つことができます。
+</p><div class="manual-option-list">
+<div class="manual-option-entry">
+<div class="manual-option-name">
+-d オプションが指定されていない場合、SnapRAIDは操作がアレイ全体に適用されると想定します。
+</div><div class="manual-option-description">
+</div>
+</div>
+</div>
+<p>この場合、<b>check</b> と <b>fix</b> はライブファイルシステムのみを排他的に使用します。
+</p><p>他のすべてのコマンドは、ライブファイルシステム上でのみ動作します。
+</p></div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec9" class="manual-title-level-1">
+スナップショットのライフサイクル (Snapshots Lifecycle)
+</h1>
+<p>SnapRAIDは、各データサブボリュームのルートにある隠しディレクトリ内で、
+<b>stable</b>（安定）、<b>pending</b>（保留）、および <b>scan</b>（スキャン）という3つの特定のスナップショットを管理します。
+Btrfs、Bcachefs、およびNTFSでは <b>.snapraid/</b> ディレクトリが使用され、
+ZFSでは標準の <b>.zfs/snapshot/</b> が使用されます。
+</p><p><b>stable</b> スナップショットは、最後に正常に完了した <b>sync</b> の状態を表し、
+現在のパリティの計算に使用された正確なデータを含んでいます。これは、
+<b>scrub</b>、<b>check</b>、および <b>fix</b> コマンドの主要なデータソースとして機能します。
+</p><p><b>scan</b> スナップショットは、スキャンとパリティ計算のための凍結された状態を提供するために、
+<b>sync</b> の開始時に作成される一時的なイメージです。
+スキャンを実行し、新しいコンテンツ状態を保存した後、以前の <b>pending</b> スナップショットを置き換えます。
+</p><p><b>pending</b> スナップショットは、中断された <b>sync</b> によって使用されるイメージです。
+操作が正常に完了すると、以前の <b>stable</b> スナップショットが削除され、
+<b>pending</b> スナップショットが新しい安定した参照として昇格します。
+</p><p><b>sync</b> が中断された場合、<b>pending</b> スナップショットは保持されます。
+パリティが部分的にしか同期されていない場合でも、.content ファイルに記録されたファイルシステム状態と
+一致するため、その後の <b>scrub</b>、<b>check</b>、および <b>fix</b> コマンドはこの保留中のスナップショットを使用します。
+</p><p><b>sync</b> が中断された場合、<b>check</b> および <b>fix</b> コマンドは <b>stable</b> スナップショットからも
+読み取りを行い、同期中に更新または削除されたファイルからデータブロックを取得します。
+これは、.content ファイルが同期プロセス全体を通じて、変更または削除されたすべてのファイルの
+メタデータを保持しているために可能です。
+この履歴情報は、syncが正常に終了し、.content ファイルの最終バージョンが保存されたときにのみクリアされます。
+</p><p>中断後に <b>sync</b> が再開されると、既存の保留中（pending）のスナップショットは削除され、
+ライブファイルシステムの現在の状態をキャプチャするために新しいスナップショットが作成されます。
+ただし、<b>sync</b> が中断された場合は、その後の <b>sync</b> が正常に完了するまで、
+ファイルの変更、削除、置換、または移動を行わないでください。
+パリティには、中断された sync で使用されたスナップショットから計算されたブロックが
+まだ含まれている可能性があります。その後の sync によりそのスナップショットが
+置き換えられ、中間バージョンのファイルが復元できなくなる可能性があります。
+</p><div class="manual-section-level-2">
+<h2 id="sec9-1" class="manual-title-level-2">
+ファイルシステムスナップショットと外部バックアップ (External backups with filesystem snapshots)
+</h2>
+<p>ファイルシステムスナップショットが有効な場合、SnapRAIDは各データサブボリューム、
+ボリューム、またはデータセットのルートにあるスナップショットにアクセスまたは作成します。
+</p><p>外部ツールとの干渉を避ける簡単な方法は、<b>data</b> 設定をサブボリュームまたは
+ボリューム内の通常のサブディレクトリ（例えば <b>/mnt/subvol</b> の代わりに
+<b>/mnt/subvol/data</b>）に指定することです。SnapRAIDは常にサブボリュームのルートに
+スナップショットディレクトリを作成するため（例えば <b>/mnt/subvol/.snapraid/</b>）、
+データサブディレクトリがクリーンに保たれ、スナップショットはそのディレクトリ内で
+動作するバックアップツールから見えない状態のままになります。
+</p><p>一方、設定された <b>data</b> ディレクトリ自体がサブボリュームまたはボリュームの
+ルートである場合、SnapRAIDはその直下に <b>.snapraid/</b> ディレクトリを作成します（Btrfs、
+Bcachefs、およびNTFS）。SnapRAID自身のスキャンからは自動的に除外されますが、
+外部のバックアップツールやファイル同期ツールはそのディレクトリを検出します。
+除外設定を行わない場合、スナップショットやディレクトリリンク内を走査して凍結された
+データツリー全体をコピーしてしまい、データが重複してバックアップストレージを使い果たす
+可能性があります。外部バックアップツールでは、必ず <b>.snapraid/</b> ディレクトリを
+除外するように設定してください。
+</p><p>ZFSでは、スナップショットは <b>.snapraid/</b> ではなく標準の仮想ディレクトリ
+<b>.zfs/snapshot/</b> 経由で公開されます。デフォルト（<b>snapdir=hidden</b>）では、ZFSはこの
+ディレクトリを一覧表示から隠すため、外部バックアップツールが走査することはありません。
+<b>snapdir=visible</b> を有効にしている場合は、バックアップツールが <b>.zfs/</b> ディレクトリを
+除外するように設定してください。
+</p></div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec10" class="manual-title-level-1">
+パターン (Pattern)
 </h1>
 <p>パターンは、含めるファイルまたは除外するファイルをフィルタリングするための柔軟な方法を
 提供します。グロブ文字を使用することで、すべてのパスを手動でリストすることなく、
@@ -1772,23 +1965,25 @@ Pattern
 ディレクトリの境界を越えることはありません。スラッシュで停止するため、
 単一のパスコンポーネント内での一致に適しています。これは、シェルの
 グロブでおなじみの標準的なワイルドカードの動作です。
-</p><p>ダブルアスタリスク <b>**</b> はより強力で、ディレクトリ区切り文字を含む
-任意の文字列に一致します。これにより、パターンが複数のディレクトリレベルを
-またいで一致できるようになります。<b>**</b> がパターン内に直接埋め込まれている場合、
-周囲のリテラルテキストの間にあるスラッシュを含む0文字以上の文字に一致します。
-</p><p><b>**</b> の最も重要な使い方は、特別な形式である <b>/**/</b> です。これは
-0個以上の完全なディレクトリレベルに一致し、正確なパス構造を知らなくても、
-ディレクトリツリー内の任意の深さにあるファイルと一致させることができます。
-例えば、パターン <b>src/**/main.js</b> は <b>src/main.js</b>（ディレクトリを0個スキップ）、
-<b>src/ui/main.js</b>（1個スキップ）、<b>src/ui/components/main.js</b>（2個スキップ）
-に一致します。
+</p><p>ダブルアスタリスクのワイルドカード <b>**</b> は、ディレクトリ区切り文字に隣接
+している場合（スラッシュの前または後にある場合）にのみ、ディレクトリ区切り
+文字をまたいで一致します。この形式では、複数のディレクトリレベルにわたって
+0個以上の文字に一致します。例えば、<b>foo/**/bar</b> は <b>foo/bar</b>、<b>foo/a/bar</b>、
+および <b>foo/a/b/bar</b> に一致し、<b>**/build</b> は <b>build</b> および <b>foo/bar/build</b> に
+一致し、<b>src/**.js</b> は <b>src/main.js</b> および <b>src/ui/components/main.js</b> に一致します。
+単独の形式 <b>/**/</b> は完全なパターンとして受け入れられません。
+</p><p><b>**</b> がスラッシュに隣接していない場合、<b>*</b> と同様に動作し、ディレクトリ区切り
+文字には一致しません。例えば、<b>**.jpg</b> はカレントディレクトリ内の <b>photo.jpg</b> に
+一致しますが、<b>dir/photo.jpg</b> には一致しません。その目的には <b>**/*.jpg</b> を
+使用してください。
 </p><p>角括弧 <b>[]</b> を使用した文字クラスは、指定されたセットまたは範囲の
 任意の1文字に一致します。他の単一文字パターンと同様に、
 ディレクトリ区切り文字には一致しません。クラスは範囲と、感嘆符を
 使用した否定をサポートしています。
 </p><p>覚えておくべき根本的な違いは、<b>*</b>、<b>?</b>、および文字クラスはすべて
 ディレクトリの境界を尊重し、単一のパスコンポーネント内でのみ一致するのに対し、
-<b>**</b> はディレクトリ区切り文字をまたいで一致できる唯一のパターンであるということです。
+<b>**</b> はスラッシュに隣接している場合にのみディレクトリ区切り文字を
+またいで一致できるということです。
 </p><p>4つの異なる種類のパターンがあります。
 </p><div class="manual-option-list">
 <div class="manual-option-entry">
@@ -1881,6 +2076,23 @@ include /movies/
 include /musics/
 include /pictures/
 </pre>
+<p>ディレクトリを除外すると（DIR/ または /PATH/DIR/ を使用）、SnapRAID がそのディレクトリに入って
+スキャンすることが防止されることに注意してください。したがって、除外された親ディレクトリ内に
+存在するファイルやサブディレクトリを <b>include</b> ルールで再度含めることはできません（スキャナが
+そのディレクトリ内を走査しないため）。
+</p><p>例えば、以下の設定では <b>/keep/</b> がプルーニングされるため、<b>file.dat</b> は含まれません：
+</p><pre>
+# 意図通りに動作しません: /keep/ は完全にスキップされます
+include /keep/file.dat
+exclude /keep/
+</pre>
+<p>特定のファイルを残しつつディレクトリ内のファイルを一括除外するには、ディレクトリ自体を除外するのではなく、
+ディレクトリ内のファイルパターンを除外してください：
+</p><pre>
+# 意図通りに動作します: /keep/ は走査され、内部の他のファイルのみが除外されます
+include /keep/file.dat
+exclude /keep/*
+</pre>
 <p>コマンドラインで -f オプションを使用する場合、<b>include</b> パターンのみを
 使用できます。例：
 </p><pre>
@@ -1892,11 +2104,11 @@ snapraid -f "*.mp3" check
 防ぐために引用符で囲む必要があります。
 </p></div>
 <div class="manual-section-level-1">
-<h1 id="sec9" class="manual-title-level-1">
-Ignore File
+<h1 id="sec11" class="manual-title-level-1">
+除外ファイル (Ignore File)
 </h1>
 <p>設定ファイルのグローバルルールに加えて、アレイ内の任意のディレクトリに
-.snapraidignore ファイルを配置して、分散型の除外ルールを定義できます。
+<b>.snapraidignore</b> ファイルを配置して、分散型の除外ルールを定義できます。
 </p><p><b>.snapraidignore</b> で定義されたルールは、設定ファイルのルールの後に
 適用されます。これは、それらがより高い優先度を持ち、グローバル設定で
 以前に含まれていたファイルを除外するために使用できることを意味します。
@@ -1957,18 +2169,21 @@ build/
 </pre>
 </div>
 <div class="manual-section-level-1">
-<h1 id="sec10" class="manual-title-level-1">
-Content
+<h1 id="sec12" class="manual-title-level-1">
+コンテンツ (Content)
 </h1>
 <p>SnapRAIDは、ファイルの一覧とチェックサムをコンテンツファイルに保存します。
 </p><p>これはバイナリファイルであり、ディスクアレイに存在するすべてのファイルと、
 それらの整合性を検証するためのすべてのチェックサムを一覧表示します。
-</p><p>このファイルは <b>sync</b> および <b>scrub</b> コマンドによって読み書きされ、
-<b>fix</b>、<b>check</b>、および <b>status</b> コマンドによって読み取られます。
+</p><p>コンテンツファイルは <b>sync</b>、<b>scrub</b>、<b>touch</b>、および <b>rehash</b>
+コマンドによって読み書きされます。<b>status</b>、<b>diff</b>、<b>check</b>、
+<b>fix</b>、<b>list</b>、<b>dup</b>、<b>locate</b>、および <b>pool</b> コマンドによって読み取られ、
+<b>smart</b>、<b>probe</b>、<b>up</b>、<b>down</b>、および <b>devices</b> コマンドによって
+完全に無視されます。
 </p></div>
 <div class="manual-section-level-1">
-<h1 id="sec11" class="manual-title-level-1">
-Parity
+<h1 id="sec13" class="manual-title-level-1">
+パリティ (Parity)
 </h1>
 <p>SnapRAIDは、アレイのパリティ情報をパリティファイルに保存します。
 </p><p>これらはバイナリファイルであり、<b>content</b> ファイルで定義されたすべてのブロックの
@@ -1977,17 +2192,281 @@ Parity
 <b>scrub</b> および <b>check</b> コマンドによって**読み取られるだけ**です。
 </p></div>
 <div class="manual-section-level-1">
-<h1 id="sec12" class="manual-title-level-1">
-Encoding
+<h1 id="sec14" class="manual-title-level-1">
+エンコーディング (Encoding)
 </h1>
 <p>UnixのSnapRAIDは、エンコーディングを無視します。ファイルシステムで使用されている
 のと同じエンコーディングでファイル名を読み取り、保存します。
 </p><p>Windowsでは、ファイルシステムから読み取られたすべての名前はUTF-8形式に変換され、
 処理されます。
 </p><p>ファイル名を正しく出力するには、<b>chcp 65001</b> コマンドでWindowsコンソールをUTF-8モードに設定し、
-コンソールフォントとして <b>Lucida Console</b> などのTrueTypeフォントを**使用する**必要があります。
+コンソールフォントとして <b>Lucida Console</b> などのTrueTypeフォントを使用する必要があります。
 これは出力されるファイル名にのみ影響します。コンソール出力をファイルにリダイレクトする場合、
 結果のファイルは常にUTF-8形式になります。
+</p></div>
+<div class="manual-section-level-1">
+<h1 id="sec15" class="manual-title-level-1">
+終了コード (Exit Code)
+</h1>
+<p>SnapRAIDは以下のエラーコードで終了します：
+</p><div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+0
+</div><div class="manual-tag-description">
+すべて正常。
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+1
+</div><div class="manual-tag-description">
+コマンドでエラーが発生しました。
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+2
+</div><div class="manual-tag-description">
+<b>diff</b> コマンドはすべて正常であると判定しましたが、 <b>sync</b> が必要です。
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+3
+</div><div class="manual-tag-description">
+ディスクデバイスコマンド（<b>probe</b>、<b>smart</b>、<b>devices</b>、<b>up</b>、<b>down</b>）は完了しましたが、
+少なくとも1つのファイルシステムがデバイス不足のためデグレード（縮退）モードで動作しています。
+</div>
+</div>
+</div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec16" class="manual-title-level-1">
+既知の問題 (Known Issues)
+</h1>
+<div class="manual-section-level-2">
+<h2 id="sec16-1" class="manual-title-level-2">
+ファイルシステムの境界
+</h2>
+<p>SnapRAIDは、データディスクのスキャン中にファイルシステム、マウントポイント、
+またはサブボリュームの境界を越えません。そのような境界が検出された場合、
+SnapRAIDは警告（WARNING）を報告し、その先をスキャンしません。
+</p><p>そのような境界の先にあるファイルはデータディスクに含まれないため、保護する
+必要がある場合は個別に設定する必要があります。
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-2" class="manual-title-level-2">
+ファイルシステムスナップショット使用時のマウントポイント
+</h2>
+<p>ファイルシステムスナップショットが有効になっている場合、データディスク内の
+ネストされたマウントポイントおよびバインドマウントはサポートされません。
+</p><p>マウントポイントは稼働中システムのマウント名前空間の一部であり、ファイルシステムの
+スナップショットには保持されません。その結果、スナップショットをスキャンする際、
+稼働中ファイルシステムでマウントポイントによって隠されていたディレクトリが
+見えるようになる場合があります。
+</p><p>ファイルシステムスナップショットが有効な場合は、データディスク内にネストされた
+マウントポイントやバインドマウントを配置しないでください。
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-3" class="manual-title-level-2">
+ファイルシステムスナップショット使用時の複数設定
+</h2>
+<p>同じファイルシステムのスナップショット名前空間を使用する複数の独立した
+SnapRAID設定で、スナップショットサポートを安全に共有することはできません。
+</p><p>BtrfsおよびBcachefsでは、スナップショットサポートが有効なSnapRAID設定は、
+同一サブボリューム内のデータディレクトリを1つしか使用できません。ZFSでは
+同じ制限がデータセットに、NTFSではボリュームに適用されます。
+</p><p>同じスナップショット名前空間を共有する複数の設定は、同一の <b>stable</b>、
+<b>pending</b>、および <b>scan</b> スナップショットを使用します。そのため、一方の設定を
+実行すると、もう一方の設定で必要なリカバリスナップショットが置換または
+削除される可能性があります。
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-4" class="manual-title-level-2">
+タイムスタンプの変更を伴わないインプレースファイル変更
+</h2>
+<p>SnapRAIDは、ファイルサイズと変更タイムスタンプ（mtime）を比較することによって
+ファイルの変更を検出します。
+</p><p>アプリケーションがファイルサイズを変更せず、変更タイムスタンプも更新せずに
+インプレースでファイルを変更した場合、"diff" および "sync" はファイルが
+変更されたことを検出できず、そのパリティは更新されません。
+</p><p>SnapRAIDにそのような変更を確実に認識させるには、ファイルの変更タイムスタンプ
+を更新してください（たとえば、"touch" ユーティリティなどを使用）。そうしない
+場合、その差分は後続の "scrub" または "check" 中のハッシュ不一致としてのみ
+検出されます。
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-5" class="manual-title-level-2">
+Windowsにおける非ASCII文字の大文字・小文字の一致
+</h2>
+<p>SnapRAIDはすべてのプラットフォームで標準的で予測可能なUTF-8エンコーディング
+を使用し、大文字・小文字を区別しないマッチングをASCII文字に限定しています。
+</p><p>Windowsファイルシステムは、任意のシステム依存のフォールディングテーブルを介して
+Unicodeファイル名全体で大文字・小文字の不区別を強制するというレガシーな設計の
+影響を受けています。その結果、Windowsは全く異なるUnicodeバイトシーケンスをあたかも
+同じファイルであるかのように扱い、ファイルシステムの実態を覆い隠してしまいます。
+</p><p>たとえば、<b>À.txt</b> と <b>à.txt</b> は明確に異なるUnicode名ですが、Windowsは非論理的にも
+これらを同一として扱い、SnapRAIDはそれらの本来の区別を維持します。
+</p><p>この制限は、WindowsによるUnicodeファイル名の非一貫な処理と、大文字・小文字を区別
+しないエイリアスへの固執によって引き起こされます。Windowsの大文字・小文字フォール
+ディングに起因する不一致を防ぐため、設定パスおよびフィルター内の非ASCII文字には
+常に正確な大文字・小文字を指定してください。
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-6" class="manual-title-level-2">
+部分的な fix による回復
+</h2>
+<p><b>fix</b> を <b>-S, --start</b> または <b>-B, --count</b> で制限した場合、
+SnapRAID は選択されたブロックのみを処理し、ファイルレベルの完了処理や
+隔離を行いません。
+</p><p>回復によって現在の内容を表していると証明できないベストエフォートのデータが
+生成された場合でも、それらのブロックは通常のファイル名で書き込まれる
+可能性があります。これらの回復されたブロックに関連する不確実性は、コマンドの
+終了後には保持されません。
+</p><p>その結果、後続の <b>fix</b> はこれらの読み取り可能なブロックを有効なファイルデータ
+として扱い、再度の回復を試みません。これにより、ファイル内に不完全または
+古いデータが残っているにもかかわらず、後続の回復が成功と報告される場合が
+あります。
+</p><p><b>-S</b> および <b>-B</b> オプションは、通常の <b>fix</b> が失敗した後の高度な手動回復
+のみを目的としています。部分的な <b>fix</b> で回復不能なデータが報告された場合は、
+別の回復を試みる前に対象のファイルを削除または名前変更するか、その内容を手動で
+確認してください。
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-7" class="manual-title-level-2">
+NTFS ハードリンクと除外されたパス
+</h2>
+<p>NTFS では、ディレクトリエントリが各ハードリンクのファイルサイズとタイム
+スタンプを個別にキャッシュします。ファイルがいずれか1つのリンクを通じて
+変更された場合、同じファイルを参照している他のリンクのディレクトリエントリ
+は、それらにアクセスされるまで古いメタデータを保持し続けることがあります。
+</p><p>SnapRAID は、スキャン中に同じファイルへのハードリンクが2つ以上見つかった
+場合、この状態を自動的に検出して正規化します。しかし、他のリンクがフィルタ
+によって除外されているか、またはデータディスクのパスの外部にあるために
+1つのハードリンクのみがスキャンされた場合、SnapRAID は inode の衝突を検出
+できず、単一の見えているリンクのキャッシュされたメタデータに依存します。
+</p><p>その結果、除外されたリンクや外部のハードリンクを通じて加えられた変更は、
+対象のファイルがアクセスされたりそのパスを通じて開かれたりして OS により
+含まれるリンクのメタデータが更新されるまで、SnapRAID に気付かれない可能性
+があります。
+</p><p>この制限を回避するには、SnapRAID から除外されているハードリンクを通じて
+保護対象のファイルを変更しないようにするか、SnapRAID が正常に正規化
+できるように、ファイルへのすべてのハードリンクがスキャンに含まれるように
+してください。
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-8" class="manual-title-level-2">
+中断されたマルチパリティ sync 後の回復
+</h2>
+<p>複数のパリティディスクを持つアレイにおいて、<b>sync</b> が中断されると、
+異なるパリティレベル間で更新状態が一時的に不一致になることがあります。
+たとえば、パリティ 1 にはすでに新しく更新されたデータが含まれている一方、
+パリティ 2 にはまだ古いデータが残っているといった状況です。
+</p><p><b>check</b> または <b>fix</b> の実行中、SnapRAID はさまざまなパリティの組み合わせを
+試し、既知のブロックハッシュ（ブロック全体、通常 256 KiB をカバー）に
+対して再構築されたデータを検証します。
+</p><p>SnapRAID が新旧のパリティが混在する不整合な組み合わせを使用して再構築を
+試みた場合、線形 RAID 方程式は誤ったデータを生成します。このような無効な
+組み合わせが誤って受け入れられるには、同じストライプ内の他の非同期ブロックが
+不正なデータで再構築されているにもかかわらず、方程式が偶然にも少なくとも
+1つの完全な 256 KiB ブロックを完璧に再構築してハッシュを一致させる必要が
+あります。
+</p><p>この事態はハッシュの衝突によるものではありません。むしろ、混在した
+パリティ方程式自体が偶然にも元の正確な 256 KiB ブロック内容を生成する
+必要があります。これは特別に作成されたデータや極めて反復的なデータでは
+数学的に考えられますが、実際のデータでは事実上不可能です。
+</p><p>すべてのディスクが正常な場合は、それ以上の変更を加える前に中断された <b>sync</b>
+を完了させることで、この不確実性を排除できます。ディスクに障害が発生して
+回復が必要な場合は、<b>check</b> または <b>fix</b> を実行する前にデータディスクを
+変更しないようにしてください。
+</p></div>
+<div class="manual-section-level-2">
+<h2 id="sec16-9" class="manual-title-level-2">
+予約済みのファイル名およびディレクトリ名
+</h2>
+<p>SnapRAID は内部処理のために一部のファイル名、ディレクトリ名、
+スナップショット名を予約しています。これらの名前をユーザーデータに
+使用しないでください:
+</p><div class="manual-tag-list">
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+.snapraidignore
+</div><div class="manual-tag-description">
+ローカル除外ルールファイル。
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+.snapraid
+</div><div class="manual-tag-description">
+スナップショットコンテナディレクトリ。
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+snapraid-*
+</div><div class="manual-tag-description">
+SnapRAID が管理する ZFS スナップショット名。
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+*.unrecoverable
+</div><div class="manual-tag-description">
+回復中に隔離された破損ファイル。
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+CONTENT.tmp
+</div><div class="manual-tag-description">
+content 更新用の一時ファイル。
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+CONTENT.lock
+</div><div class="manual-tag-description">
+content ロックファイル。
+</div>
+</div>
+<div class="manual-tag-entry">
+<div class="manual-tag-name">
+PARITY.spaceholder
+</div><div class="manual-tag-description">
+Windows でのパリティ割り当て時の一時的な
+プレースホルダーファイル。
+</div>
+</div>
+</div>
+<p>これらの名前を無関係なデータに使用すると、ファイルやスナップショットが
+無視されたり、メタデータとして誤認されたり、上書き、名前変更、または
+削除されたりする可能性があります。
+</p><p>Windows では、大文字と小文字を区別するように構成された NTFS
+ディレクトリであっても、すべての大文字・小文字のバリエーションが
+同様に予約されます（例: .SNAPRAIDIGNORE、.SnapRaid、CONTENT.TMP、
+CONTENT.Lock）。
+</p></div>
+</div>
+<div class="manual-section-level-1">
+<h1 id="sec17" class="manual-title-level-1">
+翻訳 (Translation)
+</h1>
+<p>この文書は英語版マニュアルの自動翻訳です。
+正確な記述については英語版マニュアルを参照してください。
+</p></div>
+<div class="manual-section-level-1">
+<h1 id="sec18" class="manual-title-level-1">
+著作権 (Copyright)
+</h1>
+<p>This file is Copyright (C) 2026 Andrea Mazzoleni
+</p></div>
+<div class="manual-section-level-1">
+<h1 id="sec19" class="manual-title-level-1">
+関連項目 (See Also)
+</h1>
+<p>snapraid_log(1), snapraidd(1), rsync(1)
 </p></div>
 
 
