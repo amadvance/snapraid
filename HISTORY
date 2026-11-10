@@ -1,6 +1,14 @@
 SnapRAID HISTORY
 ================
 
+15.2 2026/11
+============
+ * Avoid creating a redundant Windows Job Object when SnapRAID is
+   already running inside an existing job (such as under SnapRAID
+   Daemon). This prevents potential execution failures of child
+   processes (such as smartctl) on systems where nested job objects are
+   not supported.
+
 15.1 2026/10
 ============
  * Add synthetic device IDs on Linux, allowing SnapRAID Daemon to
