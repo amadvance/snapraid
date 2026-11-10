@@ -20,16 +20,16 @@ jobs:
       - run: make all -j$(sysctl -n hw.ncpu)
       - run: make dist check     
   build-linux:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v5
       - run: |
           sudo apt-get update
           sudo apt-get install -y \
-            linux-modules-extra-$(uname -r) \
+            linux-main-modules-zfs-$(uname -r) \
             zfsutils-linux
           sudo modprobe zfs
-          zfs version
+          sudo zfs version
       - run: autoreconf -i
       - run: ./configure --enable-warning-as-error
       - run: make all -j$(nproc)
