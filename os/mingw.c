@@ -3213,7 +3213,7 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 		/* ensure the reading handle to the pipe is not inherited */
 		if (!SetHandleInformation(stdout_read_handle, HANDLE_FLAG_INHERIT, 0)) {
 			windows_errno(GetLastError());
-			os_syslog(OS_LVL_ERROR, "failed to handle information for spawn, errno=%s(%d)", strerror(errno), errno);
+			os_syslog(OS_LVL_ERROR, "failed to set handle information for spawn, errno=%s(%d)", strerror(errno), errno);
 			CloseHandle(stdout_write_handle);
 			CloseHandle(stdout_read_handle);
 			return -1;
@@ -3244,7 +3244,7 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 		/* ensure the reading handle to the pipe is not inherited */
 		if (!SetHandleInformation(stderr_read_handle, HANDLE_FLAG_INHERIT, 0)) {
 			windows_errno(GetLastError());
-			os_syslog(OS_LVL_ERROR, "failed to handle information for spawn, errno=%s(%d)", strerror(errno), errno);
+			os_syslog(OS_LVL_ERROR, "failed to set handle information for spawn, errno=%s(%d)", strerror(errno), errno);
 			CloseHandle(stderr_write_handle);
 			CloseHandle(stderr_read_handle);
 			if (has_out) {
@@ -3302,7 +3302,7 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 		}
 		pos = argcat(cmd_buffer, COMMAND_LINE_MAX, pos, conv);
 		if (pos < 0) {
-			os_syslog(OS_LVL_ERROR, "command to long for spawn");
+			os_syslog(OS_LVL_ERROR, "command too long for spawn");
 			CloseHandle(nul_handle);
 			if (has_out) {
 				CloseHandle(stdout_write_handle);
@@ -3703,7 +3703,7 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 	/* ensure the parent's write end is NOT inherited */
 	if (!SetHandleInformation(stdin_write_handle, HANDLE_FLAG_INHERIT, 0)) {
 		windows_errno(GetLastError());
-		os_syslog(OS_LVL_ERROR, "failed to handle information for spawn, errno=%s(%d)", strerror(errno), errno);
+		os_syslog(OS_LVL_ERROR, "failed to set handle information for command, errno=%s(%d)", strerror(errno), errno);
 		CloseHandle(stdin_read_handle);
 		CloseHandle(stdin_write_handle);
 		return -1;
@@ -4122,7 +4122,7 @@ int os_script(char** argv, char** envp, const char* run_as_user, uint64_t timeou
 		if (errno == EINVAL)
 			os_syslog(OS_LVL_ERROR, "unsupported embedded double quote in script path");
 		else
-			os_syslog(OS_LVL_ERROR, "command to long for script");
+			os_syslog(OS_LVL_ERROR, "command too long for script");
 		return -1;
 	}
 	for (int i = 1; argv[i]; ++i) {
@@ -4133,13 +4133,13 @@ int os_script(char** argv, char** envp, const char* run_as_user, uint64_t timeou
 			if (errno == EINVAL)
 				os_syslog(OS_LVL_ERROR, "unsupported embedded double quote in script argument");
 			else
-				os_syslog(OS_LVL_ERROR, "command to long for script");
+				os_syslog(OS_LVL_ERROR, "command too long for script");
 			return -1;
 		}
 	}
 	pos = fixcat(cmd_buffer, COMMAND_LINE_MAX, pos, L" \"");
 	if (pos < 0) {
-		os_syslog(OS_LVL_ERROR, "command to long for script");
+		os_syslog(OS_LVL_ERROR, "command too long for script");
 		return -1;
 	}
 	cmd_buffer[pos] = 0;
