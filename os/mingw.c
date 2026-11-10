@@ -1192,8 +1192,8 @@ int windows_fsync(int fd)
 			 * So, we use now an extended error reporting.
 			 */
 			windows_errno(error);
-			os_syslog(OS_LVL_INFO, "unexpected Windows INVALID_HANDLE error in FlushFileBuffers()");
-			os_syslog(OS_LVL_INFO, "are you using ATA-over-Ethernet? Please report it.");
+			os_syslog(OS_LVL_ERROR, "unexpected Windows INVALID_HANDLE error in FlushFileBuffers()");
+			os_syslog(OS_LVL_ERROR, "are you using ATA-over-Ethernet? Please report it.");
 			return -1;
 
 		case ERROR_ACCESS_DENIED :
@@ -1249,8 +1249,8 @@ static int windows_vsync(const wchar_t* volume)
 			 * So, we use now an extended error reporting.
 			 */
 			windows_errno(error);
-			os_syslog(OS_LVL_INFO, "unexpected Windows INVALID_HANDLE error in FlushFileBuffers()");
-			os_syslog(OS_LVL_INFO, "are you using ATA-over-Ethernet? Please report it.");
+			os_syslog(OS_LVL_ERROR, "unexpected Windows INVALID_HANDLE error in FlushFileBuffers()");
+			os_syslog(OS_LVL_ERROR, "are you using ATA-over-Ethernet? Please report it.");
 			return -1;
 
 		case ERROR_ACCESS_DENIED :
@@ -3206,14 +3206,14 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 		/* create a pipe for the child process's STDOUT */
 		if (!CreatePipe(&stdout_read_handle, &stdout_write_handle, &sa, 0)) {
 			windows_errno(GetLastError());
-			os_syslog(OS_LVL_INFO, "failed to create pipe for spawn, errno=%s(%d)", strerror(errno), errno);
+			os_syslog(OS_LVL_ERROR, "failed to create pipe for spawn, errno=%s(%d)", strerror(errno), errno);
 			return -1;
 		}
 
 		/* ensure the reading handle to the pipe is not inherited */
 		if (!SetHandleInformation(stdout_read_handle, HANDLE_FLAG_INHERIT, 0)) {
 			windows_errno(GetLastError());
-			os_syslog(OS_LVL_INFO, "failed to handle information for spawn, errno=%s(%d)", strerror(errno), errno);
+			os_syslog(OS_LVL_ERROR, "failed to handle information for spawn, errno=%s(%d)", strerror(errno), errno);
 			CloseHandle(stdout_write_handle);
 			CloseHandle(stdout_read_handle);
 			return -1;
@@ -3222,7 +3222,7 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 		out_f = _open_osfhandle((intptr_t)stdout_read_handle, O_RDONLY | O_BINARY);
 		if (out_f == -1) {
 			windows_errno(GetLastError());
-			os_syslog(OS_LVL_INFO, "failed to open osfhandle for spawn, errno=%s(%d)", strerror(errno), errno);
+			os_syslog(OS_LVL_ERROR, "failed to open osfhandle for spawn, errno=%s(%d)", strerror(errno), errno);
 			CloseHandle(stdout_write_handle);
 			CloseHandle(stdout_read_handle);
 			return -1;
@@ -3233,7 +3233,7 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 		/* create a pipe for the child process's STDERR */
 		if (!CreatePipe(&stderr_read_handle, &stderr_write_handle, &sa, 0)) {
 			windows_errno(GetLastError());
-			os_syslog(OS_LVL_INFO, "failed to create pipe for spawn, errno=%s(%d)", strerror(errno), errno);
+			os_syslog(OS_LVL_ERROR, "failed to create pipe for spawn, errno=%s(%d)", strerror(errno), errno);
 			if (has_out) {
 				CloseHandle(stdout_write_handle);
 				close(out_f);
@@ -3244,7 +3244,7 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 		/* ensure the reading handle to the pipe is not inherited */
 		if (!SetHandleInformation(stderr_read_handle, HANDLE_FLAG_INHERIT, 0)) {
 			windows_errno(GetLastError());
-			os_syslog(OS_LVL_INFO, "failed to handle information for spawn, errno=%s(%d)", strerror(errno), errno);
+			os_syslog(OS_LVL_ERROR, "failed to handle information for spawn, errno=%s(%d)", strerror(errno), errno);
 			CloseHandle(stderr_write_handle);
 			CloseHandle(stderr_read_handle);
 			if (has_out) {
@@ -3257,7 +3257,7 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 		err_f = _open_osfhandle((intptr_t)stderr_read_handle, O_RDONLY | O_BINARY);
 		if (err_f == -1) {
 			windows_errno(GetLastError());
-			os_syslog(OS_LVL_INFO, "failed to open osfhandle for spawn, errno=%s(%d)", strerror(errno), errno);
+			os_syslog(OS_LVL_ERROR, "failed to open osfhandle for spawn, errno=%s(%d)", strerror(errno), errno);
 			CloseHandle(stderr_write_handle);
 			CloseHandle(stderr_read_handle);
 			if (has_out) {
@@ -3272,7 +3272,7 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 	HANDLE nul_handle = CreateFileW(L"NUL", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, &sa, OPEN_EXISTING, 0, NULL);
 	if (nul_handle == INVALID_HANDLE_VALUE) {
 		windows_errno(GetLastError());
-		os_syslog(OS_LVL_INFO, "failed to open NUL for spawn, errno=%s(%d)", strerror(errno), errno);
+		os_syslog(OS_LVL_ERROR, "failed to open NUL for spawn, errno=%s(%d)", strerror(errno), errno);
 		if (has_out) {
 			CloseHandle(stdout_write_handle);
 			close(out_f);
@@ -3302,7 +3302,7 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 		}
 		pos = argcat(cmd_buffer, COMMAND_LINE_MAX, pos, conv);
 		if (pos < 0) {
-			os_syslog(OS_LVL_INFO, "command to long for spawn");
+			os_syslog(OS_LVL_ERROR, "command to long for spawn");
 			CloseHandle(nul_handle);
 			if (has_out) {
 				CloseHandle(stdout_write_handle);
@@ -3322,7 +3322,7 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 	if (process_startup_init(&startup, nul_handle,
 		has_out ? stdout_write_handle : nul_handle,
 		has_err ? stderr_write_handle : nul_handle) != 0) {
-		os_syslog(OS_LVL_INFO, "failed to create handle list for spawn, errno=%s(%d)", strerror(errno), errno);
+		os_syslog(OS_LVL_ERROR, "failed to create handle list for spawn, errno=%s(%d)", strerror(errno), errno);
 		CloseHandle(nul_handle);
 		if (has_out) {
 			CloseHandle(stdout_write_handle);
@@ -3374,7 +3374,7 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 
 		/* validate that the requested user is actually a supported Service Account before attempting logon */
 		if (_stricmp(run_as_user, "LocalService") != 0 && _stricmp(run_as_user, "NetworkService") != 0) {
-			os_syslog(OS_LVL_INFO, "only supported users are LocalService and NetworkService");
+			os_syslog(OS_LVL_ERROR, "only supported users are LocalService and NetworkService");
 			pid_unpublish(pid_slot, 0);
 			process_startup_done(&startup);
 			CloseHandle(nul_handle);
@@ -3392,7 +3392,7 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 		const wchar_t* wuser = _stricmp(run_as_user, "LocalService") == 0 ? L"LocalService" : L"NetworkService";
 		if (!LogonUserW(wuser, L"NT AUTHORITY", NULL, LOGON32_LOGON_SERVICE, LOGON32_PROVIDER_DEFAULT, &h_token)) {
 			windows_errno(GetLastError());
-			os_syslog(OS_LVL_INFO, "failed to logon user %s, errno=%s(%d)", run_as_user, strerror(errno), errno);
+			os_syslog(OS_LVL_ERROR, "failed to logon user %s, errno=%s(%d)", run_as_user, strerror(errno), errno);
 			pid_unpublish(pid_slot, 0);
 			process_startup_done(&startup);
 			CloseHandle(nul_handle);
@@ -3411,7 +3411,7 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 		LPVOID env = NULL;
 		if (!CreateEnvironmentBlock(&env, h_token, FALSE)) {
 			windows_errno(GetLastError());
-			os_syslog(OS_LVL_INFO, "failed to get user %s environment, errno=%s(%d)", run_as_user, strerror(errno), errno);
+			os_syslog(OS_LVL_ERROR, "failed to get user %s environment, errno=%s(%d)", run_as_user, strerror(errno), errno);
 			pid_unpublish(pid_slot, 0);
 			CloseHandle(h_token);
 			process_startup_done(&startup);
@@ -3447,7 +3447,7 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 	process_startup_done(&startup);
 	if (!ret) {
 		windows_errno(create_error);
-		os_syslog(OS_LVL_INFO, "failed to create process '%s' for spawn, errno=%s(%d)", argv[0], strerror(errno), errno);
+		os_syslog(OS_LVL_ERROR, "failed to create process '%s' for spawn, errno=%s(%d)", argv[0], strerror(errno), errno);
 		pid_unpublish(pid_slot, 0);
 		CloseHandle(nul_handle);
 		if (has_out) {
@@ -3471,7 +3471,7 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 	if (os_job_handle != 0) {
 		if (!AssignProcessToJobObject(os_job_handle, pi.hProcess)) {
 			windows_errno(GetLastError());
-			os_syslog(OS_LVL_INFO, "failed to assign process to job object, errno=%s(%d)", strerror(errno), errno);
+			os_syslog(OS_LVL_ERROR, "failed to assign process to job object, errno=%s(%d)", strerror(errno), errno);
 			pid_unpublish(pid_slot, 0);
 			TerminateProcess(pi.hProcess, 1);
 			CloseHandle(pi.hThread);
@@ -3491,7 +3491,7 @@ pid_t os_spawn(char** argv, int* stdout_read_int, int* stderr_read_int, const ch
 	/* resume the primary thread now that the process is assigned to the job object */
 	if (ResumeThread(pi.hThread) == (DWORD)-1) {
 		windows_errno(GetLastError());
-		os_syslog(OS_LVL_INFO, "failed to resume thread for spawn, errno=%s(%d)", strerror(errno), errno);
+		os_syslog(OS_LVL_ERROR, "failed to resume thread for spawn, errno=%s(%d)", strerror(errno), errno);
 		pid_unpublish(pid_slot, 0);
 		TerminateProcess(pi.hProcess, 1);
 		CloseHandle(pi.hThread);
@@ -3696,14 +3696,14 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 	/* create pipe for child's STDIN */
 	if (!CreatePipe(&stdin_read_handle, &stdin_write_handle, &sa, 0)) {
 		windows_errno(GetLastError());
-		os_syslog(OS_LVL_INFO, "failed to create pipe for command, errno=%s(%d)", strerror(errno), errno);
+		os_syslog(OS_LVL_ERROR, "failed to create pipe for command, errno=%s(%d)", strerror(errno), errno);
 		return -1;
 	}
 
 	/* ensure the parent's write end is NOT inherited */
 	if (!SetHandleInformation(stdin_write_handle, HANDLE_FLAG_INHERIT, 0)) {
 		windows_errno(GetLastError());
-		os_syslog(OS_LVL_INFO, "failed to handle information for spawn, errno=%s(%d)", strerror(errno), errno);
+		os_syslog(OS_LVL_ERROR, "failed to handle information for spawn, errno=%s(%d)", strerror(errno), errno);
 		CloseHandle(stdin_read_handle);
 		CloseHandle(stdin_write_handle);
 		return -1;
@@ -3720,7 +3720,7 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 		NULL);
 	if (nul == INVALID_HANDLE_VALUE) {
 		windows_errno(GetLastError());
-		os_syslog(OS_LVL_INFO, "failed to create nul device, errno=%s(%d)", strerror(errno), errno);
+		os_syslog(OS_LVL_ERROR, "failed to create nul device, errno=%s(%d)", strerror(errno), errno);
 		CloseHandle(stdin_read_handle);
 		CloseHandle(stdin_write_handle);
 		return -1;
@@ -3728,7 +3728,7 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 
 	ZeroMemory(&pi, sizeof(pi));
 	if (process_startup_init(&startup, stdin_read_handle, nul, nul) != 0) {
-		os_syslog(OS_LVL_INFO, "failed to create handle list for command, errno=%s(%d)", strerror(errno), errno);
+		os_syslog(OS_LVL_ERROR, "failed to create handle list for command, errno=%s(%d)", strerror(errno), errno);
 		CloseHandle(stdin_read_handle);
 		CloseHandle(stdin_write_handle);
 		CloseHandle(nul);
@@ -3777,7 +3777,7 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 		 * Service Account before attempting logon.
 		 */
 		if (_stricmp(run_as_user, "LocalService") != 0 && _stricmp(run_as_user, "NetworkService") != 0) {
-			os_syslog(OS_LVL_INFO, "only supported users are LocalService and NetworkService");
+			os_syslog(OS_LVL_ERROR, "only supported users are LocalService and NetworkService");
 			pid_unpublish(pid_slot, 0);
 			process_startup_done(&startup);
 			CloseHandle(stdin_read_handle);
@@ -3789,7 +3789,7 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 		const wchar_t* wuser = _stricmp(run_as_user, "LocalService") == 0 ? L"LocalService" : L"NetworkService";
 		if (!LogonUserW(wuser, L"NT AUTHORITY", NULL, LOGON32_LOGON_SERVICE, LOGON32_PROVIDER_DEFAULT, &h_token)) {
 			windows_errno(GetLastError());
-			os_syslog(OS_LVL_INFO, "failed to logon user %s, errno=%s(%d)", run_as_user, strerror(errno), errno);
+			os_syslog(OS_LVL_ERROR, "failed to logon user %s, errno=%s(%d)", run_as_user, strerror(errno), errno);
 			pid_unpublish(pid_slot, 0);
 			process_startup_done(&startup);
 			CloseHandle(stdin_read_handle);
@@ -3804,7 +3804,7 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 		LPVOID env = NULL;
 		if (!CreateEnvironmentBlock(&env, h_token, FALSE)) {
 			windows_errno(GetLastError());
-			os_syslog(OS_LVL_INFO, "failed to get user %s environment, errno=%s(%d)", run_as_user, strerror(errno), errno);
+			os_syslog(OS_LVL_ERROR, "failed to get user %s environment, errno=%s(%d)", run_as_user, strerror(errno), errno);
 			pid_unpublish(pid_slot, 0);
 			process_startup_done(&startup);
 			CloseHandle(stdin_read_handle);
@@ -3834,7 +3834,7 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 	process_startup_done(&startup);
 	if (!ret) {
 		windows_errno(create_error);
-		os_syslog(OS_LVL_INFO, "failed to create process '%s' for command, errno=%s(%d)", command, strerror(errno), errno);
+		os_syslog(OS_LVL_ERROR, "failed to create process '%s' for command, errno=%s(%d)", command, strerror(errno), errno);
 		pid_unpublish(pid_slot, 0);
 		CloseHandle(stdin_read_handle);
 		CloseHandle(stdin_write_handle);
@@ -3852,7 +3852,7 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 	if (os_job_handle != 0) {
 		if (!AssignProcessToJobObject(os_job_handle, pi.hProcess)) {
 			windows_errno(GetLastError());
-			os_syslog(OS_LVL_INFO, "failed to assign command process to job object, errno=%s(%d)", strerror(errno), errno);
+			os_syslog(OS_LVL_ERROR, "failed to assign command process to job object, errno=%s(%d)", strerror(errno), errno);
 			pid_unpublish(pid_slot, 0);
 			TerminateProcess(pi.hProcess, 1);
 			CloseHandle(pi.hThread);
@@ -3865,7 +3865,7 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 	/* resume the primary thread now that the process is assigned to the job object */
 	if (ResumeThread(pi.hThread) == (DWORD)-1) {
 		windows_errno(GetLastError());
-		os_syslog(OS_LVL_INFO, "failed to resume thread for command, errno=%s(%d)", strerror(errno), errno);
+		os_syslog(OS_LVL_ERROR, "failed to resume thread for command, errno=%s(%d)", strerror(errno), errno);
 		pid_unpublish(pid_slot, 0);
 		TerminateProcess(pi.hProcess, 1);
 		CloseHandle(pi.hThread);
@@ -3888,7 +3888,7 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 				if (error == ERROR_BROKEN_PIPE || error == ERROR_NO_DATA)
 					break; /* child closed stdin early */
 				windows_errno(error);
-				os_syslog(OS_LVL_INFO, "failed to write stdin to command %s, errno=%s(%d)", command, strerror(errno), errno);
+				os_syslog(OS_LVL_ERROR, "failed to write stdin to command %s, errno=%s(%d)", command, strerror(errno), errno);
 				break;
 			}
 			written += count;
@@ -3914,7 +3914,7 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 	int64_t execution_time = stop - start;
 
 	if (timed_out) {
-		os_syslog(OS_LVL_INFO, "command %s timeout after %" PRId64 " seconds", command, execution_time);
+		os_syslog(OS_LVL_ERROR, "command %s timeout after %" PRId64 " seconds", command, execution_time);
 		return -1;
 	}
 
@@ -3926,16 +3926,16 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 		if (exit_code == 0)
 			os_syslog(OS_LVL_INFO, "command %s terminated in %" PRId64 " seconds with success", command, execution_time);
 		else
-			os_syslog(OS_LVL_INFO, "command %s terminated in %" PRId64 " seconds with exit code %d", command, execution_time, exit_code);
+			os_syslog(OS_LVL_ERROR, "command %s terminated in %" PRId64 " seconds with exit code %d", command, execution_time, exit_code);
 		return exit_code;
 	} else if (WIFSIGNALED(status)) {
 		/* child died from a signal */
 		int sig = WTERMSIG(status);
-		os_syslog(OS_LVL_INFO, "command %s terminated in %" PRId64 " seconds with signal %s(%d)", command, execution_time, os_signal_name(sig), sig);
+		os_syslog(OS_LVL_ERROR, "command %s terminated in %" PRId64 " seconds with signal %s(%d)", command, execution_time, os_signal_name(sig), sig);
 		return 128 + sig;
 	} else {
 		/* in Windows it can happen */
-		os_syslog(OS_LVL_INFO, "command %s terminated in %" PRId64 " seconds for unknown reason, status=0x%08x", command, execution_time, (unsigned)status);
+		os_syslog(OS_LVL_ERROR, "command %s terminated in %" PRId64 " seconds for unknown reason, status=0x%08x", command, execution_time, (unsigned)status);
 		return -1;
 	}
 }
@@ -4094,7 +4094,7 @@ int os_script(char** argv, char** envp, const char* run_as_user, uint64_t timeou
 
 	/* resolve the script path to prevent symlink attacks */
 	if (!realpath(script_path, resolved_path)) {
-		os_syslog(OS_LVL_INFO, "failed to resolve script, path=%s, errno=%s(%d)", script_path, strerror(errno), errno);
+		os_syslog(OS_LVL_ERROR, "failed to resolve script, path=%s, errno=%s(%d)", script_path, strerror(errno), errno);
 		return -1;
 	}
 
@@ -4120,9 +4120,9 @@ int os_script(char** argv, char** envp, const char* run_as_user, uint64_t timeou
 	pos = scriptcat(cmd_buffer, COMMAND_LINE_MAX, pos, conv);
 	if (pos < 0) {
 		if (errno == EINVAL)
-			os_syslog(OS_LVL_INFO, "unsupported embedded double quote in script path");
+			os_syslog(OS_LVL_ERROR, "unsupported embedded double quote in script path");
 		else
-			os_syslog(OS_LVL_INFO, "command to long for script");
+			os_syslog(OS_LVL_ERROR, "command to long for script");
 		return -1;
 	}
 	for (int i = 1; argv[i]; ++i) {
@@ -4131,15 +4131,15 @@ int os_script(char** argv, char** envp, const char* run_as_user, uint64_t timeou
 		pos = scriptcat(cmd_buffer, COMMAND_LINE_MAX, pos, conv);
 		if (pos < 0) {
 			if (errno == EINVAL)
-				os_syslog(OS_LVL_INFO, "unsupported embedded double quote in script argument");
+				os_syslog(OS_LVL_ERROR, "unsupported embedded double quote in script argument");
 			else
-				os_syslog(OS_LVL_INFO, "command to long for script");
+				os_syslog(OS_LVL_ERROR, "command to long for script");
 			return -1;
 		}
 	}
 	pos = fixcat(cmd_buffer, COMMAND_LINE_MAX, pos, L" \"");
 	if (pos < 0) {
-		os_syslog(OS_LVL_INFO, "command to long for script");
+		os_syslog(OS_LVL_ERROR, "command to long for script");
 		return -1;
 	}
 	cmd_buffer[pos] = 0;
@@ -4167,14 +4167,14 @@ int os_script(char** argv, char** envp, const char* run_as_user, uint64_t timeou
 			base_env = GetEnvironmentStringsW();
 			if (!base_env) {
 				windows_errno(GetLastError());
-				os_syslog(OS_LVL_INFO, "failed to get environment strings, errno=%s(%d)", strerror(errno), errno);
+				os_syslog(OS_LVL_ERROR, "failed to get environment strings, errno=%s(%d)", strerror(errno), errno);
 				pid_unpublish(pid_slot, 0);
 				return -1;
 			}
 			combined_env = env_combine(base_env, envp);
 			FreeEnvironmentStringsW(base_env);
 			if (!combined_env) {
-				os_syslog(OS_LVL_INFO, "failed to combine environment strings, errno=%s(%d)", strerror(errno), errno);
+				os_syslog(OS_LVL_ERROR, "failed to combine environment strings, errno=%s(%d)", strerror(errno), errno);
 				pid_unpublish(pid_slot, 0);
 				return -1;
 			}
@@ -4205,7 +4205,7 @@ int os_script(char** argv, char** envp, const char* run_as_user, uint64_t timeou
 		 * Service Account before attempting logon.
 		 */
 		if (_stricmp(run_as_user, "LocalService") != 0 && _stricmp(run_as_user, "NetworkService") != 0) {
-			os_syslog(OS_LVL_INFO, "only supported users are LocalService and NetworkService");
+			os_syslog(OS_LVL_ERROR, "only supported users are LocalService and NetworkService");
 			pid_unpublish(pid_slot, 0);
 			return -1;
 		}
@@ -4213,7 +4213,7 @@ int os_script(char** argv, char** envp, const char* run_as_user, uint64_t timeou
 		const wchar_t* wuser = _stricmp(run_as_user, "LocalService") == 0 ? L"LocalService" : L"NetworkService";
 		if (!LogonUserW(wuser, L"NT AUTHORITY", NULL, LOGON32_LOGON_SERVICE, LOGON32_PROVIDER_DEFAULT, &h_token)) {
 			windows_errno(GetLastError());
-			os_syslog(OS_LVL_INFO, "failed to logon user %s, errno=%s(%d)", run_as_user, strerror(errno), errno);
+			os_syslog(OS_LVL_ERROR, "failed to logon user %s, errno=%s(%d)", run_as_user, strerror(errno), errno);
 			pid_unpublish(pid_slot, 0);
 			return -1;
 		}
@@ -4224,7 +4224,7 @@ int os_script(char** argv, char** envp, const char* run_as_user, uint64_t timeou
 		LPVOID env = NULL;
 		if (!CreateEnvironmentBlock(&env, h_token, FALSE)) {
 			windows_errno(GetLastError());
-			os_syslog(OS_LVL_INFO, "failed to get user %s environment, errno=%s(%d)", run_as_user, strerror(errno), errno);
+			os_syslog(OS_LVL_ERROR, "failed to get user %s environment, errno=%s(%d)", run_as_user, strerror(errno), errno);
 			pid_unpublish(pid_slot, 0);
 			CloseHandle(h_token);
 			return -1;
@@ -4234,7 +4234,7 @@ int os_script(char** argv, char** envp, const char* run_as_user, uint64_t timeou
 		if (envp != NULL) {
 			combined_env = env_combine((const WCHAR*)env, envp);
 			if (!combined_env) {
-				os_syslog(OS_LVL_INFO, "failed to combine environment strings, errno=%s(%d)", strerror(errno), errno);
+				os_syslog(OS_LVL_ERROR, "failed to combine environment strings, errno=%s(%d)", strerror(errno), errno);
 				pid_unpublish(pid_slot, 0);
 				DestroyEnvironmentBlock(env);
 				CloseHandle(h_token);
@@ -4261,7 +4261,7 @@ int os_script(char** argv, char** envp, const char* run_as_user, uint64_t timeou
 	}
 	if (!ret) {
 		windows_errno(GetLastError());
-		os_syslog(OS_LVL_INFO, "failed to create process '%s' for script, errno=%s(%d)", resolved_path, strerror(errno), errno);
+		os_syslog(OS_LVL_ERROR, "failed to create process '%s' for script, errno=%s(%d)", resolved_path, strerror(errno), errno);
 		pid_unpublish(pid_slot, 0);
 		return -1;
 	}
@@ -4270,7 +4270,7 @@ int os_script(char** argv, char** envp, const char* run_as_user, uint64_t timeou
 	if (os_job_handle != 0) {
 		if (!AssignProcessToJobObject(os_job_handle, pi.hProcess)) {
 			windows_errno(GetLastError());
-			os_syslog(OS_LVL_INFO, "failed to assign script process to job object, errno=%s(%d)", strerror(errno), errno);
+			os_syslog(OS_LVL_ERROR, "failed to assign script process to job object, errno=%s(%d)", strerror(errno), errno);
 			pid_unpublish(pid_slot, 0);
 			TerminateProcess(pi.hProcess, 1);
 			CloseHandle(pi.hThread);
@@ -4282,7 +4282,7 @@ int os_script(char** argv, char** envp, const char* run_as_user, uint64_t timeou
 	/* resume the primary thread now that the process is assigned to the job object */
 	if (ResumeThread(pi.hThread) == (DWORD)-1) {
 		windows_errno(GetLastError());
-		os_syslog(OS_LVL_INFO, "failed to resume thread for script, errno=%s(%d)", strerror(errno), errno);
+		os_syslog(OS_LVL_ERROR, "failed to resume thread for script, errno=%s(%d)", strerror(errno), errno);
 		pid_unpublish(pid_slot, 0);
 		TerminateProcess(pi.hProcess, 1);
 		CloseHandle(pi.hThread);
@@ -4309,7 +4309,7 @@ int os_script(char** argv, char** envp, const char* run_as_user, uint64_t timeou
 	int64_t execution_time = stop - start;
 
 	if (timed_out) {
-		os_syslog(OS_LVL_INFO, "script %s timeout after %" PRId64 " seconds", resolved_path, execution_time);
+		os_syslog(OS_LVL_ERROR, "script %s timeout after %" PRId64 " seconds", resolved_path, execution_time);
 		return -1;
 	}
 
@@ -4321,16 +4321,16 @@ int os_script(char** argv, char** envp, const char* run_as_user, uint64_t timeou
 		if (exit_code == 0)
 			os_syslog(OS_LVL_INFO, "script %s terminated in %" PRId64 " seconds with success", resolved_path, execution_time);
 		else
-			os_syslog(OS_LVL_INFO, "script %s terminated in %" PRId64 " seconds with exit code %d", resolved_path, execution_time, exit_code);
+			os_syslog(OS_LVL_ERROR, "script %s terminated in %" PRId64 " seconds with exit code %d", resolved_path, execution_time, exit_code);
 		return exit_code;
 	} else if (WIFSIGNALED(status)) {
 		/* child died from a signal */
 		int sig = WTERMSIG(status);
-		os_syslog(OS_LVL_INFO, "script %s terminated in %" PRId64 " seconds with signal %s(%d)", resolved_path, execution_time, os_signal_name(sig), sig);
+		os_syslog(OS_LVL_ERROR, "script %s terminated in %" PRId64 " seconds with signal %s(%d)", resolved_path, execution_time, os_signal_name(sig), sig);
 		return 128 + sig;
 	} else {
 		/* in Windows it can happen */
-		os_syslog(OS_LVL_INFO, "script %s terminated in %" PRId64 " seconds for unknown reason, status=0x%08x", resolved_path, execution_time, (unsigned)status);
+		os_syslog(OS_LVL_ERROR, "script %s terminated in %" PRId64 " seconds for unknown reason, status=0x%08x", resolved_path, execution_time, (unsigned)status);
 		return -1;
 	}
 }

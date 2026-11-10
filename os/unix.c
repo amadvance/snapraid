@@ -461,24 +461,24 @@ static int verify_shebang_interpreter(int fd, const char* script_path)
 
 	bytes_read = pread(fd, shebang, sizeof(shebang) - 1, 0); /* reserve space for the terminating 0 */
 	if (bytes_read < 0) {
-		os_syslog(OS_LVL_INFO, "failed to read script shebang, path=%s, errno=%s(%d)", script_path, strerror(errno), errno);
+		os_syslog(OS_LVL_ERROR, "failed to read script shebang, path=%s, errno=%s(%d)", script_path, strerror(errno), errno);
 		return -1;
 	}
 	if (bytes_read < 4) {
-		os_syslog(OS_LVL_INFO, "script %s is too small or missing a shebang", script_path);
+		os_syslog(OS_LVL_ERROR, "script %s is too small or missing a shebang", script_path);
 		return -1;
 	}
 	shebang[bytes_read] = 0;
 
 	/* check for shebang */
 	if (shebang[0] != '#' || shebang[1] != '!') {
-		os_syslog(OS_LVL_INFO, "script %s is missing shebang (#!)", script_path);
+		os_syslog(OS_LVL_ERROR, "script %s is missing shebang (#!)", script_path);
 		return -1;
 	}
 
 	char* end_of_line = strchr(shebang, '\n');
 	if (!end_of_line || end_of_line - shebang > 128) {
-		os_syslog(OS_LVL_INFO, "script %s has invalid or overlong shebang (#!), exceeds 126 characters", script_path);
+		os_syslog(OS_LVL_ERROR, "script %s has invalid or overlong shebang (#!), exceeds 126 characters", script_path);
 		return -1;
 	}
 	*end_of_line = 0;
@@ -489,7 +489,7 @@ static int verify_shebang_interpreter(int fd, const char* script_path)
 		++interpreter;
 
 	if (*interpreter == 0) {
-		os_syslog(OS_LVL_INFO, "script %s has empty shebang", script_path);
+		os_syslog(OS_LVL_ERROR, "script %s has empty shebang", script_path);
 		return -1;
 	}
 
@@ -510,49 +510,49 @@ static int verify_shebang_interpreter(int fd, const char* script_path)
 	}
 
 	if (!found) {
-		os_syslog(OS_LVL_INFO, "script %s uses disallowed interpreter %s", script_path, interpreter);
+		os_syslog(OS_LVL_ERROR, "script %s uses disallowed interpreter %s", script_path, interpreter);
 		return -1;
 	}
 
 	/* verify interpreter exists and is safe */
 	if (stat(interpreter, &st) != 0) {
-		os_syslog(OS_LVL_INFO, "interpreter %s does not exist, errno=%s(%d)", interpreter, strerror(errno), errno);
+		os_syslog(OS_LVL_ERROR, "interpreter %s does not exist, errno=%s(%d)", interpreter, strerror(errno), errno);
 		return -1;
 	}
 
 	/* interpreter must be a regular file */
 	if (!S_ISREG(st.st_mode)) {
-		os_syslog(OS_LVL_INFO, "interpreter %s must be a regular file", interpreter);
+		os_syslog(OS_LVL_ERROR, "interpreter %s must be a regular file", interpreter);
 		return -1;
 	}
 
 	/* interpreter must be owned by root */
 	if (st.st_uid != 0) {
-		os_syslog(OS_LVL_INFO, "interpreter %s not owned by root", interpreter);
+		os_syslog(OS_LVL_ERROR, "interpreter %s not owned by root", interpreter);
 		return -1;
 	}
 
 	/* interpreter must be not world-writable */
 	if (st.st_mode & S_IWOTH) {
-		os_syslog(OS_LVL_INFO, "interpreter %s is world-writable", interpreter);
+		os_syslog(OS_LVL_ERROR, "interpreter %s is world-writable", interpreter);
 		return -1;
 	}
 
 	/* interpreter must be not group-writable (unless group is root) */
 	if ((st.st_mode & S_IWGRP) && st.st_gid != 0) {
-		os_syslog(OS_LVL_INFO, "interpreter %s is group-writable by non-root group", interpreter);
+		os_syslog(OS_LVL_ERROR, "interpreter %s is group-writable by non-root group", interpreter);
 		return -1;
 	}
 
 	/* interpreter must be executable */
 	if (!(st.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH))) {
-		os_syslog(OS_LVL_INFO, "interpreter %s is not executable", interpreter);
+		os_syslog(OS_LVL_ERROR, "interpreter %s is not executable", interpreter);
 		return -1;
 	}
 
 	/* interpreter must be not setuid / setgid */
 	if (st.st_mode & (S_ISUID | S_ISGID)) {
-		os_syslog(OS_LVL_INFO, "file %s has setuid/setgid bits set", interpreter);
+		os_syslog(OS_LVL_ERROR, "file %s has setuid/setgid bits set", interpreter);
 		return -1;
 	}
 
@@ -595,7 +595,7 @@ static int verify_shebang_interpreter(int fd, const char* script_path)
  *
  * Returns an open file descriptor (>= 0) on success. The caller is
  * responsible for closing it. Returns -1 on any verification failure;
- * the specific reason is emitted via os_syslog(OS_LVL_INFO, ...).
+ * the specific reason is emitted via os_syslog(OS_LVL_ERROR, ...).
  */
 static int verify_executable(const char* exec_path, char* resolved_path, int is_script)
 {
@@ -610,29 +610,29 @@ static int verify_executable(const char* exec_path, char* resolved_path, int is_
 
 	/* verify path is absolute */
 	if (exec_path[0] != '/') {
-		os_syslog(OS_LVL_INFO, "path %s must be absolute", exec_path);
+		os_syslog(OS_LVL_ERROR, "path %s must be absolute", exec_path);
 		return -1;
 	}
 
 	/* resolve the path to prevent symlink attacks */
 	if (!realpath(exec_path, resolved_path)) {
-		os_syslog(OS_LVL_INFO, "failed to resolve %s, errno=%s(%d)", exec_path, strerror(errno), errno);
+		os_syslog(OS_LVL_ERROR, "failed to resolve %s, errno=%s(%d)", exec_path, strerror(errno), errno);
 		return -1;
 	}
 
 	char* last_slash = strrchr(resolved_path, '/');
 	if (last_slash == 0) {
-		os_syslog(OS_LVL_INFO, "relative execution of %s not allowed", resolved_path);
+		os_syslog(OS_LVL_ERROR, "relative execution of %s not allowed", resolved_path);
 		return -1;
 	}
 	if (last_slash == resolved_path) {
-		os_syslog(OS_LVL_INFO, "root dir execution of %s not allowed", resolved_path);
+		os_syslog(OS_LVL_ERROR, "root dir execution of %s not allowed", resolved_path);
 		return -1;
 	}
 
 	const char* exec_name = last_slash + 1;
 	if (exec_name[0] == 0) {
-		os_syslog(OS_LVL_INFO, "no executable name in %s", exec_path);
+		os_syslog(OS_LVL_ERROR, "no executable name in %s", exec_path);
 		return -1;
 	}
 
@@ -643,33 +643,33 @@ static int verify_executable(const char* exec_path, char* resolved_path, int is_
 
 	int dir_fd = open(dir_path, O_PATH | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC);
 	if (dir_fd < 0) {
-		os_syslog(OS_LVL_INFO, "failed to open directory %s, errno=%s(%d)", dir_path, strerror(errno), errno);
+		os_syslog(OS_LVL_ERROR, "failed to open directory %s, errno=%s(%d)", dir_path, strerror(errno), errno);
 		return -1;
 	}
 
 	if (fstat(dir_fd, &st) != 0) {
-		os_syslog(OS_LVL_INFO, "failed to stat directory %s, errno=%s(%d)", dir_path, strerror(errno), errno);
+		os_syslog(OS_LVL_ERROR, "failed to stat directory %s, errno=%s(%d)", dir_path, strerror(errno), errno);
 		close(dir_fd);
 		return -1;
 	}
 
 	/* directory must be owned by root or the daemon's real user */
 	if (st.st_uid != process_uid && st.st_uid != process_euid && st.st_uid != 0) {
-		os_syslog(OS_LVL_INFO, "directory %s owner must match the daemon owner or be root", dir_path);
+		os_syslog(OS_LVL_ERROR, "directory %s owner must match the daemon owner or be root", dir_path);
 		close(dir_fd);
 		return -1;
 	}
 
 	/* directory must be not group-writable unless group matches daemon */
 	if ((st.st_mode & S_IWGRP) && st.st_gid != process_gid && st.st_gid != process_egid && st.st_gid != 0) {
-		os_syslog(OS_LVL_INFO, "directory %s must be not group-writable unless group matches daemon owner or root", dir_path);
+		os_syslog(OS_LVL_ERROR, "directory %s must be not group-writable unless group matches daemon owner or root", dir_path);
 		close(dir_fd);
 		return -1;
 	}
 
 	/* directory must be not world-writable */
 	if (st.st_mode & S_IWOTH) {
-		os_syslog(OS_LVL_INFO, "directory %s must be not world-writable", dir_path);
+		os_syslog(OS_LVL_ERROR, "directory %s must be not world-writable", dir_path);
 		close(dir_fd);
 		return -1;
 	}
@@ -689,7 +689,7 @@ static int verify_executable(const char* exec_path, char* resolved_path, int is_
 
 	int fd = openat(dir_fd, exec_name, flags);
 	if (fd < 0) {
-		os_syslog(OS_LVL_INFO, "failed to open %s, errno=%s(%d)", resolved_path, strerror(errno), errno);
+		os_syslog(OS_LVL_ERROR, "failed to open %s, errno=%s(%d)", resolved_path, strerror(errno), errno);
 		close(dir_fd);
 		return -1;
 	}
@@ -698,14 +698,14 @@ static int verify_executable(const char* exec_path, char* resolved_path, int is_
 
 	/* get the file handle (TOCTOU Protection) */
 	if (fstat(fd, &st) == -1) {
-		os_syslog(OS_LVL_INFO, "failed to stat %s, errno=%s(%d)", resolved_path, strerror(errno), errno);
+		os_syslog(OS_LVL_ERROR, "failed to stat %s, errno=%s(%d)", resolved_path, strerror(errno), errno);
 		close(fd);
 		return -1;
 	}
 
 	/* ensure it's a regular file */
 	if (!S_ISREG(st.st_mode)) {
-		os_syslog(OS_LVL_INFO, "file %s is not a regular file", resolved_path);
+		os_syslog(OS_LVL_ERROR, "file %s is not a regular file", resolved_path);
 		close(fd);
 		return -1;
 	}
@@ -714,7 +714,7 @@ static int verify_executable(const char* exec_path, char* resolved_path, int is_
 	if (!is_script) {
 		char magic[2];
 		if (read(fd, magic, 2) == 2 && magic[0] == '#' && magic[1] == '!') {
-			os_syslog(OS_LVL_INFO, "file %s is a script, which is not supported", resolved_path);
+			os_syslog(OS_LVL_ERROR, "file %s is a script, which is not supported", resolved_path);
 			close(fd);
 			return -1;
 		}
@@ -725,35 +725,35 @@ static int verify_executable(const char* exec_path, char* resolved_path, int is_
 
 	/* ensure it has execute permissions */
 	if (!(st.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH))) {
-		os_syslog(OS_LVL_INFO, "file %s is not an executable", resolved_path);
+		os_syslog(OS_LVL_ERROR, "file %s is not an executable", resolved_path);
 		close(fd);
 		return -1;
 	}
 
 	/* must be owned by root or the daemon's real user */
 	if (st.st_uid != process_uid && st.st_uid != process_euid && st.st_uid != 0) {
-		os_syslog(OS_LVL_INFO, "file %s owner must match the daemon owner or be root", resolved_path);
+		os_syslog(OS_LVL_ERROR, "file %s owner must match the daemon owner or be root", resolved_path);
 		close(fd);
 		return -1;
 	}
 
 	/* must be not group-writable unless group matches daemon */
 	if ((st.st_mode & S_IWGRP) && st.st_gid != process_gid && st.st_gid != process_egid && st.st_gid != 0) {
-		os_syslog(OS_LVL_INFO, "file %s must be not group-writable unless group matches daemon owner or root", resolved_path);
+		os_syslog(OS_LVL_ERROR, "file %s must be not group-writable unless group matches daemon owner or root", resolved_path);
 		close(fd);
 		return -1;
 	}
 
 	/* must be not world-writable */
 	if (st.st_mode & S_IWOTH) {
-		os_syslog(OS_LVL_INFO, "file %s must be not world-writable", resolved_path);
+		os_syslog(OS_LVL_ERROR, "file %s must be not world-writable", resolved_path);
 		close(fd);
 		return -1;
 	}
 
 	/* must be not setuid / setgid */
 	if (st.st_mode & (S_ISUID | S_ISGID)) {
-		os_syslog(OS_LVL_INFO, "file %s has setuid/setgid bits set", resolved_path);
+		os_syslog(OS_LVL_ERROR, "file %s has setuid/setgid bits set", resolved_path);
 		close(fd);
 		return -1;
 	}
@@ -765,13 +765,13 @@ int os_validate_exec_input(const char* str)
 {
 	/* reject paths trying to go up levels */
 	if (strstr(str, "..") != 0) {
-		os_syslog(OS_LVL_INFO, "invalid argument %s for execution", str);
+		os_syslog(OS_LVL_ERROR, "invalid argument %s for execution", str);
 		return -1;
 	}
 
 	/* reject inputs starting with '-' to prevent Flag Injection */
 	if (str[0] == '-') {
-		os_syslog(OS_LVL_INFO, "invalid argument %s for execution", str);
+		os_syslog(OS_LVL_ERROR, "invalid argument %s for execution", str);
 		return -1;
 	}
 
@@ -810,7 +810,7 @@ static int os_user_lookup(const char* run_as_user, struct os_user* user)
 	char pw_buf[PASSWD_MAX];
 	int err = getpwnam_r(run_as_user, &pw, pw_buf, sizeof(pw_buf), &pw_res);
 	if (err != 0 || !pw_res) {
-		os_syslog(OS_LVL_INFO, "failed to get user info for %s, errno=%s(%d)", run_as_user, strerror(err ? err : ENOENT), err ? err : ENOENT);
+		os_syslog(OS_LVL_ERROR, "failed to get user info for %s, errno=%s(%d)", run_as_user, strerror(err ? err : ENOENT), err ? err : ENOENT);
 		return -1;
 	}
 
@@ -822,7 +822,7 @@ static int os_user_lookup(const char* run_as_user, struct os_user* user)
 	int ngroups = sizeof(groups_buf) / sizeof(groups_buf[0]);
 
 	if (getgrouplist(pw.pw_name, (os_group_t)pw.pw_gid, groups_buf, &ngroups) < 0) {
-		os_syslog(OS_LVL_INFO, "failed to get group list for %s, exceeds maximum of %d groups", run_as_user, GROUPS_MAX);
+		os_syslog(OS_LVL_ERROR, "failed to get group list for %s, exceeds maximum of %d groups", run_as_user, GROUPS_MAX);
 		return -1;
 	}
 
@@ -1198,7 +1198,7 @@ int os_script(char** argv, char** envp, const char* run_as_user, uint64_t timeou
 
 	pid = fork();
 	if (pid < 0) {
-		os_syslog(OS_LVL_INFO, "failed to fork script=%s, errno=%s(%d)", resolved_path, strerror(errno), errno);
+		os_syslog(OS_LVL_ERROR, "failed to fork script=%s, errno=%s(%d)", resolved_path, strerror(errno), errno);
 		pid_unpublish(pid_slot, 0);
 		close(fd);
 		return -1;
@@ -1323,7 +1323,7 @@ int os_script(char** argv, char** envp, const char* run_as_user, uint64_t timeou
 	}
 
 	if (ret == -1) {
-		os_syslog(OS_LVL_INFO, "failed to wait for script, path=%s, errno=%s(%d)", resolved_path, strerror(errno), errno);
+		os_syslog(OS_LVL_ERROR, "failed to wait for script, path=%s, errno=%s(%d)", resolved_path, strerror(errno), errno);
 		return -1;
 	}
 
@@ -1331,7 +1331,7 @@ int os_script(char** argv, char** envp, const char* run_as_user, uint64_t timeou
 	int64_t execution_time = stop - start;
 
 	if (timed_out) {
-		os_syslog(OS_LVL_INFO, "script %s timeout after %" PRId64 " seconds", resolved_path, execution_time);
+		os_syslog(OS_LVL_ERROR, "script %s timeout after %" PRId64 " seconds", resolved_path, execution_time);
 
 		return 128 + SIGALRM;
 	}
@@ -1344,17 +1344,17 @@ int os_script(char** argv, char** envp, const char* run_as_user, uint64_t timeou
 		if (exit_code == 0)
 			os_syslog(OS_LVL_INFO, "script %s terminated in %" PRId64 " seconds with success", resolved_path, execution_time);
 		else
-			os_syslog(OS_LVL_INFO, "script %s terminated in %" PRId64 " seconds with exit code %d", resolved_path, execution_time, exit_code);
+			os_syslog(OS_LVL_ERROR, "script %s terminated in %" PRId64 " seconds with exit code %d", resolved_path, execution_time, exit_code);
 		return exit_code;
 	} else if (WIFSIGNALED(status)) {
 		/* child died from a signal */
 		int sig = WTERMSIG(status);
 
-		os_syslog(OS_LVL_INFO, "script %s terminated in %" PRId64 " seconds with signal %s(%d)", resolved_path, execution_time, os_signal_name(sig), sig);
+		os_syslog(OS_LVL_ERROR, "script %s terminated in %" PRId64 " seconds with signal %s(%d)", resolved_path, execution_time, os_signal_name(sig), sig);
 		return 128 + sig;
 	} else {
 		/* in Linux it should never happen */
-		os_syslog(OS_LVL_INFO, "script %s terminated in %" PRId64 " seconds for unknown reason, status=%d", resolved_path, execution_time, status);
+		os_syslog(OS_LVL_ERROR, "script %s terminated in %" PRId64 " seconds for unknown reason, status=%d", resolved_path, execution_time, status);
 		return -1;
 	}
 }
@@ -1373,14 +1373,14 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 	/* create pipe only if we have text to send */
 	if (stdin_text != 0) {
 		if (pipe_cloexec(pipe_fds) < 0) {
-			os_syslog(OS_LVL_INFO, "failed to create input pipe, errno=%s(%d)", strerror(errno), errno);
+			os_syslog(OS_LVL_ERROR, "failed to create input pipe, errno=%s(%d)", strerror(errno), errno);
 			return -1;
 		}
 
 		int flags = fcntl(pipe_fds[1], F_GETFL);
 
 		if (flags < 0 || fcntl(pipe_fds[1], F_SETFL, flags | O_NONBLOCK) < 0) {
-			os_syslog(OS_LVL_INFO, "failed to make input pipe non-blocking, errno=%s(%d)", strerror(errno), errno);
+			os_syslog(OS_LVL_ERROR, "failed to make input pipe non-blocking, errno=%s(%d)", strerror(errno), errno);
 			close(pipe_fds[0]);
 			close(pipe_fds[1]);
 			return -1;
@@ -1411,7 +1411,7 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 
 	pid = fork();
 	if (pid < 0) {
-		os_syslog(OS_LVL_INFO, "failed to fork command=%s, errno=%s(%d)", command, strerror(errno), errno);
+		os_syslog(OS_LVL_ERROR, "failed to fork command=%s, errno=%s(%d)", command, strerror(errno), errno);
 		pid_unpublish(pid_slot, 0);
 		if (pipe_fds[0] != -1) {
 			close(pipe_fds[0]);
@@ -1509,7 +1509,7 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 	pid_unpublish(pid_slot, pid);
 
 	if (input_error != 0)
-		os_syslog(OS_LVL_INFO, "failed to write stdin to command %s, errno=%s(%d)", command, strerror(input_error), input_error);
+		os_syslog(OS_LVL_ERROR, "failed to write stdin to command %s, errno=%s(%d)", command, strerror(input_error), input_error);
 
 	if (ret != -1) {
 		do {
@@ -1518,7 +1518,7 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 	}
 
 	if (ret == -1) {
-		os_syslog(OS_LVL_INFO, "failed to wait for command, command=%s, errno=%s(%d)", command, strerror(errno), errno);
+		os_syslog(OS_LVL_ERROR, "failed to wait for command, command=%s, errno=%s(%d)", command, strerror(errno), errno);
 		return -1;
 	}
 
@@ -1526,7 +1526,7 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 	int64_t execution_time = stop - start;
 
 	if (timed_out) {
-		os_syslog(OS_LVL_INFO, "command %s timeout after %" PRId64 " seconds", command, execution_time);
+		os_syslog(OS_LVL_ERROR, "command %s timeout after %" PRId64 " seconds", command, execution_time);
 		return 128 + SIGALRM;
 	}
 
@@ -1538,16 +1538,16 @@ int os_command(const char* command, const char* run_as_user, const char* stdin_t
 		if (exit_code == 0)
 			os_syslog(OS_LVL_INFO, "command %s terminated in %" PRId64 " seconds with success", command, execution_time);
 		else
-			os_syslog(OS_LVL_INFO, "command %s terminated in %" PRId64 " seconds with exit code %d", command, execution_time, exit_code);
+			os_syslog(OS_LVL_ERROR, "command %s terminated in %" PRId64 " seconds with exit code %d", command, execution_time, exit_code);
 		return exit_code;
 	} else if (WIFSIGNALED(status)) {
 		/* child died from a signal */
 		int sig = WTERMSIG(status);
-		os_syslog(OS_LVL_INFO, "command %s terminated in %" PRId64 " seconds with signal %s(%d)", command, execution_time, os_signal_name(sig), sig);
+		os_syslog(OS_LVL_ERROR, "command %s terminated in %" PRId64 " seconds with signal %s(%d)", command, execution_time, os_signal_name(sig), sig);
 		return 128 + sig;
 	} else {
 		/* in Linux it should never happen */
-		os_syslog(OS_LVL_INFO, "command %s terminated in %" PRId64 " seconds for unknown reason, status=%d", command, execution_time, status);
+		os_syslog(OS_LVL_ERROR, "command %s terminated in %" PRId64 " seconds for unknown reason, status=%d", command, execution_time, status);
 		return -1;
 	}
 }
@@ -1584,7 +1584,7 @@ pid_t os_spawn(char** argv, int* stdout_read_fd, int* stderr_read_fd, const char
 
 	if (has_out) {
 		if (pipe_cloexec(out_pipe) < 0) {
-			os_syslog(OS_LVL_INFO, "failed to open output pipe, errno=%s(%d)", strerror(errno), errno);
+			os_syslog(OS_LVL_ERROR, "failed to open output pipe, errno=%s(%d)", strerror(errno), errno);
 			close(fd);
 			return -1;
 		}
@@ -1592,7 +1592,7 @@ pid_t os_spawn(char** argv, int* stdout_read_fd, int* stderr_read_fd, const char
 
 	if (has_err) {
 		if (pipe_cloexec(err_pipe) < 0) {
-			os_syslog(OS_LVL_INFO, "failed to open error pipe, errno=%s(%d)", strerror(errno), errno);
+			os_syslog(OS_LVL_ERROR, "failed to open error pipe, errno=%s(%d)", strerror(errno), errno);
 			if (has_out) {
 				close(out_pipe[0]);
 				close(out_pipe[1]);
@@ -1634,7 +1634,7 @@ pid_t os_spawn(char** argv, int* stdout_read_fd, int* stderr_read_fd, const char
 
 	pid = fork();
 	if (pid < 0) {
-		os_syslog(OS_LVL_INFO, "failed to fork path=%s, errno=%s(%d)", resolved_path, strerror(errno), errno);
+		os_syslog(OS_LVL_ERROR, "failed to fork path=%s, errno=%s(%d)", resolved_path, strerror(errno), errno);
 		pid_unpublish(pid_slot, 0);
 		if (has_out) {
 			close(out_pipe[0]);
@@ -1819,7 +1819,7 @@ pid_t os_wait(pid_t pid, int* status, pid_t* pid_slot)
 	} while (ret == -1 && errno == EINTR);
 
 	if (ret == -1) {
-		os_syslog(OS_LVL_INFO, "failed to wait, errno=%s(%d)", strerror(errno), errno);
+		os_syslog(OS_LVL_ERROR, "failed to wait, errno=%s(%d)", strerror(errno), errno);
 	}
 
 	return ret;
@@ -1996,7 +1996,7 @@ int os_privileges_drop(void)
 		/* find the unprivileged user "nobody" */
 		struct passwd* pw = getpwnam("nobody");
 		if (!pw) {
-			os_syslog(OS_LVL_INFO, "unprivileged user 'nobody' not found");
+			os_syslog(OS_LVL_ERROR, "unprivileged user 'nobody' not found");
 			return -1;
 		}
 
@@ -2010,7 +2010,7 @@ int os_privileges_drop(void)
 		 */
 		privileged_group_count = getgroups(0, 0);
 		if (privileged_group_count < 0) {
-			os_syslog(OS_LVL_INFO, "failed to get supplementary group count, errno=%s(%d)", strerror(errno), errno);
+			os_syslog(OS_LVL_ERROR, "failed to get supplementary group count, errno=%s(%d)", strerror(errno), errno);
 			return -1;
 		}
 
@@ -2022,12 +2022,12 @@ int os_privileges_drop(void)
 			}
 
 			if (getgroups(privileged_group_count, privileged_groups) != privileged_group_count) {
-				os_syslog(OS_LVL_INFO, "failed to get supplementary groups, errno=%s(%d)", strerror(errno), errno);
+				os_syslog(OS_LVL_ERROR, "failed to get supplementary groups, errno=%s(%d)", strerror(errno), errno);
 				return -1;
 			}
 
 			if (setgroups(0, 0) != 0) {
-				os_syslog(OS_LVL_INFO, "failed to release supplementary group privileges, errno=%s(%d)", strerror(errno), errno);
+				os_syslog(OS_LVL_ERROR, "failed to release supplementary group privileges, errno=%s(%d)", strerror(errno), errno);
 				return -1;
 			}
 
@@ -2035,14 +2035,14 @@ int os_privileges_drop(void)
 		}
 
 		if (setegid(unpriv_gid) != 0) {
-			os_syslog(OS_LVL_INFO, "failed to release group privileges, errno=%s(%d)", strerror(errno), errno);
+			os_syslog(OS_LVL_ERROR, "failed to release group privileges, errno=%s(%d)", strerror(errno), errno);
 			return -1;
 		}
 
 		gid_dropped = 1;
 
 		if (seteuid(unpriv_uid) != 0) {
-			os_syslog(OS_LVL_INFO, "failed to release privileges, errno=%s(%d)", strerror(errno), errno);
+			os_syslog(OS_LVL_ERROR, "failed to release privileges, errno=%s(%d)", strerror(errno), errno);
 			return -1;
 		}
 
@@ -2072,7 +2072,7 @@ void os_privileges_acquire(void)
 			if (errno == EPERM) {
 				os_syslog(OS_LVL_INFO, "permission denied to acquire privileges, continuing with active privileges");
 			} else {
-				os_syslog(OS_LVL_INFO, "failed to acquire privileges, errno=%s(%d)", strerror(errno), errno);
+				os_syslog(OS_LVL_ERROR, "failed to acquire privileges, errno=%s(%d)", strerror(errno), errno);
 				os_abort();
 			}
 		}
@@ -2083,7 +2083,7 @@ void os_privileges_acquire(void)
 			if (errno == EPERM) {
 				os_syslog(OS_LVL_INFO, "permission denied to acquire group privileges, continuing with active privileges");
 			} else {
-				os_syslog(OS_LVL_INFO, "failed to acquire group privileges, errno=%s(%d)", strerror(errno), errno);
+				os_syslog(OS_LVL_ERROR, "failed to acquire group privileges, errno=%s(%d)", strerror(errno), errno);
 				os_abort();
 			}
 		}
@@ -2094,7 +2094,7 @@ void os_privileges_acquire(void)
 			if (errno == EPERM) {
 				os_syslog(OS_LVL_INFO, "permission denied to acquire supplementary group privileges, continuing with active privileges");
 			} else {
-				os_syslog(OS_LVL_INFO, "failed to acquire supplementary group privileges, errno=%s(%d)", strerror(errno), errno);
+				os_syslog(OS_LVL_ERROR, "failed to acquire supplementary group privileges, errno=%s(%d)", strerror(errno), errno);
 				os_abort();
 			}
 		}
@@ -2105,7 +2105,7 @@ void os_privileges_acquire(void)
 			if (errno == EPERM) {
 				os_syslog(OS_LVL_INFO, "permission denied to acquire privileges, continuing with active privileges");
 			} else {
-				os_syslog(OS_LVL_INFO, "failed to acquire privileges, errno=%s(%d)", strerror(errno), errno);
+				os_syslog(OS_LVL_ERROR, "failed to acquire privileges, errno=%s(%d)", strerror(errno), errno);
 				os_abort();
 			}
 		}
@@ -2116,7 +2116,7 @@ void os_privileges_acquire(void)
 			if (errno == EPERM) {
 				os_syslog(OS_LVL_INFO, "permission denied to acquire group privileges, continuing with active privileges");
 			} else {
-				os_syslog(OS_LVL_INFO, "failed to acquire group privileges, errno=%s(%d)", strerror(errno), errno);
+				os_syslog(OS_LVL_ERROR, "failed to acquire group privileges, errno=%s(%d)", strerror(errno), errno);
 				os_abort();
 			}
 		}
@@ -2127,7 +2127,7 @@ void os_privileges_acquire(void)
 			if (errno == EPERM) {
 				os_syslog(OS_LVL_INFO, "permission denied to acquire supplementary group privileges, continuing with active privileges");
 			} else {
-				os_syslog(OS_LVL_INFO, "failed to acquire supplementary group privileges, errno=%s(%d)", strerror(errno), errno);
+				os_syslog(OS_LVL_ERROR, "failed to acquire supplementary group privileges, errno=%s(%d)", strerror(errno), errno);
 				os_abort();
 			}
 		}
@@ -2147,7 +2147,7 @@ void os_privileges_release(void)
 			if (errno == EPERM) {
 				os_syslog(OS_LVL_INFO, "permission denied to release supplementary group privileges, continuing with active privileges");
 			} else {
-				os_syslog(OS_LVL_INFO, "failed to release supplementary group privileges, errno=%s(%d)", strerror(errno), errno);
+				os_syslog(OS_LVL_ERROR, "failed to release supplementary group privileges, errno=%s(%d)", strerror(errno), errno);
 				os_abort();
 			}
 		}
@@ -2158,7 +2158,7 @@ void os_privileges_release(void)
 			if (errno == EPERM) {
 				os_syslog(OS_LVL_INFO, "permission denied to release group privileges, continuing with active privileges");
 			} else {
-				os_syslog(OS_LVL_INFO, "failed to release group privileges, errno=%s(%d)", strerror(errno), errno);
+				os_syslog(OS_LVL_ERROR, "failed to release group privileges, errno=%s(%d)", strerror(errno), errno);
 				os_abort();
 			}
 		}
@@ -2170,7 +2170,7 @@ void os_privileges_release(void)
 			if (errno == EPERM) {
 				os_syslog(OS_LVL_INFO, "permission denied to release privileges, continuing with active privileges");
 			} else {
-				os_syslog(OS_LVL_INFO, "failed to release privileges, errno=%s(%d)", strerror(errno), errno);
+				os_syslog(OS_LVL_ERROR, "failed to release privileges, errno=%s(%d)", strerror(errno), errno);
 				os_abort();
 			}
 		}
@@ -2181,7 +2181,7 @@ void os_privileges_release(void)
 			if (errno == EPERM) {
 				os_syslog(OS_LVL_INFO, "permission denied to release supplementary group privileges, continuing with active privileges");
 			} else {
-				os_syslog(OS_LVL_INFO, "failed to release supplementary group privileges, errno=%s(%d)", strerror(errno), errno);
+				os_syslog(OS_LVL_ERROR, "failed to release supplementary group privileges, errno=%s(%d)", strerror(errno), errno);
 				os_abort();
 			}
 		}
@@ -2192,7 +2192,7 @@ void os_privileges_release(void)
 			if (errno == EPERM) {
 				os_syslog(OS_LVL_INFO, "permission denied to release group privileges, continuing with active privileges");
 			} else {
-				os_syslog(OS_LVL_INFO, "failed to release group privileges, errno=%s(%d)", strerror(errno), errno);
+				os_syslog(OS_LVL_ERROR, "failed to release group privileges, errno=%s(%d)", strerror(errno), errno);
 				os_abort();
 			}
 		}
@@ -2204,7 +2204,7 @@ void os_privileges_release(void)
 			if (errno == EPERM) {
 				os_syslog(OS_LVL_INFO, "permission denied to release privileges, continuing with active privileges");
 			} else {
-				os_syslog(OS_LVL_INFO, "failed to release privileges, errno=%s(%d)", strerror(errno), errno);
+				os_syslog(OS_LVL_ERROR, "failed to release privileges, errno=%s(%d)", strerror(errno), errno);
 				os_abort();
 			}
 		}
