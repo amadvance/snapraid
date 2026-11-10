@@ -4661,21 +4661,33 @@ void os_init(unsigned opt)
 		os_exit();
 	}
 
-	/* initialize job object to terminate child processes if daemon dies */
-	os_job_handle = CreateJobObjectW(0, 0);
-	if (os_job_handle != 0) {
-		JOBOBJECT_EXTENDED_LIMIT_INFORMATION info;
-		ZeroMemory(&info, sizeof(info));
-		info.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
-		if (!SetInformationJobObject(os_job_handle, JobObjectExtendedLimitInformation, &info, sizeof(info))) {
-			windows_errno(GetLastError());
-			os_syslog(OS_LVL_WARNING, "failed to configure job object, errno=%s(%d)", strerror(errno), errno);
-			CloseHandle(os_job_handle);
-			os_job_handle = 0;
-		}
+	/*
+	 * Skip creating a separate job object if already running inside one
+	 * (e.g. spawned by snapraid-daemon, a service, or Task Scheduler).
+	 * Child processes automatically inherit the parent's job object, and
+	 * attempting to assign them to a second independent job object would
+	 * fail with ERROR_ACCESS_DENIED.
+	 */
+	BOOL in_job = 0;
+	if (IsProcessInJob(GetCurrentProcess(), 0, &in_job) && in_job) {
+		os_job_handle = 0;
 	} else {
-		windows_errno(GetLastError());
-		os_syslog(OS_LVL_WARNING, "failed to create job object, errno=%s(%d)", strerror(errno), errno);
+		/* initialize job object to terminate child processes if daemon dies */
+		os_job_handle = CreateJobObjectW(0, 0);
+		if (os_job_handle != 0) {
+			JOBOBJECT_EXTENDED_LIMIT_INFORMATION info;
+			ZeroMemory(&info, sizeof(info));
+			info.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+			if (!SetInformationJobObject(os_job_handle, JobObjectExtendedLimitInformation, &info, sizeof(info))) {
+				windows_errno(GetLastError());
+				os_syslog(OS_LVL_WARNING, "failed to configure job object, errno=%s(%d)", strerror(errno), errno);
+				CloseHandle(os_job_handle);
+				os_job_handle = 0;
+			}
+		} else {
+			windows_errno(GetLastError());
+			os_syslog(OS_LVL_WARNING, "failed to create job object, errno=%s(%d)", strerror(errno), errno);
+		}
 	}
 
 	/* check for Wine presence */
