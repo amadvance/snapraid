@@ -8,6 +8,11 @@ SnapRAID HISTORY
    Daemon). This prevents potential execution failures of child
    processes (such as smartctl) on systems where nested job objects are
    not supported.
+ * Skip disks on network or virtual filesystems (such as NFS, CIFS,
+   FUSE, or tmpfs) in device operations like 'up', 'down', 'smart',
+   and 'probe' on Linux, instead of failing with an error. If no
+   physical device remains, the operation completes successfully with
+   an informational message.
 
 15.1 2026/10
 ============

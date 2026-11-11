@@ -1237,13 +1237,16 @@ int state_device_force(struct snapraid_state* state, int operation, tommy_list* 
 		}
 	}
 
-	/* distinguish skipped devices from unsupported device queries */
 	if (ret == 0 && tommy_list_empty(&low)) {
-		ret = -1;
 		if (tommy_list_empty(&high)) {
+			ret = -1;
 			log_error(ESOFT, "No accessible devices selected for this operation.\n");
 			goto bail;
 		}
+
+		/* not an error, the selected disks are on network or virtual filesystems without a block device to manage */
+		msg_info("No physical devices found for the selected disks, nothing to do.\n");
+		goto bail;
 	}
 
 	if (ret != 0) {

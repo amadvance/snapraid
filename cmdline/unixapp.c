@@ -4375,6 +4375,16 @@ int devquery(tommy_list* high, tommy_list* low)
 			struct dev_struct* dev = j->data;
 			uint64_t access_stat;
 
+			/*
+			 * Major 0 is an anonymous superblock (NFS, CIFS, FUSE, tmpfs, overlay, ...)
+			 * not backed by a block device. Btrfs/Bcachefs/ZFS are already dereferenced
+			 * to their member devices, so what remains has no physical disk to manage.
+			 */
+			if (major(dev->device) == 0) {
+				log_tag("device:%s:skip:%u:%u: no block device\n", esc_tag(devinfo->name), major(dev->device), minor(dev->device));
+				continue;
+			}
+
 			/* retrieve access stat for the high level device */
 			if (devstat(dev->device, &access_stat) == 0) {
 				/* cumulate access stat in the first split */
@@ -4420,6 +4430,9 @@ int devquery(tommy_list* high, tommy_list* low)
 #else
 	(void)high;
 	(void)low;
+
+	/* device operations are unsupported in this platform */
+	failed = 1;
 #endif
 
 	return failed ? -1 : degraded ? 1 : 0;
