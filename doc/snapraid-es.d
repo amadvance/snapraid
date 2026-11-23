@@ -321,7 +321,9 @@ Primeros pasos (Getting Started)
 
 	¡NO ENTRE EN PÁNICO! ¡Podrá recuperarlos!
 
-	Lo primero que debe hacer es evitar más cambios en su array de discos.
+	Antes de hacer cualquier otra cosa, evite realizar cualquier cambio en su
+	array de discos, ya que modificar o eliminar datos en los discos restantes
+	puede hacer imposible la recuperación.
 	Deshabilite cualquier conexión remota a él y cualquier proceso
 	programado, incluida cualquier sincronización o depuración nocturna
 	programada de SnapRAID.

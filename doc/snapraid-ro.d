@@ -307,7 +307,9 @@ Noțiuni de Bază (Getting Started)
 
 	NU INTRAȚI ÎN PANICĂ! Veți putea să le recuperați!
 
-	Primul lucru pe care trebuie să-l faceți este să evitați modificările ulterioare la matricea dvs. de discuri.
+	Înainte de a face orice altceva, evitați să efectuați orice modificare la matricea
+	dvs. de discuri, deoarece modificarea sau ștergerea datelor de pe discurile
+	rămase poate face recuperarea imposibilă.
 	Dezactivați orice conexiuni la distanță la aceasta și orice procese programate, inclusiv
 	orice sincronizare sau verificare SnapRAID programată pe timp de noapte.
 

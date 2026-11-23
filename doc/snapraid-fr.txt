@@ -354,8 +354,10 @@ Le pire est arrivé, et vous avez perdu un ou plusieurs disques !
 
 NE PANIQUEZ PAS ! Vous pourrez les récupérer !
 
-La première chose à faire est d'éviter d'autres modifications
-sur votre baie de disques. Désactivez toute connexion à distance
+Avant toute autre chose, évitez d'apporter la moindre modification
+à votre baie de disques, car modifier ou supprimer des données sur
+les disques restants peut rendre la récupération impossible.
+Désactivez toute connexion à distance
 et tout processus planifié, y compris toute synchronisation ou
 nettoyage SnapRAID nocturne planifié.
 

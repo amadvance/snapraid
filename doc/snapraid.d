@@ -310,7 +310,8 @@ Getting Started
 
 	DO NOT PANIC! You will be able to recover them!
 
-	The first thing you must do is avoid further changes to your disk array.
+	Before doing anything else, avoid making any changes to your disk array, as
+	modifying or deleting data on the remaining disks may make recovery impossible.
 	Disable any remote connections to it and any scheduled processes, including
 	any scheduled SnapRAID nightly sync or scrub.
 

@@ -310,7 +310,9 @@ Pierwsze kroki (Getting Started)
 
 	NIE PANIKUJ! Będziesz w stanie je odzyskać!
 
-	Pierwszą rzeczą, którą musisz zrobić, to unikać dalszych zmian w Twojej macierzy dysków.
+	Zanim zrobisz cokolwiek innego, unikaj wprowadzania jakichkolwiek zmian w Twojej
+	macierzy dysków, ponieważ modyfikowanie lub usuwanie danych na pozostałych
+	dyskach może uniemożliwić odzyskanie.
 	Wyłącz wszelkie zdalne połączenia z nią i wszelkie zaplanowane procesy, w tym
 	jakąkolwiek zaplanowaną nocną synchronizację lub scrub SnapRAID.
 

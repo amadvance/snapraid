@@ -334,8 +334,10 @@ Erste Schritte (Getting Started)
 
 	KEINE PANIK! Sie werden in der Lage sein, sie wiederherzustellen!
 
-	Das erste, was Sie tun müssen, ist, weitere Änderungen an Ihrem
-	Festplatten-Array zu vermeiden. Deaktivieren Sie alle Remote-Verbindungen
+	Bevor Sie irgendetwas anderes tun, vermeiden Sie jegliche Änderungen an Ihrem
+	Festplatten-Array, da das Ändern oder Löschen von Daten auf den verbleibenden
+	Festplatten eine Wiederherstellung unmöglich machen kann.
+	Deaktivieren Sie alle Remote-Verbindungen
 	dazu und alle geplanten Prozesse, einschließlich geplanter SnapRAID-nächtlicher
 	`sync`- oder `scrub`-Läufe.
 

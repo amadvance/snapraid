@@ -344,7 +344,9 @@ O per recuperare tutti i file eliminati su tutte le unità con:
 
 NON FARSI PRENDERE DAL PANICO! Sarà possibile recuperarli!
 
-La prima cosa da fare è evitare ulteriori modifiche all'array di dischi.
+Prima di fare qualsiasi altra cosa, evitare di apportare qualsiasi modifica
+all'array di dischi, poiché modificare o cancellare dati sui dischi rimanenti
+potrebbe rendere impossibile il recupero.
 Disabilitare qualsiasi connessione remota ad esso e qualsiasi processo
 pianificato, incluso qualsiasi sync o scrub notturno pianificato di SnapRAID.
 

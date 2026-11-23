@@ -330,7 +330,9 @@ Det värsta har hänt, och du har förlorat en eller flera diskar!
 
 FÅ INTE PANIK! Du kommer att kunna återställa dem!
 
-Det första du måste göra är att undvika ytterligare ändringar i din disk-array.
+Innan du gör något annat, undvik att göra några ändringar i din disk-array,
+eftersom ändring eller borttagning av data på de återstående diskarna kan
+göra återställning omöjlig.
 Inaktivera alla fjärranslutningar till den och alla schemalagda processer, inklusive
 alla schemalagda SnapRAID nattliga sync- eller scrub-körningar.
 
