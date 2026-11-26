@@ -3682,6 +3682,22 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
+			/*
+			 * Reject the same disk name twice. The maps keep the content file
+			 * names until the end of the parsing, so this compares content names.
+			 */
+			for (tommy_node* j = tommy_list_head(&state->maplist); j != 0; j = j->next) {
+				struct snapraid_map* other = j->data;
+
+				if (pathcmp(other->name, buffer) == 0) {
+					/* LCOV_EXCL_START */
+					decoding_error(path, f);
+					log_fatal(ECONTENT, "Internal inconsistency: Field 'M' duplicate disk name '%s' in the content file!\n", buffer);
+					os_abort();
+					/* LCOV_EXCL_STOP */
+				}
+			}
+
 			/* find the disk */
 			disk = find_disk_by_name(state, buffer);
 			if (!disk) {
