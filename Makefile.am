@@ -990,6 +990,8 @@ endif # HAVE_POSIX
 	$(MSG) Rename a disk
 	$(FAILENV) $(SNAPRAID) $(CHECKFLAGS) -c $(RENAME) --test-match-first-uuid sync
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) --test-match-first-uuid sync
+	$(MSG) Remove a disk with the same UUID of another one
+	$(FAILENV) $(SNAPRAID) $(CHECKFLAGS) -c $(HOLE) --test-match-first-uuid --test-expect-failure sync
 #### SCRUB ####
 	$(MSG) Scrub some times
 	$(TESTENV) $(SNAPRAID) $(CHECKFLAGS) -c $(CONF) --test-force-scrub-at 100 scrub

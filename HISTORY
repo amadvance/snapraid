@@ -1,6 +1,14 @@
 SnapRAID HISTORY
 ================
 
+15.3 (WorkInProgress)
+=====================
+ * Fix an internal inconsistency termination when removing from the
+   configuration file a data disk that shares the same UUID with
+   another data disk, such as Btrfs subvolumes of the same filesystem.
+   SnapRAID now reports the removed disk as not present in the
+   configuration file, asking to restore it, as for any other disk.
+
 15.2 2026/11
 ============
  * Avoid creating a redundant Windows Job Object when SnapRAID is

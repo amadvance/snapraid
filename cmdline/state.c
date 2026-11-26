@@ -3617,6 +3617,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			block_off_t v_total_blocks;
 			block_off_t v_free_blocks;
 			struct snapraid_disk* disk;
+			const char* missing_name;
+			const char* missing_uuid;
 
 			if (mapping_max >= RAID_DATA_MAX) {
 				/* LCOV_EXCL_START */
@@ -3685,17 +3687,52 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (!disk) {
 				/* search by UUID if renamed */
 				disk = find_disk_by_uuid(state, uuid);
-				if (disk) {
-					log_info(EUSER, "WARNING! Renaming disk '%s' to '%s'\n", buffer, disk->name);
+			}
 
-					/* write the new state with the new name */
-					state->need_write = 1;
+			/* the disk to report as not present in the configuration file */
+			missing_name = buffer;
+			missing_uuid = uuid;
+
+			/*
+			 * Ensure that a disk of the configuration file is associated with only one
+			 * disk of the content file.
+			 *
+			 * A double association happens when a disk removed from the configuration
+			 * file has the same UUID of a disk still present, like BTRFS subvolumes of
+			 * the same filesystem, and the search by UUID matches the wrong disk.
+			 * Loading the files of both disks into the same disk would overlap their
+			 * parity positions.
+			 *
+			 * The association by name always wins, so the disk not present in the
+			 * configuration file is the one associated by UUID. As the maps keep the
+			 * content file names until the end of the parsing, it can be reported
+			 * even if it was found before.
+			 */
+			if (disk) {
+				tommy_node* j = tommy_list_head(&state->maplist);
+				uint32_t k;
+
+				for (k = 0; k < mapping_max; ++k) {
+					struct snapraid_map* other = j->data;
+
+					if (tommy_array_get(&disk_mapping, k) == disk) {
+						/* if this one is associated by name, the previous one was by UUID */
+						if (pathcmp(buffer, disk->name) == 0) {
+							missing_name = other->name;
+							missing_uuid = other->content_uuid;
+						}
+						disk = 0;
+						break;
+					}
+
+					j = j->next;
 				}
 			}
+
 			if (!disk) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal(EUSER, "Disk '%s' with uuid '%s' not present in the configuration file!\n", buffer, uuid);
+				log_fatal(EUSER, "Disk '%s' with uuid '%s' not present in the configuration file!\n", missing_name, missing_uuid);
 				log_fatal(EUSER, "If you have removed it from the configuration file, please restore it\n");
 				/* if it's a command without UUID, it cannot autorename using UUID */
 				if (state->opt.skip_disk_access)
@@ -3704,7 +3741,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
-			map = map_alloc(disk->name, v_idx, v_total_blocks, v_free_blocks, uuid);
+			/* keep the content file name, the rename is done at the end of the parsing */
+			map = map_alloc(buffer, v_idx, v_total_blocks, v_free_blocks, uuid);
 
 			tommy_list_insert_tail(&state->maplist, &map->node, map);
 
@@ -3935,6 +3973,27 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			os_abort();
 			/* LCOV_EXCL_STOP */
 		}
+	}
+
+	/*
+	 * Rename the disks associated by UUID only now that all the associations
+	 * are verified, otherwise a disk not present in the configuration file
+	 * could be reported with the wrong name.
+	 */
+	uint32_t map_idx = 0;
+	for (tommy_node* map_node = tommy_list_head(&state->maplist); map_node != 0; map_node = map_node->next, ++map_idx) {
+		struct snapraid_map* map = map_node->data;
+		struct snapraid_disk* disk = tommy_array_get(&disk_mapping, map_idx);
+
+		if (pathcmp(map->name, disk->name) != 0) {
+			log_info(EUSER, "WARNING! Renaming disk '%s' to '%s'\n", map->name, disk->name);
+
+			/* write the new state with the new name */
+			state->need_write = 1;
+		}
+
+		/* use the configuration file name */
+		pathcpy(map->name, sizeof(map->name), disk->name);
 	}
 
 	/*
